@@ -1,0 +1,27 @@
+[package]
+name = "hallr"
+version = "0.1.0"
+edition = "2021"
+readme = "README.md"
+description = "An experimental Blender addon"
+repository = "https://github.com/eadf/hallr"
+license = "AGPL-3.0-or-later"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+thiserror = "1.0.50"
+vob="3.0.3"
+rayon = "1.8.0"
+itertools = "0.11.0"
+ahash = "0.8.6"
+smallvec = "1.11"
+linestring = "0.10.1"
+vector-traits = { version = "0.2.0", features = ["glam"] }
+spade = "2.2.0"
+krakel = {version = "0.2.0", features = ["glam"]}
+hronn = { version = "0.1.0", features = ["glam"]}
+
+[dev-dependencies]
+rand = "0.8.5"
