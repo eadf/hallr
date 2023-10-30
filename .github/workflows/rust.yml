@@ -21,7 +21,7 @@ jobs:
       - name: Build and Package Libraries (Windows)
         run: |
           # Build for Windows target (using Windows commands)
-          cargo build --release --features="glam"
+          cargo build --release
         shell: powershell
         working-directory: ${{ github.workspace }}
 
@@ -40,7 +40,6 @@ jobs:
         with:
           name: hallr
           path: hallr
-
 
   linux_job:
     runs-on: ubuntu-latest
@@ -64,7 +63,7 @@ jobs:
       - name: Build and Package Libraries (Linux)
         run: |
           # Build for Linux target (using Bash)
-          cargo build --release --features="glam"
+          cargo build --release
         shell: bash
         working-directory: ${{ github.workspace }}
 
@@ -101,7 +100,7 @@ jobs:
       - name: Build and Package Libraries (macOS)
         run: |
           # Build for macOS x86 target (using Bash)
-          cargo build --release --features="glam"
+          cargo build --release
         shell: bash
         working-directory: ${{ github.workspace }}
 
@@ -136,7 +135,7 @@ jobs:
       - name: Build and Package Libraries (macOS)
         run: |
           # Build for macOS arm target (using Bash)
-          cargo build --release --features="glam"
+          cargo build --release
         shell: bash
         working-directory: ${{ github.workspace }}
 
