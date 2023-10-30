@@ -22,7 +22,7 @@ bounding_props_items = [
 
 class OBJECT_OT_hallr_2d_delaunay_triangulation(bpy.types.Operator):
     bl_idname = "object.hallr_2d_delaunay_triangulation"
-    bl_label = "Hallr 2d Delaunay Triangulation"
+    bl_label = "Hallr 2½D Delaunay Triangulation"
     bl_options = {'REGISTER', 'UNDO'}
 
     bounds_props: bpy.props.EnumProperty(
@@ -111,7 +111,7 @@ class OBJECT_OT_hallr_2d_delaunay_triangulation(bpy.types.Operator):
 
 
 def VIEW3D_MT_2d_delaunay_triangulation_menu_item(self, context):
-    self.layout.operator(OBJECT_OT_hallr_2d_delaunay_triangulation.bl_idname, text="MeshMach 2d Delaunay operator")
+    self.layout.operator(OBJECT_OT_hallr_2d_delaunay_triangulation.bl_idname)
 
 
 def register():

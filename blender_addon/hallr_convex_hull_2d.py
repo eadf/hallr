@@ -14,7 +14,7 @@ bl_info = {
 
 
 class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
-    """A convex hull 2d operator"""
+    """A 2D convex hull operator"""
     bl_idname = "mesh.hallr_convex_hull_2d"
     bl_label = "Hallr Convex Hull 2d"
     bl_options = {'REGISTER', 'UNDO'}
@@ -61,7 +61,7 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
 
 
 def VIEW3D_MT_hallr_convex_hull_2d_menu_item(self, context):
-    self.layout.operator(MESH_OT_hallr_convex_hull_2d.bl_idname, text="MeshMach Convex Hull 2d")
+    self.layout.operator(MESH_OT_hallr_convex_hull_2d.bl_idname)
 
 
 def register():

@@ -2,7 +2,7 @@ import bpy
 from . import hallr_ffi_utils
 
 bl_info = {
-    "name": "Hallr Simplify RDP",
+    "name": "Hallr 2D Simplify RDP",
     "category": "Object",
     "location": "View3D > Tools",
     "description": "This module does something useful.",
@@ -14,7 +14,7 @@ bl_info = {
 
 
 class OBJECT_OT_hallr_simplify_rdp(bpy.types.Operator):
-    """Line Simplification using the RDP Algorithm"""
+    """2D Line Simplification using the RDP Algorithm"""
     bl_idname = "object.simplify_rdp"
     bl_label = "Hallr Simplify RDP"
     bl_options = {'REGISTER', 'UNDO'}
@@ -57,7 +57,7 @@ class OBJECT_OT_hallr_simplify_rdp(bpy.types.Operator):
 
 
 def VIEW3D_MT_hallr_simplify_rdp_menu_item(self, context):
-    self.layout.operator(OBJECT_OT_hallr_simplify_rdp.bl_idname, text="MeshMach simplify 2d")
+    self.layout.operator(OBJECT_OT_hallr_simplify_rdp.bl_idname)
 
 
 def register():

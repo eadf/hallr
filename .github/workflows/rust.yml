@@ -32,7 +32,7 @@ jobs:
           mkdir hallr/hallr/lib
           cp blender_addon/.hallr hallr
           cp blender_addon/*.py hallr/hallr
-          cp target/release/rust_workflow_trial_and_error.dll hallr/hallr/lib/
+          cp target/release/hallr.dll hallr/hallr/lib/
         working-directory: ${{ github.workspace }}
 
       - name: Upload Archive
@@ -70,7 +70,7 @@ jobs:
       - name: Append to Archive
         run: |
           # Append Linux artifacts to the existing archive
-          cp target/release/librust_workflow_trial_and_error.so  hallr/hallr/lib/
+          cp target/release/libhallr.so  hallr/hallr/lib/
         working-directory: ${{ github.workspace }}
 
       - name: Upload Archive
@@ -105,7 +105,7 @@ jobs:
         working-directory: ${{ github.workspace }}
 
       - name: Append to Archive
-        run: cp target/release/librust_workflow_trial_and_error.dylib  hallr/hallr/lib/
+        run: cp target/release/libhallr.dylib  hallr/hallr/lib/
         working-directory: ${{ github.workspace }}
 
       - name: Upload Archive
@@ -141,14 +141,14 @@ jobs:
 
       - name: Build fat library
         run: |
-          #lipo -create target/release/librust_workflow_trial_and_error.dylib lib/librust_workflow_trial_and_error.dylib -output target/librust_workflow_trial_and_error.dylib
-          #mv target/librust_workflow_trial_and_error.dylib target/release
+          #lipo -create target/release/libhallr.dylib lib/libhallr.dylib -output target/libhallr.dylib
+          #mv target/libhallr.dylib target/release
         working-directory: ${{ github.workspace }}
 
       - name: Append to Archive
         run: |
           # Append macOS artifacts to the existing archive
-          cp target/release/librust_workflow_trial_and_error.dylib hallr/hallr/lib/
+          cp target/release/libhallr.dylib hallr/hallr/lib/
         working-directory: ${{ github.workspace }}
 
       - name: Upload Archive
