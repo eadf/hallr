@@ -1,5 +1,16 @@
 import bpy
-import hallr_ffi_utils
+from . import hallr_ffi_utils
+
+bl_info = {
+    "name": "Hallr Delaunay Triangulation",
+    "category": "Object",
+    "location": "View3D > Tools",
+    "description": "This module does something useful.",
+    "author": "EAD",
+    "version": (0, 1, 0),
+    "blender": (3, 4, 1),
+    "warning": "This executes rust code on your computer",
+}
 
 # Define the choices for the search pattern property
 bounding_props_items = [

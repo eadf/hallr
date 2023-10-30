@@ -1,10 +1,14 @@
 import bpy
 import os
+import platform
 from importlib import reload
 import ctypes
 import bmesh
+
 # workaround for the "ImportError: attempted relative import with no known parent package" problem:
 DEV_MODE = False  # Set this to False for distribution
+HALLR_LIBRARY = None
+
 
 class Vector3(ctypes.Structure):
     _fields_ = [("x", ctypes.c_float),
@@ -31,21 +35,14 @@ class ProcessResult(ctypes.Structure):
 
 
 def load_latest_dylib(prefix="libhallr_"):
-    if not DEV_MODE:
-        system = platform.system()
-        library_extension = ".dylib"  # Default to macOS
-        if system == "Linux":
-            library_extension = ".so"
-        elif system == "Windows":
-            library_extension = ".dll"
-        rust_lib = ctypes.cdll.LoadLibrary('libhallr'+library_extension)
-        return rust_lib
-
-    else: # DEV_MODE
-        # Todo: how are an end users suppose to change this path?
+    global HALLR_LIBRARY
+    if DEV_MODE:
+        # this will be find-and-replaced by the build script
         directory = "HALLR__TARGET_RELEASE"
+
         # List all files in the directory with the given prefix
-        files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f)) and f.startswith(prefix)]
+        files = [f for f in os.listdir(directory) if
+                 os.path.isfile(os.path.join(directory, f)) and f.startswith(prefix)]
 
         # Sort files by their modification time
         files.sort(key=lambda x: os.path.getmtime(os.path.join(directory, x)), reverse=True)
@@ -53,19 +50,37 @@ def load_latest_dylib(prefix="libhallr_"):
         # Load the latest .dylib, .dll, .so, whatever
         if files:
             latest_dylib = os.path.join(directory, files[0])
-            # print(f"Loading: {latest_dylib}")
+            print("Loading lib: ", latest_dylib)
             rust_lib = ctypes.cdll.LoadLibrary(latest_dylib)
-            rust_lib.process_geometry.argtypes = [ctypes.POINTER(Vector3), ctypes.c_size_t,
-                                                  ctypes.POINTER(ctypes.c_size_t), ctypes.c_size_t,
-                                                  ctypes.POINTER(StringMap)]
-
-            rust_lib.process_geometry.restype = ProcessResult
-            rust_lib.free_process_results.argtypes = [ctypes.POINTER(ProcessResult)]
-            rust_lib.free_process_results.restype = None  # The function does not return anything
-
-            return rust_lib
         else:
-            raise ValueError("Could not find the meshmach runtime library!")
+            raise ValueError("Could not find the hallr runtime library!")
+
+    else:  # release mode
+        if HALLR_LIBRARY:
+            return HALLR_LIBRARY
+
+        system = platform.system()
+        library_name = "libhallr.dylib"  # Default to macOS
+        if system == "Linux":
+            library_name = "libhallr.so"
+        elif system == "Windows":
+            library_name = "hallr.dll"
+        module_dir = os.path.dirname(__file__)  # Get the directory of the Python module
+        dylib_path = os.path.join(module_dir, 'lib', library_name)
+        # print("trying to load:", dylib_path)
+        # os.environ['DYLD_FALLBACK_LIBRARY_PATH'] = module_dir
+        rust_lib = ctypes.cdll.LoadLibrary(dylib_path)
+
+    rust_lib.process_geometry.argtypes = [ctypes.POINTER(Vector3), ctypes.c_size_t,
+                                          ctypes.POINTER(ctypes.c_size_t), ctypes.c_size_t,
+                                          ctypes.POINTER(StringMap)]
+
+    rust_lib.process_geometry.restype = ProcessResult
+    rust_lib.free_process_results.argtypes = [ctypes.POINTER(ProcessResult)]
+    rust_lib.free_process_results.restype = None
+    HALLR_LIBRARY = rust_lib
+    return rust_lib
+
 
 def ctypes_close_library(lib):
     if DEV_MODE:
@@ -73,6 +88,7 @@ def ctypes_close_library(lib):
         dlclose_func.argtypes = [ctypes.c_void_p]
         dlclose_func.restype = ctypes.c_int
         dlclose_func(lib._handle)
+
 
 def handle_new_object(mesh_obj):
     bpy.context.collection.objects.link(mesh_obj)
@@ -269,7 +285,7 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
         raise RuntimeError("Error in finding the active mesh.")
     if bounding_shape:
         bounding_obj_to_process, bounding_obj_is_duplicated = prepare_object_for_processing(bounding_shape,
-                                                                                        "TempDuplicateBounding")
+                                                                                            "TempDuplicateBounding")
         if not bounding_obj_to_process:
             raise RuntimeError("Error in finding the bounding shape.")
 
@@ -321,6 +337,8 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
     # 8. Make the call to rust
     rust_result = rust_lib.process_geometry(vertices_ptr, len(vertices), indices_ptr, len(indices), map_data)
 
+    print("python received: ", rust_result.geometry.vertex_count, "vertices")
+    print("python received: ", rust_result.geometry.indices_count, "indices")
     # 9. Handle the results
     output_vertices = [(vec.x, vec.y, vec.z) for vec in
                        (rust_result.geometry.vertices[i] for i in range(rust_result.geometry.vertex_count))]
@@ -331,6 +349,7 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
         key = ctypes.string_at(rust_result.map.keys[i]).decode('utf-8')
         value = ctypes.string_at(rust_result.map.values[i]).decode('utf-8')
         output_map[key] = value
+    print("python received: ", output_map)
 
     # 10. Free rust memory
     rust_lib.free_process_results(rust_result)
@@ -360,7 +379,7 @@ def call_rust_direct(config, active_obj, expect_line_string=False):
         indices = [vert_idx for face in active_obj_to_process.data.polygons for vert_idx in face.vertices]
 
     indices_ptr = (ctypes.c_size_t * len(indices))(*indices)
-    
+
     keys_list = list(config.keys())
     values_list = list(config.values())
     keys_array = (ctypes.c_char_p * len(keys_list))(*[k.encode('utf-8') for k in keys_list])
@@ -401,4 +420,3 @@ def cleanup_duplicated_object(an_obj):
             print("obj was None")
     else:
         print("obj_name was not found")
-

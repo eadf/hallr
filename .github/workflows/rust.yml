@@ -21,21 +21,26 @@ jobs:
       - name: Build and Package Libraries (Windows)
         run: |
           # Build for Windows target (using Windows commands)
-          cargo build --release
+          cargo build --release --features="glam"
         shell: powershell
         working-directory: ${{ github.workspace }}
 
       - name: Build Archive
         run: |
-          mkdir blender_addon/lib
-          cp target/release/hallr.dll blender_addon/lib/
+          mkdir hallr
+          mkdir hallr/hallr
+          mkdir hallr/hallr/lib
+          cp blender_addon/.hallr hallr
+          cp blender_addon/*.py hallr/hallr
+          cp target/release/rust_workflow_trial_and_error.dll hallr/hallr/lib/
         working-directory: ${{ github.workspace }}
 
       - name: Upload Archive
         uses: actions/upload-artifact@v3
         with:
           name: hallr
-          path: blender_addon
+          path: hallr
+
 
   linux_job:
     runs-on: ubuntu-latest
@@ -46,32 +51,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Prepare Archive
+        run: mkdir hallr
+        working-directory: ${{ github.workspace }}
+
       - name: Download Previous Artifacts
         uses: actions/download-artifact@v3
         with:
           name: hallr
-          path: blender_addon
+          path: hallr
 
       - name: Build and Package Libraries (Linux)
         run: |
           # Build for Linux target (using Bash)
-          cargo build --release
+          cargo build --release --features="glam"
         shell: bash
         working-directory: ${{ github.workspace }}
 
       - name: Append to Archive
         run: |
           # Append Linux artifacts to the existing archive
-          cp target/release/libhallr.so blender_addon/lib/
+          cp target/release/librust_workflow_trial_and_error.so  hallr/hallr/lib/
         working-directory: ${{ github.workspace }}
 
       - name: Upload Archive
         uses: actions/upload-artifact@v3
         with:
           name: hallr
-          path: blender_addon
+          path: hallr
 
-  macos_job_x86:
+  macos_x86_job:
     runs-on: macos-latest
     needs: linux_job
 
@@ -79,65 +88,72 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Prepare Archive
+        run: mkdir hallr
+        working-directory: ${{ github.workspace }}
+
       - name: Download Previous Artifacts
         uses: actions/download-artifact@v3
         with:
           name: hallr
-          path: blender_addon
+          path: hallr
 
       - name: Build and Package Libraries (macOS)
         run: |
           # Build for macOS x86 target (using Bash)
-          cargo build --release
+          cargo build --release --features="glam"
         shell: bash
         working-directory: ${{ github.workspace }}
 
       - name: Append to Archive
-        run: |
-          cp target/release/libhallr.dylib blender_addon/lib/
+        run: cp target/release/librust_workflow_trial_and_error.dylib  hallr/hallr/lib/
         working-directory: ${{ github.workspace }}
 
       - name: Upload Archive
         uses: actions/upload-artifact@v3
         with:
           name: hallr
-          path: blender_addon
+          path: hallr
 
-  macos_job_arm:
-    runs-on: macos-latest  # this is just running on another x86 mac. Todo: pay up and fix
-    needs: macos_job_x86
+  macos_arm_job:
+    runs-on: macos-latest
+    needs: macos_x86_job
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Prepare Archive
+        run: mkdir hallr
+        working-directory: ${{ github.workspace }}
+
       - name: Download Previous Artifacts
         uses: actions/download-artifact@v3
         with:
           name: hallr
-          path: blender_addon
+          path: hallr
 
       - name: Build and Package Libraries (macOS)
         run: |
           # Build for macOS arm target (using Bash)
-          cargo build --release
+          cargo build --release --features="glam"
         shell: bash
         working-directory: ${{ github.workspace }}
 
       - name: Build fat library
         run: |
-          #lipo -create target/release/libhallr.dylib lib/libhallr.dylib -output target/libhallr.dylib
-          #mv target/libhallr.dylib target/release
+          #lipo -create target/release/librust_workflow_trial_and_error.dylib lib/librust_workflow_trial_and_error.dylib -output target/librust_workflow_trial_and_error.dylib
+          #mv target/librust_workflow_trial_and_error.dylib target/release
         working-directory: ${{ github.workspace }}
 
       - name: Append to Archive
         run: |
           # Append macOS artifacts to the existing archive
-          cp target/release/libhallr.dylib blender_addon/lib/
+          cp target/release/librust_workflow_trial_and_error.dylib hallr/hallr/lib/
         working-directory: ${{ github.workspace }}
 
       - name: Upload Archive
         uses: actions/upload-artifact@v3
         with:
           name: hallr
-          path: blender_addon
+          path: hallr

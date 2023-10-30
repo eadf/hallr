@@ -1,31 +1,28 @@
 import bpy
 import sys
 
+bl_info = {
+    "name": "Hallr",
+    "blender": (3, 4, 1),
+    "category": "Object",
+    "description": "A collection of addons written in rust",
+    "author": "EAD",
+    "version": (0, 1, 0),
+    "warning": "This executes rust code on your computer",
+}
+
 DEV_MODE = False  # Set this to False for distribution
 
 if DEV_MODE:
     addon_path = "HALLR__BLENDER_ADDON_PATH"  # Modify this path to point to your addon directory
     if addon_path not in sys.path:
         sys.path.append(addon_path)
-
-try:
-    from . import hallr_collision  # This is for the packaged addon
-    from . import hallr_ffi_utils
-    from . import hallr_convex_hull_2d
-    from . import hallr_simplify_rdp
-    from . import hallr_2d_delaunay_triangulation
-except ImportError:
-    import hallr_collision  # This is for direct run in Blender's text editor
-    import hallr_ffi_utils
-    import hallr_convex_hull_2d
-    import hallr_simplify_rdp
-    import hallr_2d_delaunay_triangulation
-    
-bl_info = {
-    "name": "Hallr",
-    "blender": (3, 4, 1),
-    "category": "Object",
-}
+# the string "from ." will be find-and-replaced with "" if run in DEV_MODE
+from . import hallr_collision
+from . import hallr_ffi_utils
+from . import hallr_convex_hull_2d
+from . import hallr_simplify_rdp
+from . import hallr_2d_delaunay_triangulation
 
 
 def register():

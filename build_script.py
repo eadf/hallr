@@ -77,7 +77,10 @@ if __name__ == "__main__":
         os.remove(old_file)
 
     for lib_file in lib_files:
-        new_name = os.path.join(dest_lib_directory, f"libhallr_{timestamp}{library_extension}")
+        if args.dev_mode:
+            new_name = os.path.join(dest_lib_directory, f"libhallr_{timestamp}{library_extension}")
+        else:
+            new_name = os.path.join(dest_lib_directory,lib_file)
         shutil.copy(f"target/release/{lib_file}", new_name)
 
     file_extension = '.py'
@@ -100,7 +103,7 @@ if __name__ == "__main__":
     file_list = [f for f in os.listdir(addon_exported_path) if
                  os.path.isfile(os.path.join(addon_exported_path, f)) and f.endswith(".py")]
 
-    # Print the list of files
+    # Do find and replace on the .py files
     for file in file_list:
         file_path = os.path.join(addon_exported_path, file)
         with open(file_path, 'r') as f:
@@ -109,7 +112,13 @@ if __name__ == "__main__":
         content = re.sub(r'HALLR__TARGET_RELEASE', target_release_path, content)
         if args.dev_mode:
             content = re.sub(r'DEV_MODE = False', 'DEV_MODE = True', content)
+            content = re.sub(r'from . import', 'import', content)
+
         with open(file_path, 'w') as f:
             f.write(content)
 
+    if not args.dev_mode:
+        subprocess.run("mv blender_addon_exported hallr", shell=True)
+        subprocess.run("zip -r hallr.zip hallr", shell=True)#,cwd=addon_exported_path)
+        subprocess.run("mv hallr blender_addon_exported", shell=True)
     print("Done")

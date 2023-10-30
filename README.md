@@ -8,9 +8,14 @@
 Experimental Blender addon written in Rust. Work in progress
 
 ## Usage
-You should be able to find CI generated zip files under the Actions->workdlows tab that blender can install. 
+You should be able to find CI generated zip files under the [Actions->workflows](https://github.com/eadf/hallr/actions) tab that blender can install. 
 There are issues with building for MacOs Arm with the github workflows, 
-in that case you can locally run `cargo build --release` and replace the `.dylib` inside the zip file
+in that case you can locally run:
+```bash
+cargo build --release
+```
+
+and replace the `.dylib` inside the zip file
 
 ## License
 AGPL-3.0-or-later

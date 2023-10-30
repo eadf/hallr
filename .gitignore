@@ -13,6 +13,8 @@ debug/
 *.ipr
 *.profraw
 out/
+*.dylib
+*.zip
 
 # Ignore temporary files
 *.swp

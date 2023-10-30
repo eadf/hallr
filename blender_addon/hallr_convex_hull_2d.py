@@ -1,5 +1,17 @@
 import bpy
-import hallr_ffi_utils
+from . import hallr_ffi_utils
+
+bl_info = {
+    "name": "Hallr Convex Hull",
+    "category": "Object",
+    "location": "View3D > Tools",
+    "description": "This module does something useful.",
+    "author": "EAD",
+    "version": (0, 1, 0),
+    "blender": (3, 4, 1),
+    "warning": "This executes rust code on your computer",
+}
+
 
 class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
     """A convex hull 2d operator"""
@@ -62,7 +74,7 @@ def unregister():
         bpy.utils.unregister_class(MESH_OT_hallr_convex_hull_2d)
     except (RuntimeError, NameError):
         pass
-    #if hasattr(bpy.types, 'YOUR_OT_convex_hull_2d'):
+    # if hasattr(bpy.types, 'YOUR_OT_convex_hull_2d'):
     #    bpy.utils.unregister_class(YOUR_OT_convex_hull_2d)
     bpy.types.VIEW3D_MT_edit_mesh.remove(VIEW3D_MT_hallr_convex_hull_2d_menu_item)
 
