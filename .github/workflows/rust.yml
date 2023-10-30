@@ -115,7 +115,7 @@ jobs:
           path: hallr
 
   macos_arm_job:
-    runs-on: macos-latest
+    runs-on: macos-latest  # we are still using x86 mac here, I need sponsors to pay for macos-latest-xl
     needs: macos_x86_job
 
     steps:

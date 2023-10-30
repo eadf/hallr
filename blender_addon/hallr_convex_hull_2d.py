@@ -1,20 +1,10 @@
 import bpy
 from . import hallr_ffi_utils
 
-bl_info = {
-    "name": "Hallr Convex Hull",
-    "category": "Object",
-    "location": "View3D > Tools",
-    "description": "This module does something useful.",
-    "author": "EAD",
-    "version": (0, 1, 0),
-    "blender": (3, 4, 1),
-    "warning": "This executes rust code on your computer",
-}
-
 
 class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
-    """A 2D convex hull operator"""
+    """A 2D convex hull operator that works in the XY plane, remember to apply any transformations"""
+
     bl_idname = "mesh.hallr_convex_hull_2d"
     bl_label = "Hallr Convex Hull 2d"
     bl_options = {'REGISTER', 'UNDO'}

@@ -11,7 +11,7 @@ use std::{
 use vector_traits::glam::Vec2;
 
 #[derive(PartialEq, PartialOrd, Copy, Clone, Default)]
-#[cfg_attr(feature = "ffi", repr(C))]
+#[repr(C)]
 pub struct FFIVector3 {
     pub(crate) x: f32,
     pub(crate) y: f32,

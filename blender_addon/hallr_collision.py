@@ -1,17 +1,6 @@
 import bpy
 from . import hallr_ffi_utils
 
-bl_info = {
-    "name": "Hallr Collision",
-    "category": "Object",
-    "location": "View3D > Tools",
-    "description": "This module does something useful.",
-    "author": "EAD",
-    "version": (0, 1, 0),
-    "blender": (3, 4, 1),
-    "warning": "This executes rust code on your computer",
-}
-
 # Define the choices for the tool/probe property
 probes_props_items = [
     ("BALL_NOSE", "Ball Nose", "Ball Nose probe"),
@@ -33,6 +22,8 @@ bounding_props_items = [
 
 
 class OBJECT_OT_hallr_collision(bpy.types.Operator):
+    """A CNC toolpath/mesh probe operation, work in progress"""
+
     bl_idname = "object.hallr_collision"
     bl_label = "Hallr mesh toolpath generator"
     bl_options = {'REGISTER', 'UNDO'}

@@ -1,22 +1,12 @@
 import bpy
 from . import hallr_ffi_utils
 
-bl_info = {
-    "name": "Hallr 2D Simplify RDP",
-    "category": "Object",
-    "location": "View3D > Tools",
-    "description": "This module does something useful.",
-    "author": "EAD",
-    "version": (0, 1, 0),
-    "blender": (3, 4, 1),
-    "warning": "This executes rust code on your computer",
-}
-
 
 class OBJECT_OT_hallr_simplify_rdp(bpy.types.Operator):
-    """2D Line Simplification using the RDP Algorithm"""
+    """2D Line Simplification using the RDP Algorithm, works in the XY plane"""
+
     bl_idname = "object.simplify_rdp"
-    bl_label = "Hallr Simplify RDP"
+    bl_label = "Hallr 2D Simplify RDP"
     bl_options = {'REGISTER', 'UNDO'}
 
     epsilon_props: bpy.props.FloatProperty(name="Epsilon", default=0.1, min=0, description="Amount of simplification")
