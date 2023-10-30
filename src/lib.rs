@@ -36,48 +36,15 @@ pub enum HallrError {
     #[error(transparent)]
     LinestringError(#[from] linestring::LinestringError),
 
-    #[error(transparent)]
-    SpaceInsertionError(#[from] spade::InsertionError),
-
-    #[error("Could not parse float value.")]
-    ParseFloatError,
-
-    #[error("The vertex indices does not match {0}")]
-    MismatchedIndex(String),
-
-    #[error("Your line-strings are self-intersecting: {0}")]
-    SelfIntersectingData(String),
-
-    #[error("The input data is not 2D: {0}")]
-    InputNotPLane(String),
-
-    #[error("Invalid data: {0}")]
-    InvalidData(String),
-
-    #[error("Aabb error: {0}")]
-    AabbError(String),
-
-    #[error("Transform error: {0}")]
-    TransformError(String),
-
     #[error("Invalid input data: {0}")]
     InvalidParameter(String),
 
     #[error("Missing input data: {0}")]
     NoData(String),
 
-    #[error("Obj file not triangulated: {0}")]
-    NotTriangulated(String),
-
     #[error("Missing parameter: {0}")]
     MissingParameter(String),
-
-    #[error("Mismatched MeshAnalyzer: {0}")]
-    Mismatch(String),
-
     #[error("Unknown error: {0}")]
     InternalError(String),
 
-    #[error(transparent)]
-    IoError(#[from] std::io::Error),
 }

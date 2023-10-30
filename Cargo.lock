@@ -96,18 +96,12 @@ checksum = "b5418c17512bdf42730f9032c74e1ae39afc408745ebb2acf72fbc4691c17945"
 name = "hallr"
 version = "0.1.0"
 dependencies = [
- "ahash",
  "hronn",
- "itertools",
  "krakel",
  "linestring",
  "rand",
- "rayon",
- "smallvec",
- "spade",
  "thiserror",
  "vector-traits",
- "vob",
 ]
 
 [[package]]
