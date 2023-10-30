@@ -121,4 +121,6 @@ if __name__ == "__main__":
         subprocess.run("mv blender_addon_exported hallr", shell=True)
         subprocess.run("zip -r hallr.zip hallr", shell=True)#,cwd=addon_exported_path)
         subprocess.run("mv hallr blender_addon_exported", shell=True)
-    print("Done")
+        print("Created a new hallr.zip file in the root, install it as an addon in blender.")
+    else:
+        print("Updated the files under blender_addon_exported, use blender to run __init__.py")

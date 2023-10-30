@@ -29,17 +29,10 @@ impl FFIVector3 {
             y: self.y,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn dist_sq(&self, pt: &Self) -> f32 {
-        let dx = self.x - pt.x;
-        let dy = self.y - pt.y;
-        let dz = self.z - pt.z;
-        dx * dx + dy * dy + dz * dz
-    }
 }
 
 #[repr(C)]
-pub(crate) struct GeometryOutput {
+pub struct GeometryOutput {
     vertices: *mut FFIVector3,
     vertex_count: usize,
     indices: *mut usize,
@@ -59,7 +52,7 @@ impl GeometryOutput {
 }
 
 #[repr(C)]
-pub(crate) struct StringMap {
+pub struct StringMap {
     keys: *mut *mut c_char,
     values: *mut *mut c_char,
     count: usize,
@@ -83,7 +76,7 @@ impl StringMap {
 }
 
 #[repr(C)]
-pub(crate) struct ProcessResult {
+pub struct ProcessResult {
     pub geometry: GeometryOutput,
     pub map: StringMap,
 }
@@ -125,22 +118,26 @@ fn process_command_error_handler(
 ///
 /// For FFI purposes, the caller from other languages (like Python) must be aware of these safety requirements, even though they won't explicitly use `unsafe` in their language.
 #[no_mangle]
-pub(crate) unsafe extern "C" fn process_geometry(
+pub unsafe extern "C" fn process_geometry(
     input_ffi_vertices: *const FFIVector3,
     vertex_count: usize,
     input_ffi_indices: *const usize,
     indices_count: usize,
     config: StringMap,
 ) -> ProcessResult {
-    // Extract and print the input map (just for demonstration purposes)
-    let mut input_config = HashMap::new();
-    #[allow(clippy::ptr_offset_with_cast)]
+    println!("Rust:Received config of size:{:?}", config.count);
+    assert!(
+        config.count < 1000,
+        "process_geometry(): Number of configuration parameters was too large: {}",
+        config.count
+    );
+    let mut input_config = HashMap::with_capacity(config.count);
     for i in 0..config.count {
-        let key = CStr::from_ptr(*config.keys.offset(i as isize))
+        let key = CStr::from_ptr(*config.keys.add(i))
             .to_str()
             .unwrap()
             .to_string();
-        let value = CStr::from_ptr(*config.values.offset(i as isize))
+        let value = CStr::from_ptr(*config.values.add(i))
             .to_str()
             .unwrap()
             .to_string();
@@ -202,10 +199,10 @@ pub(crate) unsafe extern "C" fn process_geometry(
 }
 
 #[no_mangle]
-pub(crate) extern "C" fn free_process_results(result: ProcessResult) {
+pub extern "C" fn free_process_results(result: ProcessResult) {
     println!(
-        "Rust releasing memory: vertices:{}, indices:{}",
-        result.geometry.vertex_count, result.geometry.indices_count
+        "Rust releasing memory: vertices:{}, indices:{}, map items:{}",
+        result.geometry.vertex_count, result.geometry.indices_count, result.map.count
     );
     result.geometry.free();
     result.map.free();
