@@ -18,12 +18,13 @@
 #![warn(clippy::explicit_into_iter_loop)]
 //mod collision;
 pub mod command;
-mod ffi;
+pub mod ffi;
 mod geo;
 
 use hronn::prelude::*;
 
 pub mod prelude {
+    pub use crate::ffi::{FFIVector3, GeometryOutput, StringMap, process_geometry, free_process_results};
     pub use crate::HallrError;
 }
 

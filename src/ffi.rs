@@ -9,6 +9,22 @@ use std::{
 };
 use vector_traits::glam::Vec2;
 
+/// A simple 3D vector struct for FFI (Foreign Function Interface) usage.
+///
+/// This struct represents a 3D vector with `x`, `y`, and `z` components for FFI usage.
+/// It's used to exchange data between Rust and other programming languages like C or Python.
+///
+/// # Example
+///
+/// ```
+/// use hallr::prelude::FFIVector3;
+///
+/// // Create a new FFIVector3 instance
+/// let vector = FFIVector3 { x: 1.0, y: 2.0, z: 3.0 };
+///
+/// // Perform operations with the vector
+/// let result = vector.x + vector.y;
+/// ```
 #[derive(PartialEq, PartialOrd, Copy, Clone, Default)]
 #[repr(C)]
 pub struct FFIVector3 {
@@ -30,6 +46,17 @@ impl FFIVector3 {
     }
 }
 
+/// A struct representing the geometry output for FFI (Foreign Function Interface) usage.
+///
+/// This struct is used to return geometry-related data from Rust to other programming languages
+/// like C or Python via FFI. It includes information about vertices and indices.
+///
+/// # Fields
+///
+/// * `vertices`: A pointer to an array of `FFIVector3` representing vertices.
+/// * `vertex_count`: The number of vertices in the geometry.
+/// * `indices`: A pointer to an array of `usize` representing indices.
+/// * `indices_count`: The number of indices in the geometry.
 #[repr(C)]
 pub struct GeometryOutput {
     vertices: *mut FFIVector3,
@@ -39,6 +66,17 @@ pub struct GeometryOutput {
 }
 
 impl GeometryOutput {
+    /// Deallocates the memory associated with the `GeometryOutput` vertices and indices.
+    ///
+    /// This method should be called to free the memory held by the `GeometryOutput`.
+    /// It safely deallocates memory for both the vertices and indices, preventing memory
+    /// leaks. This function is typically used in conjunction with the `free_process_results`
+    /// function to release memory when it is no longer needed.
+    ///
+    /// # Safety
+    /// This function uses unsafe Rust code to deallocate memory. It should only be
+    /// called in situations where you are certain that the memory can be safely
+    /// released.
     fn free(&self) {
         unsafe {
             // Convert the raw pointers back into Vecs, which will deallocate when dropped
@@ -50,6 +88,16 @@ impl GeometryOutput {
     }
 }
 
+/// A struct representing a map of strings for FFI (Foreign Function Interface) usage.
+///
+/// This struct is used to pass a map of strings between Rust and other programming languages
+/// like C or Python via FFI. It contains arrays of keys and values along with their counts.
+///
+/// # Fields
+///
+/// * `keys`: A pointer to an array of C-style strings (null-terminated character pointers) representing keys.
+/// * `values`: A pointer to an array of C-style strings (null-terminated character pointers) representing values.
+/// * `count`: The number of key-value pairs in the map.
 #[repr(C)]
 pub struct StringMap {
     keys: *mut *mut std::os::raw::c_char,
@@ -58,6 +106,17 @@ pub struct StringMap {
 }
 
 impl StringMap {
+    /// Deallocates the memory associated with the `StringMap` keys and values.
+    ///
+    /// This method should be called to free the memory held by the `StringMap`. It
+    /// safely deallocates memory for both the keys and values, preventing memory
+    /// leaks. This function is typically used in conjunction with the
+    /// `free_process_results` function to release memory when it is no longer needed.
+    ///
+    /// # Safety
+    /// This function uses unsafe Rust code to deallocate memory. It should only be
+    /// called in situations where you are certain that the memory can be safely
+    /// released.
     fn free(&self) {
         unsafe {
             for i in 0..self.count {
@@ -73,6 +132,17 @@ impl StringMap {
     }
 }
 
+
+/// A struct representing the result of a process with geometry data and a string map for FFI (Foreign Function Interface) usage.
+///
+/// This struct is used to return the result of a process that involves geometry data and a string map
+/// between Rust and other programming languages like C or Python via FFI.
+///
+/// # Fields
+///
+/// * `geometry`: The geometry output of the process, typically containing vertices and indices.
+/// * `map`: A string map with key-value pairs that store additional information about the process.
+///
 #[repr(C)]
 pub struct ProcessResult {
     pub geometry: GeometryOutput,
@@ -205,12 +275,32 @@ pub unsafe extern "C" fn process_geometry(
     rv
 }
 
+/// Frees the memory associated with a `ProcessResult`.
+///
+/// This function releases the memory associated with the components of the `ProcessResult`
+/// struct, including vertices, indices, and the StringMap. It is intended to be called
+/// from Python after processing to ensure proper memory cleanup.
+///
+/// # Safety
+/// This function should only be called with a valid pointer to a `ProcessResult` created
+/// by the Rust code. Using it with an invalid or NULL pointer may lead to memory issues.
+///
+/// # Arguments
+///
+/// * `result` - A pointer to a `ProcessResult` struct that you want to free the memory for.
+///
 #[no_mangle]
-pub extern "C" fn free_process_results(result: ProcessResult) {
+pub unsafe extern "C" fn free_process_results(result: *mut ProcessResult) {
+    assert!(
+        !result.is_null(),
+        "Rust: free_process_results(): result ptr was null"
+    );
     println!(
         "Rust releasing memory: vertices:{}, indices:{}, map items:{}",
-        result.geometry.vertex_count, result.geometry.indices_count, result.map.count
+        (*result).geometry.vertex_count,
+        (*result).geometry.indices_count,
+        (*result).map.count
     );
-    result.geometry.free();
-    result.map.free();
+    (*result).geometry.free();
+    (*result).map.free();
 }
