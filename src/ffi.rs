@@ -4,7 +4,6 @@ use std::{
     collections::HashMap,
     ffi::{CStr, CString},
     iter::successors,
-    os::raw::c_char,
     slice,
     time::Instant,
 };
@@ -13,9 +12,9 @@ use vector_traits::glam::Vec2;
 #[derive(PartialEq, PartialOrd, Copy, Clone, Default)]
 #[repr(C)]
 pub struct FFIVector3 {
-    pub(crate) x: f32,
-    pub(crate) y: f32,
-    pub(crate) z: f32,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
 impl FFIVector3 {
@@ -53,19 +52,18 @@ impl GeometryOutput {
 
 #[repr(C)]
 pub struct StringMap {
-    keys: *mut *mut c_char,
-    values: *mut *mut c_char,
+    keys: *mut *mut std::os::raw::c_char,
+    values: *mut *mut std::os::raw::c_char,
     count: usize,
 }
 
 impl StringMap {
     fn free(&self) {
         unsafe {
-            #[allow(clippy::ptr_offset_with_cast)]
             for i in 0..self.count {
                 // Convert back to CString to free the memory
-                let _ = CString::from_raw(*self.keys.offset(i as isize));
-                let _ = CString::from_raw(*self.values.offset(i as isize));
+                let _ = CString::from_raw(*self.keys.add(i));
+                let _ = CString::from_raw(*self.values.add(i));
             }
 
             // Convert the raw pointers back into Vecs, which will be dropped and deallocate memory
@@ -123,21 +121,30 @@ pub unsafe extern "C" fn process_geometry(
     vertex_count: usize,
     input_ffi_indices: *const usize,
     indices_count: usize,
-    config: StringMap,
+    config: *const StringMap,
 ) -> ProcessResult {
-    println!("Rust:Received config of size:{:?}", config.count);
     assert!(
-        config.count < 1000,
-        "process_geometry(): Number of configuration parameters was too large: {}",
-        config.count
+        !config.is_null(),
+        "Rust: process_geometry(): Config ptr was null"
     );
-    let mut input_config = HashMap::with_capacity(config.count);
-    for i in 0..config.count {
-        let key = CStr::from_ptr(*config.keys.add(i))
+    let count = (*config).count;
+    println!("Rust:Received config of size:{:?}", count);
+    assert!(
+        (*config).count < 1000,
+        "Rust: process_geometry(): Number of configuration parameters was too large: {}",
+        (*config).count
+    );
+    // Use (*config).keys and (*config).values to access the arrays.
+    let keys = slice::from_raw_parts((*config).keys, count);
+    let values = slice::from_raw_parts((*config).values, count);
+
+    let mut input_config = HashMap::with_capacity(count);
+    for i in 0..count {
+        let key = CStr::from_ptr(*keys.get(i).unwrap())
             .to_str()
             .unwrap()
             .to_string();
-        let value = CStr::from_ptr(*config.values.add(i))
+        let value = CStr::from_ptr(*values.get(i).unwrap())
             .to_str()
             .unwrap()
             .to_string();
@@ -178,8 +185,8 @@ pub unsafe extern "C" fn process_geometry(
 
     // Create the return map
     let rv_s = StringMap {
-        keys: output_keys.as_ptr() as *mut *mut c_char,
-        values: output_values.as_ptr() as *mut *mut c_char,
+        keys: output_keys.as_ptr() as *mut *mut std::os::raw::c_char,
+        values: output_values.as_ptr() as *mut *mut std::os::raw::c_char,
         count: output_config.len(),
     };
 

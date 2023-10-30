@@ -74,8 +74,8 @@ def load_latest_dylib(prefix="libhallr_"):
     rust_lib.process_geometry.argtypes = [ctypes.POINTER(Vector3), ctypes.c_size_t,
                                           ctypes.POINTER(ctypes.c_size_t), ctypes.c_size_t,
                                           ctypes.POINTER(StringMap)]
-
     rust_lib.process_geometry.restype = ProcessResult
+    
     rust_lib.free_process_results.argtypes = [ctypes.POINTER(ProcessResult)]
     rust_lib.free_process_results.restype = None
     HALLR_LIBRARY = rust_lib
