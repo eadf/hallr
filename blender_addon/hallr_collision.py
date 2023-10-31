@@ -205,7 +205,7 @@ def VIEW3D_MT_collision_menu_item(self, context):
 
 def register():
     bpy.utils.register_class(OBJECT_OT_hallr_collision)
-    bpy.types.VIEW3D_MT_mesh_add.append(VIEW3D_MT_collision_menu_item)
+    bpy.types.VIEW3D_MT_object_convert.append(VIEW3D_MT_collision_menu_item)
 
 
 def unregister():
@@ -214,10 +214,10 @@ def unregister():
     except (RuntimeError, NameError):
         pass
 
-    bpy.types.VIEW3D_MT_mesh_add.remove(VIEW3D_MT_collision_menu_item)
-    for f in bpy.types.VIEW3D_MT_mesh_add._dyn_ui_initialize():
+    bpy.types.VIEW3D_MT_object_convert.remove(VIEW3D_MT_collision_menu_item)
+    for f in bpy.types.VIEW3D_MT_object_convert._dyn_ui_initialize():
         if f.__name__ == VIEW3D_MT_collision_menu_item.__name__:
-            bpy.types.VIEW3D_MT_mesh_add.remove(f)
+            bpy.types.VIEW3D_MT_object_convert.remove(f)
 
 
 if __name__ == "__main__":

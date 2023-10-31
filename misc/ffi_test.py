@@ -32,13 +32,13 @@ class ProcessResult(ctypes.Structure):
 
 
 system = platform.system()
-library_extension = ".dylib"  # Default to macOS
+library_name = "libhallr.dylib"  # Default to macOS
 if system == "Linux":
-   library_extension = ".so"
+   library_name = "libhallr.so"
 elif system == "Windows":
-   library_extension = ".dll"
+   library_name = "hallr.dll"
 
-rust_lib = ctypes.cdll.LoadLibrary("./blender_addon_exported/lib/libhallr" + library_extension)
+rust_lib = ctypes.cdll.LoadLibrary("./blender_addon_exported/lib/" + library_name)
 rust_lib.process_geometry.argtypes = [ctypes.POINTER(Vector3), ctypes.c_size_t,
                                           ctypes.POINTER(ctypes.c_size_t), ctypes.c_size_t,
                                           ctypes.POINTER(StringMap)]
