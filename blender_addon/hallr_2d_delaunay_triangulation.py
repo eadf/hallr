@@ -23,12 +23,16 @@ class OBJECT_OT_hallr_2d_delaunay_triangulation(bpy.types.Operator):
         default="AABB"
     )
 
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
     def execute(self, context):
         try:
             # 1. Get the selected objects and verify counts:
             selected_objects = bpy.context.selected_objects
             if len(selected_objects) != 2:
-                self.report({'ERROR'}, "Please select only two objects: the mesh and the bounding shape.")
+                self.report({'ERROR'}, "Please select exactly two objects: the mesh and the bounding shape.")
                 return {'CANCELLED'}
 
             active_obj = bpy.context.active_object
@@ -79,7 +83,7 @@ class OBJECT_OT_hallr_2d_delaunay_triangulation(bpy.types.Operator):
                 hallr_ffi_utils.handle_triangle_mesh(vertices, indices)
             # Handle line format
             elif config.get("mesh.format") == "line":
-                hallr_ffi_utils.handle_sliding_line_mesh(vertices, indices)
+                hallr_ffi_utils.handle_windows_line_new_object(vertices, indices)
             else:
                 self.report({'ERROR'}, "Unknown mesh format:" + config.get("mesh.format", "None"))
                 return {'CANCELLED'}

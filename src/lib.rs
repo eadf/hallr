@@ -21,15 +21,21 @@ pub mod command;
 pub mod ffi;
 mod geo;
 
+use centerline::CenterlineError;
 use hronn::prelude::*;
 
 pub mod prelude {
-    pub use crate::ffi::{FFIVector3, GeometryOutput, StringMap, process_geometry, free_process_results};
-    pub use crate::HallrError;
+    pub use crate::{
+        ffi::{free_process_results, process_geometry, FFIVector3, GeometryOutput, StringMap},
+        HallrError,
+    };
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum HallrError {
+    #[error(transparent)]
+    CenterlineError(#[from] CenterlineError),
+
     #[error(transparent)]
     HronnErr(#[from] HronnError),
 
@@ -39,12 +45,21 @@ pub enum HallrError {
     #[error("Invalid input data: {0}")]
     InvalidParameter(String),
 
+    #[error("Input model not in one plane or not crossing origin. {0}")]
+    InputNotPLane(String),
+
+    #[error("Invalid input data value: {0}")]
+    InvalidInputData(String),
+
     #[error("Missing input data: {0}")]
     NoData(String),
 
     #[error("Missing parameter: {0}")]
     MissingParameter(String),
+
+    #[error("Model must not contain any faces: {0}")]
+    ModelContainsFaces(String),
+
     #[error("Unknown error: {0}")]
     InternalError(String),
-
 }

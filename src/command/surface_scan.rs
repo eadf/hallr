@@ -1,11 +1,7 @@
-use super::{get_mandatory_numeric_option, get_mandatory_option, ConfigType};
+use super::ConfigType;
 use hronn::prelude::*;
 
-use crate::{
-    command::{does_option_exist, get_mandatory_bool_option},
-    geo::HashableVector2,
-    HallrError,
-};
+use crate::{command::Options, geo::HashableVector2, HallrError};
 use krakel::PointTrait;
 use vector_traits::{num_traits::AsPrimitive, Approx, GenericVector3, HasXYZ};
 
@@ -26,14 +22,14 @@ where
     u32: AsPrimitive<T::Scalar>,
     T::Scalar: AsPrimitive<MESH::Scalar>,
 {
-    let search_config = if does_option_exist("xy_sample_dist_multiplier", &config)? {
+    let search_config = if config.does_option_exist("xy_sample_dist_multiplier")? {
         SearchPatternConfig::<T, MESH>::new(probe, minimum_z).with_adaptive_config(
             AdaptiveSearchConfig::new(
-                get_mandatory_numeric_option::<T::Scalar>("xy_sample_dist_multiplier", &config)?
+                config.get_mandatory_parsed_option::<T::Scalar>("xy_sample_dist_multiplier")?
                     * step,
-                get_mandatory_numeric_option::<T::Scalar>("z_jump_threshold_multiplier", &config)?
+                config.get_mandatory_parsed_option::<T::Scalar>("z_jump_threshold_multiplier")?
                     * step,
-                get_mandatory_bool_option("reduce_adaptive", &config)?,
+                config.get_mandatory_parsed_option::<bool>("reduce_adaptive")?,
             ),
         )
     } else {
@@ -46,7 +42,7 @@ where
     //println!("bounding_indices {:?}", bounding_indices.len());
     //println!("bounding_vertices {:?}", bounding_vertices.len());
 
-    let (aabb, convex_hull) = match get_mandatory_option("bounds", &config)? {
+    let (aabb, convex_hull) = match config.get_mandatory_option("bounds")? {
         "CONVEX_HULL" => generate_convex_hull_then_aabb(bounding_vertices),
         "AABB" => generate_aabb_then_convex_hull(bounding_vertices),
         bounds => Err(HronnError::InvalidParameter(format!(
@@ -84,7 +80,7 @@ where
     u32: AsPrimitive<T::Scalar>,
     T::Scalar: AsPrimitive<MESH::Scalar>,
 {
-    let (aabb, convex_hull) = match get_mandatory_option("bounds", &config)? {
+    let (aabb, convex_hull) = match config.get_mandatory_option("bounds")? {
         "CONVEX_HULL" => generate_convex_hull_then_aabb(bounding_vertices),
         "AABB" => generate_aabb_then_convex_hull(bounding_vertices),
         bounds => Err(HronnError::InvalidParameter(format!(
@@ -93,14 +89,14 @@ where
         ))),
     }?;
 
-    let search_config = if does_option_exist("xy_sample_dist_multiplier", &config)? {
+    let search_config = if config.does_option_exist("xy_sample_dist_multiplier")? {
         SearchPatternConfig::<T, MESH>::new(probe, minimum_z).with_adaptive_config(
             AdaptiveSearchConfig::new(
-                get_mandatory_numeric_option::<T::Scalar>("xy_sample_dist_multiplier", &config)?
+                config.get_mandatory_parsed_option::<T::Scalar>("xy_sample_dist_multiplier")?
                     * step,
-                get_mandatory_numeric_option::<T::Scalar>("z_jump_threshold_multiplier", &config)?
+                config.get_mandatory_parsed_option::<T::Scalar>("z_jump_threshold_multiplier")?
                     * step,
-                get_mandatory_bool_option("reduce_adaptive", &config)?,
+                config.get_mandatory_parsed_option::<bool>("reduce_adaptive")?,
             ),
         )
     } else {
@@ -130,9 +126,9 @@ where
     HashableVector2: From<T::Vector2>,
 {
     let start_vertex_index_for_bounding: usize =
-        get_mandatory_numeric_option("start_vertex_index_for_bounding", &config)?;
+        config.get_mandatory_parsed_option("start_vertex_index_for_bounding")?;
     let start_index_for_bounding: usize =
-        get_mandatory_numeric_option("start_index_for_bounding", &config)?;
+        config.get_mandatory_parsed_option("start_index_for_bounding")?;
 
     let mesh_analyzer = MeshAnalyzerBuilder::<T, MESH>::default()
         .load_from_ref(
@@ -143,10 +139,10 @@ where
     let bounding_indices = &indices[start_index_for_bounding..];
     let bounding_vertices = &vertices[start_vertex_index_for_bounding..];
 
-    let probe_radius = get_mandatory_numeric_option("probe_radius", &config)?;
-    let minimum_z = get_mandatory_numeric_option("minimum_z", &config)?;
-    let step = get_mandatory_numeric_option("step", &config)?;
-    let probe: Box<dyn Probe<T, MESH>> = match get_mandatory_option("probe", &config)? {
+    let probe_radius = config.get_mandatory_parsed_option("probe_radius")?;
+    let minimum_z = config.get_mandatory_parsed_option("minimum_z")?;
+    let step = config.get_mandatory_parsed_option("step")?;
+    let probe: Box<dyn Probe<T, MESH>> = match config.get_mandatory_option("probe")? {
         "SQUARE_END" => Box::new(SquareEndProbe::new(&mesh_analyzer, probe_radius)?),
         "BALL_NOSE" => Box::new(BallNoseProbe::new(&mesh_analyzer, probe_radius)?),
         probe_name => Err(HronnError::InvalidParameter(format!(
@@ -155,7 +151,7 @@ where
         )))?,
     };
 
-    match get_mandatory_option("pattern", &config)? {
+    match config.get_mandatory_option("pattern")? {
         "MEANDER" => do_meander_scan::<T, MESH>(
             config,
             bounding_vertices,

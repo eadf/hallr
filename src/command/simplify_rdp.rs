@@ -1,7 +1,9 @@
-use super::ConfigType;
-use crate::{geo::HashableVector2, /*obj::Obj*/ prelude::*};
-use hronn::{prelude::*, reconstruct_from_unordered_edges};
-use krakel::PointTrait;
+use super::{ConfigType, Options};
+use crate::{
+    geo::{reconstruct_from_unordered_edges, HashableVector2},
+    prelude::*,
+};
+use hronn::prelude::*;
 use linestring::linestring_2d::LineString2;
 use vector_traits::{GenericScalar, GenericVector2, GenericVector3, HasXYZ};
 
@@ -11,12 +13,11 @@ pub(crate) fn process_command<T: GenericVector3, MESH: HasXYZ>(
     config: ConfigType,
 ) -> Result<(Vec<MESH>, Vec<usize>, ConfigType), HallrError>
 where
-    T::Vector2: PointTrait<PScalar = T::Scalar>,
     T: ConvertTo<MESH>,
     MESH: ConvertTo<T>,
     HashableVector2: From<T::Vector2>,
 {
-    let epsilon: T::Scalar = super::get_mandatory_numeric_option("epsilon", &config)?;
+    let epsilon: T::Scalar = config.get_mandatory_parsed_option("epsilon")?;
     let mut obj = Obj::<MESH>::new("simplified_rdp");
     //println!("rust: vertices.len():{}", vertices.len());
     //println!("rust: indices.len():{}", indices.len());

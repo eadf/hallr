@@ -31,4 +31,3 @@ impl SillyApproxEq for DVec3 {
             && (self.z - other.z).abs() <= epsilon
     }
 }
-

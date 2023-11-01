@@ -34,3 +34,4 @@ Icon
 *.blend*
 *.pyc
 blender_addon_exported
+watchexec_run.sh

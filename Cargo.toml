@@ -14,9 +14,17 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 thiserror = "1.0.50"
 linestring = "0.10.1"
+centerline = { version="0.8.0", features = ["glam"]}
+#centerline = { path="../centerline.rs", features = ["glam"]}
 vector-traits = { version = "0.2.0", features = ["glam"] }
 krakel = {version = "0.2.0", features = ["glam"]}
 hronn = { version = "0.1.0", features = ["glam"]}
+ahash = "0.8.6"
+smallvec = "1.11.1"
+boostvoronoi = { version = "0.11.0" }
+rayon = "1.8.0"
+itertools = "0.11.0"
+
 
 [dev-dependencies]
 rand = "0.8.5"

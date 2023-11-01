@@ -122,6 +122,7 @@ def handle_triangle_mesh(vertices, indices):
         handle_new_object(mesh_obj)
 
 
+""""
 def handle_line_mesh(vertices, indices):
     # Convert the indices to Blender's edge format
     # Assuming indices are [0, 1, 2, 3, ...], where each set of 2 is a line
@@ -139,15 +140,18 @@ def handle_line_mesh(vertices, indices):
         handle_new_object(mesh_obj)
     else:
         print("Python: Got no edges from rust")
+"""
 
 
-def handle_sliding_line_mesh(vertices, indices):
+def handle_windows_line_new_object(vertices, indices):
     """"
     Convert the indices to Blender's edge format
-    Slide over each vertex pair
+    Slide over each vertex pair and create a new object.
+    This function assumes that the line is in the ".window(2)" format,
+    I.e. indices are [0, 1, 2, 3, ...], where [(1,2), (2,3),...] forms edges.
     """
     print("Python: received ", len(vertices), " vertices and ", len(indices), " indices")
-
+    # Create edges from pairs of indices using windows(2)
     edges = [(indices[i], indices[i + 1]) for i in range(len(indices) - 1)]
 
     # Check if edges list isn't empty
@@ -161,9 +165,40 @@ def handle_sliding_line_mesh(vertices, indices):
         handle_new_object(mesh_obj)
 
 
-def handle_sliding_line_mesh_modify_actice_object(vertices, indices):
+def handle_chunks_line_new_object(vertices, indices):
     """
-    convert vertices and indices to a bpy data, and insert into active object
+    Convert the indices to Blender's edge format
+    Slide over each vertex pair and create a new object.
+    This function assumes that the line is in the ".chunks(2)" format,
+    i.e., indices are [0, 1, 2, 3, ...], where [(1,2), (3,4),...] forms edges.
+    """
+    print("Python: received ", len(vertices), " vertices and ", len(indices), " indices")
+
+    # Convert the indices to Blender's edge format
+    edges = [(indices[i], indices[i + 1]) for i in range(0, len(indices) - 1, 2)]
+
+    # Check if the length is odd and print a warning
+    if len(indices) % 2 != 0:
+        print("Warning: Length of indices is odd. The last value may not form a valid edge pair.")
+        print("indices:", indices)
+        print("edges:", edges)
+
+    # Check if edges list isn't empty
+    if edges:
+        # Create a new mesh
+        mesh = bpy.data.meshes.new(name="New_Line_Mesh")
+        mesh.from_pydata(vertices, edges, [])
+
+        # Create a new object using the mesh and link it to the current collection
+        mesh_obj = bpy.data.objects.new("New_Line_Object", mesh)
+        handle_new_object(mesh_obj)
+
+
+def handle_windows_line_modify_active_object(vertices, indices):
+    """
+    Convert vertices and indices to a bpy data, and insert into active object.
+    This function assumes that the line is in the ".window(2)" format,
+    I.e. indices are [0, 1, 2, 3, ...], where each set of 2 is a line
     """
     # Ensure that the active object is a mesh object
     active_obj = bpy.context.view_layer.objects.active
@@ -173,6 +208,44 @@ def handle_sliding_line_mesh_modify_actice_object(vertices, indices):
 
     # Convert the indices to Blender's edge format
     edges = [(indices[i], indices[i + 1]) for i in range(len(indices) - 1)]
+
+    # Clear the existing geometry
+    bpy.ops.object.mode_set(mode='EDIT')  # Must be in edit mode to use bmesh
+    bm = bmesh.from_edit_mesh(active_obj.data)
+    bm.clear()  # Clear all geometry
+
+    # Create new vertices and edges
+    verts = [bm.verts.new(vert) for vert in vertices]
+    for edge in edges:
+        bm.edges.new((verts[edge[0]], verts[edge[1]]))
+    bmesh.update_edit_mesh(active_obj.data)  # Update the mesh with the changes
+
+    bpy.ops.object.mode_set(mode='OBJECT')  # Switch back to object mode
+
+    # Update the mesh
+    active_obj.data.update()
+
+
+def handle_chunks_line_modify_active_object(vertices, indices):
+    """
+    Convert vertices and indices to a bpy data, and insert into active object.
+    This function assumes that the line is in the ".chunks(2)" format,
+    i.e., indices are [0, 1, 2, 3, ...], where [(1,2), (3,4),...] forms edges.
+    """
+    # Ensure that the active object is a mesh object
+    active_obj = bpy.context.view_layer.objects.active
+    if not active_obj or active_obj.type != 'MESH':
+        print("No active mesh object to modify!")
+        return
+
+    # Convert the indices to Blender's edge format
+    edges = [(indices[i], indices[i + 1]) for i in range(0, len(indices) - 1, 2)]
+
+    # Check if the length is odd and print a warning
+    if len(indices) % 2 != 0:
+        print("Warning: Length of indices is odd. The last value may not form a valid edge pair.")
+        print("indices:", indices)
+        print("edges:", edges)
 
     # Clear the existing geometry
     bpy.ops.object.mode_set(mode='EDIT')  # Must be in edit mode to use bmesh
@@ -361,9 +434,11 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
     return output_vertices, output_indices, output_map
 
 
-def call_rust_direct(config, active_obj, expect_line_string=False):
+def call_rust_direct(config, active_obj, expect_line_chunks=False):
     """
-    A simpler version of call_rust that only processes the active_object
+    A simpler version of call_rust that only processes the active_object.
+    When `expect_line_chunks` is set, the data will iterate over each edge(a,b) and use a list of
+    indices in .chunks(2) format.
     """
 
     rust_lib = load_latest_dylib()
@@ -372,9 +447,8 @@ def call_rust_direct(config, active_obj, expect_line_string=False):
     vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in active_obj_to_process.data.vertices]
     vertices_ptr = (Vector3 * len(vertices))(*vertices)
 
-    if expect_line_string:
+    if expect_line_chunks:
         indices = [v for edge in active_obj_to_process.data.edges for v in edge.vertices]
-
     else:
         indices = [vert_idx for face in active_obj_to_process.data.polygons for vert_idx in face.vertices]
 

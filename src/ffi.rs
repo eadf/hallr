@@ -132,7 +132,6 @@ impl StringMap {
     }
 }
 
-
 /// A struct representing the result of a process with geometry data and a string map for FFI (Foreign Function Interface) usage.
 ///
 /// This struct is used to return the result of a process that involves geometry data and a string map

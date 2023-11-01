@@ -1,4 +1,4 @@
-use super::{get_mandatory_numeric_option, get_mandatory_option, ConfigType};
+use super::{ConfigType, Options};
 use crate::{geo::HashableVector2, prelude::*};
 use hronn::prelude::*;
 
@@ -95,9 +95,9 @@ where
     HashableVector2: From<T::Vector2>,
 {
     let start_vertex_index_for_bounding: usize =
-        get_mandatory_numeric_option("start_vertex_index_for_bounding", &config)?;
+        config.get_mandatory_parsed_option("start_vertex_index_for_bounding")?;
     let start_index_for_bounding: usize =
-        get_mandatory_numeric_option("start_index_for_bounding", &config)?;
+        config.get_mandatory_parsed_option("start_index_for_bounding")?;
 
     let object_vertices = &vertices[0..start_vertex_index_for_bounding];
     let object_indices = &indices[0..start_index_for_bounding];
@@ -105,7 +105,7 @@ where
     let bounding_indices = &indices[start_index_for_bounding..];
     let bounding_vertices = &vertices[start_vertex_index_for_bounding..];
 
-    match get_mandatory_option("bounds", &config)? {
+    match config.get_mandatory_option("bounds")? {
         "CONVEX_HULL" => convex_hull_delaunay_triangulation_2d::<T, MESH>(
             config,
             object_vertices,

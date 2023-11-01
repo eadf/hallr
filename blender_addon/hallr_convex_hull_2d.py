@@ -9,6 +9,10 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
     bl_label = "Hallr Convex Hull 2d"
     bl_options = {'REGISTER', 'UNDO'}
 
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
     def execute(self, context):
         active_object = context.active_object
         if active_object is None or active_object.type != 'MESH':
@@ -38,7 +42,7 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
             hallr_ffi_utils.handle_triangle_mesh(vertices, indices)
         # Handle line format
         elif config.get("mesh.format") == "line":
-            hallr_ffi_utils.handle_sliding_line_mesh(vertices, indices)
+            hallr_ffi_utils.handle_windows_line_new_object(vertices, indices)
         else:
             self.report({'ERROR'}, "Unknown mesh format:" + config.get("mesh.format", "None"))
             return {'CANCELLED'}

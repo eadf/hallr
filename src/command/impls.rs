@@ -1,0 +1,60 @@
+use crate::{command::Options, HallrError};
+use std::collections::HashMap;
+
+impl Options for HashMap<String, String> {
+    /// Will return an option parsed as a `T` or an Err
+    fn get_mandatory_parsed_option<'a, T: std::str::FromStr>(
+        &'a self,
+        key: &'a str,
+    ) -> Result<T, HallrError> {
+        match self.get(key) {
+            Some(v) => match v.parse() {
+                Ok(val) => Ok(val),
+                Err(_) => Err(HallrError::InvalidParameter(format!(
+                    "Invalid value for parameter \"{}\": \"{}\"",
+                    key, v
+                ))),
+            },
+            None => Err(HallrError::MissingParameter(
+                format!("The parameter \"{key}\" was missing").to_string(),
+            )),
+        }
+    }
+
+    /// Will return an option parsed as a `T` or None.
+    /// If the option is missing None is returned, if it there but if it can't be parsed an error
+    /// will be returned.
+    fn get_parsed_option<'a, T: std::str::FromStr>(
+        &'a self,
+        key: &'a str,
+    ) -> Result<Option<T>, HallrError> {
+        match self.get(key) {
+            Some(v) => match v.parse() {
+                Ok(val) => Ok(Some(val)),
+                Err(_) => Err(HallrError::InvalidParameter(format!(
+                    "Invalid value for parameter \"{}\": \"{}\"",
+                    key, v
+                ))),
+            },
+            None => Ok(None),
+        }
+    }
+
+    /// Returns the &str value of an option, or an Err is it does not exists
+    fn get_mandatory_option<'a>(&'a self, key: &str) -> Result<&'a str, HallrError> {
+        match self.get(key) {
+            Some(v) => Ok(v),
+            None => Err(HallrError::MissingParameter(
+                format!("The parameter \"{key}\" was missing").to_string(),
+            )),
+        }
+    }
+
+    /// Checks if an option exists
+    fn does_option_exist(&self, key: &str) -> Result<bool, HallrError> {
+        match self.get(key) {
+            Some(_) => Ok(true),
+            _ => Ok(false),
+        }
+    }
+}

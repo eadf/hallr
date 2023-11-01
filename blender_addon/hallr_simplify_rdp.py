@@ -11,6 +11,10 @@ class OBJECT_OT_hallr_simplify_rdp(bpy.types.Operator):
 
     epsilon_props: bpy.props.FloatProperty(name="Epsilon", default=0.1, min=0, description="Amount of simplification")
 
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
     def execute(self, context):
         obj = context.active_object
 
@@ -24,13 +28,13 @@ class OBJECT_OT_hallr_simplify_rdp(bpy.types.Operator):
         config = {"command": "simplify_rdp", "epsilon": str(self.epsilon_props)}
 
         # Call the Rust function
-        vertices, indices, config = hallr_ffi_utils.call_rust_direct(config, obj, expect_line_string=True)
+        vertices, indices, config = hallr_ffi_utils.call_rust_direct(config, obj, expect_line_chunks=True)
         print(f"Received {config} as the result from Rust!")
         if config.get("ERROR"):
             self.report({'ERROR'}, "" + config.get("ERROR"))
             return {'CANCELLED'}
         elif config.get("mesh.format") == "line":
-            hallr_ffi_utils.handle_sliding_line_mesh_modify_actice_object(vertices, indices)
+            hallr_ffi_utils.handle_windows_line_modify_active_object(vertices, indices)
         else:
             self.report({'ERROR'}, "Unknown mesh format:" + config.get("mesh.format", "None"))
             return {'CANCELLED'}

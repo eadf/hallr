@@ -23,29 +23,35 @@ from . import hallr_ffi_utils
 from . import hallr_convex_hull_2d
 from . import hallr_simplify_rdp
 from . import hallr_2d_delaunay_triangulation
+from . import hallr_centerline
+
+
+# define modules for registration
+modules = (
+    hallr_collision,
+    hallr_convex_hull_2d,
+    hallr_simplify_rdp,
+    hallr_2d_delaunay_triangulation,
+    hallr_centerline
+)
 
 
 def register():
-    hallr_collision.register()
-    hallr_convex_hull_2d.register()
-    hallr_simplify_rdp.register()
-    hallr_2d_delaunay_triangulation.register()
+    for module in modules:
+        module.register()
 
 
 def unregister():
-    hallr_collision.unregister()
-    hallr_convex_hull_2d.unregister()
-    hallr_simplify_rdp.unregister()
-    hallr_2d_delaunay_triangulation.unregister()
+    for module in modules:
+        module.unregister()
 
 
 if __name__ == "__main__":
     unregister()  # Unregister everything
 
     import importlib
-    importlib.reload(hallr_collision)
+    # special treatment for the non-bpy module hallr_ffi_utils
     importlib.reload(hallr_ffi_utils)
-    importlib.reload(hallr_convex_hull_2d)
-    importlib.reload(hallr_simplify_rdp)
-    importlib.reload(hallr_2d_delaunay_triangulation)
+    for module in modules:
+        importlib.reload(module)
     register()  # Register everything again
