@@ -4,19 +4,19 @@ use hronn::prelude::*;
 
 use krakel::PointTrait;
 use linestring::linestring_2d::{convex_hull, Aabb2, LineString2};
-use vector_traits::{num_traits::AsPrimitive, GenericVector3, HasXYZ};
+use vector_traits::{num_traits::AsPrimitive, GenericVector3, HasXY};
 
-fn aabb_delaunay_triangulation_2d<T: GenericVector3, MESH: HasXYZ>(
+fn aabb_delaunay_triangulation_2d<T: GenericVector3>(
     _config: ConfigType,
-    object_vertices: &[MESH],
+    object_vertices: &[FFIVector3],
     _object_indices: &[usize],
-    bounding_vertices: &[MESH],
+    bounding_vertices: &[FFIVector3],
     _bounding_indices: &[usize],
-) -> Result<(Vec<MESH>, Vec<usize>, ConfigType), HallrError>
+) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
-    T: ConvertTo<MESH>,
-    MESH: ConvertTo<T>,
-    T::Scalar: AsPrimitive<MESH::Scalar>,
+    T: ConvertTo<FFIVector3>,
+    FFIVector3: ConvertTo<T>,
+    T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
 {
     if bounding_vertices.is_empty() {
         return Err(HallrError::NoData("The bounding box is empty".to_string()));
@@ -37,23 +37,23 @@ where
         //.map(|v| v.to_3d(T::Scalar::ZERO).to())
         .collect();
 
-    let results = triangulate_vertices::<T, MESH>(aabb, &hull, object_vertices)?;
+    let results = triangulate_vertices::<T, FFIVector3>(aabb, &hull, object_vertices)?;
     let mut return_config = ConfigType::new();
     let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
     Ok((results.0, results.1, return_config))
 }
 
-fn convex_hull_delaunay_triangulation_2d<T: GenericVector3, MESH: HasXYZ>(
+fn convex_hull_delaunay_triangulation_2d<T: GenericVector3>(
     _config: ConfigType,
-    object_vertices: &[MESH],
+    object_vertices: &[FFIVector3],
     _object_indices: &[usize],
-    bounding_vertices: &[MESH],
+    bounding_vertices: &[FFIVector3],
     bounding_indices: &[usize],
-) -> Result<(Vec<MESH>, Vec<usize>, ConfigType), HallrError>
+) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
-    T: ConvertTo<MESH>,
-    MESH: ConvertTo<T>,
-    T::Scalar: AsPrimitive<MESH::Scalar>,
+    T: ConvertTo<FFIVector3>,
+    FFIVector3: ConvertTo<T>,
+    T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
 {
     if bounding_vertices.is_empty() {
         return Err(HallrError::NoData("The bounding box is empty".to_string()));
@@ -76,22 +76,22 @@ where
     };
     let aabb = Aabb2::with_points(&convex_hull.0);
 
-    let results = triangulate_vertices::<T, MESH>(aabb, &convex_hull.0, object_vertices)?;
+    let results = triangulate_vertices::<T, FFIVector3>(aabb, &convex_hull.0, object_vertices)?;
     let mut return_config = ConfigType::new();
     let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
     Ok((results.0, results.1, return_config))
 }
 
-pub(crate) fn process_command<T: GenericVector3, MESH: HasXYZ>(
-    vertices: &[MESH],
+pub(crate) fn process_command<T: GenericVector3>(
+    vertices: &[FFIVector3],
     indices: &[usize],
     config: ConfigType,
-) -> Result<(Vec<MESH>, Vec<usize>, ConfigType), HallrError>
+) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
     T::Vector2: PointTrait<PScalar = T::Scalar>,
-    T: ConvertTo<MESH>,
-    MESH: ConvertTo<T>,
-    T::Scalar: AsPrimitive<MESH::Scalar>,
+    T: ConvertTo<FFIVector3>,
+    FFIVector3: ConvertTo<T>,
+    T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
     HashableVector2: From<T::Vector2>,
 {
     let start_vertex_index_for_bounding: usize =
@@ -106,14 +106,14 @@ where
     let bounding_vertices = &vertices[start_vertex_index_for_bounding..];
 
     match config.get_mandatory_option("bounds")? {
-        "CONVEX_HULL" => convex_hull_delaunay_triangulation_2d::<T, MESH>(
+        "CONVEX_HULL" => convex_hull_delaunay_triangulation_2d::<T>(
             config,
             object_vertices,
             object_indices,
             bounding_vertices,
             bounding_indices,
         ),
-        "AABB" => aabb_delaunay_triangulation_2d::<T, MESH>(
+        "AABB" => aabb_delaunay_triangulation_2d::<T>(
             config,
             object_vertices,
             object_indices,

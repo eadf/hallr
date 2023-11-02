@@ -145,7 +145,7 @@ class OBJECT_OT_hallr_collision(bpy.types.Operator):
             if self.enable_adaptive_scan_props:
                 config["z_jump_threshold_multiplier"] = str(self.z_jump_threshold_multiplier_props)
                 config["xy_sample_dist_multiplier"] = str(self.xy_sample_dist_multiplier_props)
-                config["reduce_adaptive"] = str(self.enable_reduce_props)
+                config["reduce_adaptive"] = str(self.enable_reduce_props).lower()
 
             if config["bounds"] == "LINE":
                 # Ensure the bounding shape doesn't have any faces:

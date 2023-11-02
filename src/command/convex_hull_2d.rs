@@ -3,24 +3,24 @@ use crate::{geo::HashableVector2, /*obj::Obj,*/ prelude::*};
 use hronn::prelude::*;
 use krakel::PointTrait;
 use linestring::linestring_2d::convex_hull;
-use vector_traits::{approx::UlpsEq, GenericScalar, GenericVector2, GenericVector3, HasXYZ};
+use vector_traits::{approx::UlpsEq, GenericScalar, GenericVector2, GenericVector3};
 
-pub(crate) fn process_command<T: GenericVector3, MESH: HasXYZ>(
-    vertices: &[MESH],
+pub(crate) fn process_command<T: GenericVector3>(
+    vertices: &[FFIVector3],
     _indices: &[usize],
     _config: ConfigType,
-) -> Result<(Vec<MESH>, Vec<usize>, ConfigType), HallrError>
+) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
     T::Vector2: PointTrait<PScalar = T::Scalar>,
     T::Scalar: UlpsEq,
-    T: ConvertTo<MESH>,
-    MESH: ConvertTo<T>,
+    T: ConvertTo<FFIVector3>,
+    FFIVector3: ConvertTo<T>,
     HashableVector2: From<T::Vector2>,
 {
     // convert the input vertices to 2d point cloud
     let input: Vec<_> = vertices.iter().map(|v| v.to().to_2d()).collect();
-    let mut obj = Obj::<MESH>::new("convex_hull");
-    // calculate the convex hull, and convert back to 3d MESH vertices
+    let mut obj = Obj::<FFIVector3>::new("convex_hull");
+    // calculate the convex hull, and convert back to 3d FFIVector3 vertices
     convex_hull::graham_scan(&input)
         .points()
         .iter()

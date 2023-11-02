@@ -16,9 +16,6 @@ use vector_traits::{
     GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ,
 };
 
-//use vector_traits::approx::UlpsEq;
-//use vector_traits::num_traits::AsPrimitive;
-
 /// converts to a private, comparable and hashable format
 /// only use this for floats that are f64::is_finite()
 /// This will only work for floats that's identical in every bit.
@@ -43,9 +40,12 @@ fn make_edge_key(v0: usize, v1: usize) -> (usize, usize) {
 
 /// reformat the input into a useful structure
 #[allow(clippy::type_complexity)]
-fn parse_input<T: GenericVector3, MESH: HasXYZ + ConvertTo<T>>(
-    model: &Model<'_, MESH>,
-) -> Result<(ahash::AHashSet<(usize, usize)>, Vec<T>, Aabb3<T>), HallrError> {
+fn parse_input<T: GenericVector3>(
+    model: &Model<'_>,
+) -> Result<(ahash::AHashSet<(usize, usize)>, Vec<T>, Aabb3<T>), HallrError>
+where
+    FFIVector3: ConvertTo<T>,
+{
     let mut aabb = Aabb3::<T>::default();
     for v in model.vertices.iter() {
         aabb.update_point(v.to())
@@ -93,7 +93,7 @@ fn parse_input<T: GenericVector3, MESH: HasXYZ + ConvertTo<T>>(
 
 /// Build the return model
 #[allow(clippy::type_complexity)]
-fn build_output_model<T: GenericVector3, MESH: HasXYZ + ConvertTo<T>>(
+fn build_output_model<T: GenericVector3>(
     _a_command: &ConfigType,
     shapes: Vec<(
         linestring::linestring_2d::LineStringSet2<T::Vector2>,
@@ -103,9 +103,9 @@ fn build_output_model<T: GenericVector3, MESH: HasXYZ + ConvertTo<T>>(
     inverted_transform: T::Matrix4Type,
     cmd_arg_negative_radius: bool,
     cmd_arg_keep_input: bool,
-) -> Result<OwnedModel<MESH>, HallrError>
+) -> Result<OwnedModel, HallrError>
 where
-    T: HasMatrix4 + ConvertTo<MESH>,
+    T: HasMatrix4 + ConvertTo<FFIVector3>,
     T::Scalar: OutputType,
 {
     let transform_point = |point: T| -> T {
@@ -135,7 +135,7 @@ where
         * 5)
         / 4;
 
-    let mut output_pb_model_vertices = Vec::<MESH>::with_capacity(estimated_capacity);
+    let mut output_pb_model_vertices = Vec::<FFIVector3>::with_capacity(estimated_capacity);
     let mut output_pb_model_faces = Vec::<(u64, u64)>::with_capacity(estimated_capacity);
 
     // map between 'meta-vertex' and vertex index
@@ -283,10 +283,18 @@ where
     // Todo: store in the output_pb_model_indices format in the first place
     let mut output_pb_model_indices = Vec::<usize>::with_capacity(output_pb_model_faces.len() * 2);
     for (a, b) in output_pb_model_faces {
-        output_pb_model_indices.push(a as usize);
-        output_pb_model_indices.push(b as usize);
+        if a!=b {
+            output_pb_model_indices.push(a as usize);
+            output_pb_model_indices.push(b as usize);
+        } else {
+            println!("Something is wrong wanted to add edge {} to {}", a, b);
+        }
     }
-
+    println!("Resulting centerline model:{:?}", output_pb_model_indices);
+    for p in output_pb_model_indices.chunks(2) {
+        print!("{}-{}, ", p[0], p[1]);
+    }
+    println!();
     Ok(OwnedModel {
         //name: input_pb_model.name.clone(),
         //world_orientation: input_pb_model.world_orientation.clone(),
@@ -295,13 +303,14 @@ where
     })
 }
 
-pub(crate) fn process_command<T: GenericVector3, MESH: HasXYZ>(
-    models: Vec<Model<'_, MESH>>,
+/// Run the centerline command
+pub(crate) fn process_command<T: GenericVector3>(
+    models: Vec<Model<'_>>,
     config: ConfigType,
-) -> Result<(Vec<MESH>, Vec<usize>, ConfigType), HallrError>
+) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
-    T: ConvertTo<MESH> + HasMatrix4,
-    MESH: ConvertTo<T>,
+    T: ConvertTo<FFIVector3> + HasMatrix4,
+    FFIVector3: ConvertTo<T>,
     HashableVector2: From<T::Vector2>,
     T::Scalar: OutputType,
     i64: AsPrimitive<T::Scalar>,
@@ -309,7 +318,7 @@ where
 {
     let default_max_voronoi_dimension: T::Scalar =
         NumCast::from(super::DEFAULT_MAX_VORONOI_DIMENSION).unwrap();
-    if false {
+    if true {
         // use this to generate test data from blender
         println!("Some test data:");
         println!("model:indices:{:?}", models[0].indices);
@@ -392,7 +401,7 @@ where
     // Can also be described as cos(angle) between edge and segment.
     let dot_limit = cmd_arg_angle.to_degrees().cos();
 
-    println!("centerline got command");
+    println!("cmd_centerline got command");
     //println!("model.vertices:{:?}", model.vertices.len());
     //println!("model.indices:{:?}", model.indices.len());
     //println!("model.faces:{:?}", faces.len());
@@ -411,10 +420,10 @@ where
     println!("max_distance:{:?}", max_distance);
     println!();
 
-    //let mut obj = Obj::<MESH>::new("centerline");
+    //let mut obj = Obj::<FFIVector3>::new("cmd_centerline");
     //println!("rust: vertices.len():{}", vertices.len());
     //println!("rust: indices.len():{}", indices.len());
-    //println!("rust: indices:{:?}", indices);
+    println!("rust: indices:{:?}", model.indices);
 
     // convert the input vertices to 2d point cloud
     //let vertices: Vec<T::Vector2> = vertices.iter().map(|v| v.to().to_2d()).collect();
@@ -422,7 +431,7 @@ where
     //println!("Indices:{:?}", indices);
 
     let (edges, vertices, total_aabb) = parse_input(model)?;
-    // println!("edge set: {:?}", edges);
+    println!("edge set: {:?}", edges);
     println!("-> divide_into_shapes");
     let lines = centerline::divide_into_shapes(edges, vertices)?;
     println!("-> get_transform_relaxed");
@@ -550,6 +559,6 @@ where
         model.indices.len()
     );
     //println!("rv:vertices:{:?}", model.vertices);
-    //println!("rv:indices:{:?}", model.indices);
+    println!("rv:indices:{:?}", model.indices);
     Ok((model.vertices, model.indices, return_config))
 }

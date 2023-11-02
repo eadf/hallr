@@ -41,7 +41,7 @@ impl Options for HashMap<String, String> {
     }
 
     /// Returns the &str value of an option, or an Err is it does not exists
-    fn get_mandatory_option<'a>(&'a self, key: &str) -> Result<&'a str, HallrError> {
+    fn get_mandatory_option(&self, key: &str) -> Result<&str, HallrError> {
         match self.get(key) {
             Some(v) => Ok(v),
             None => Err(HallrError::MissingParameter(

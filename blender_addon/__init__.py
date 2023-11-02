@@ -23,6 +23,7 @@ from . import hallr_ffi_utils
 from . import hallr_convex_hull_2d
 from . import hallr_simplify_rdp
 from . import hallr_2d_delaunay_triangulation
+from . import hallr_2d_outline
 from . import hallr_centerline
 
 
@@ -32,6 +33,7 @@ modules = (
     hallr_convex_hull_2d,
     hallr_simplify_rdp,
     hallr_2d_delaunay_triangulation,
+    hallr_2d_outline,
     hallr_centerline
 )
 

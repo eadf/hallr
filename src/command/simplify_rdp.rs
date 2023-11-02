@@ -5,20 +5,20 @@ use crate::{
 };
 use hronn::prelude::*;
 use linestring::linestring_2d::LineString2;
-use vector_traits::{GenericScalar, GenericVector2, GenericVector3, HasXYZ};
+use vector_traits::{GenericScalar, GenericVector2, GenericVector3};
 
-pub(crate) fn process_command<T: GenericVector3, MESH: HasXYZ>(
-    vertices: &[MESH],
+pub(crate) fn process_command<T: GenericVector3>(
+    vertices: &[FFIVector3],
     indices: &[usize],
     config: ConfigType,
-) -> Result<(Vec<MESH>, Vec<usize>, ConfigType), HallrError>
+) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
-    T: ConvertTo<MESH>,
-    MESH: ConvertTo<T>,
+    T: ConvertTo<FFIVector3>,
+    FFIVector3: ConvertTo<T>,
     HashableVector2: From<T::Vector2>,
 {
     let epsilon: T::Scalar = config.get_mandatory_parsed_option("epsilon")?;
-    let mut obj = Obj::<MESH>::new("simplified_rdp");
+    let mut obj = Obj::<FFIVector3>::new("simplified_rdp");
     //println!("rust: vertices.len():{}", vertices.len());
     //println!("rust: indices.len():{}", indices.len());
     //println!("rust: indices:{:?}", indices);
@@ -43,7 +43,9 @@ where
     //println!("result vertices:{:?}", obj.vertices);
     //println!("result edges:{:?}", obj.lines.first());
     let mut config = ConfigType::new();
-    let _ = config.insert("mesh.format".to_string(), "line".to_string());
+    let _ = config.insert("mesh.format".to_string(), "line_windows".to_string());
+    let _ = config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
+
     println!(
         "simplify_rdp operation returning {} vertices, {} edges",
         obj.vertices.len(),

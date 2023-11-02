@@ -93,18 +93,10 @@ class OBJECT_OT_hallr_centerline(bpy.types.Operator):
                   : str(self.weld_props).lower(),
                   "mesh.format": "line_chunks",
                   }
-
+        raise hallr_ffi_utils.HallrException("Not implemented")
         # Call the Rust function
-        vertices, indices, config = hallr_ffi_utils.call_rust_direct(config, obj, expect_line_chunks=True)
-        print(f"Received {config} as the result from Rust!")
-        if config.get("ERROR"):
-            self.report({'ERROR'}, "" + config.get("ERROR"))
-            return {'CANCELLED'}
-        elif config.get("mesh.format") == "line_chunks":
-            hallr_ffi_utils.handle_chunks_line_modify_active_object(vertices, indices)
-        else:
-            self.report({'ERROR'}, "Unknown mesh format:" + config.get("mesh.format", "None"))
-            return {'CANCELLED'}
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, expect_line_chunks=True)
+        hallr_ffi_utils.handle_received_object(obj, config_out, vertices, indices)
 
         return {'FINISHED'}
 

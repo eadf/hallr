@@ -5,11 +5,11 @@ from . import hallr_ffi_utils
 class OBJECT_OT_hallr_simplify_rdp(bpy.types.Operator):
     """2D Line Simplification using the RDP Algorithm, works in the XY plane"""
 
-    bl_idname = "object.hallr_simplify_rdp"
-    bl_label = "Hallr 2D Simplify RDP"
+    bl_idname = "object.hallr_2d_outline"
+    bl_label = "Hallr 2D Outline"
+    bl_description = ("Outline 2d geometry into a wire frame, the geometry must be flat and on a plane intersecting "
+                      "origin")
     bl_options = {'REGISTER', 'UNDO'}
-
-    epsilon_props: bpy.props.FloatProperty(name="Epsilon", default=0.1, min=0, description="Amount of simplification")
 
     @classmethod
     def poll(cls, context):
@@ -25,21 +25,13 @@ class OBJECT_OT_hallr_simplify_rdp(bpy.types.Operator):
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "simplify_rdp", "epsilon": str(self.epsilon_props)}
+        config = {"command": "2d_outline", "mesh.format": "triangulated"}
 
         # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, expect_line_chunks=True)
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, expect_line_chunks=False)
         hallr_ffi_utils.handle_received_object(obj, config_out, vertices, indices)
 
         return {'FINISHED'}
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
-
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(self, "epsilon_props", text="Epsion")
 
 
 def VIEW3D_MT_hallr_simplify_rdp_menu_item(self, context):

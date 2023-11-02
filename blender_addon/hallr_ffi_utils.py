@@ -4,10 +4,16 @@ import platform
 from importlib import reload
 import ctypes
 import bmesh
+import mathutils
 
 # workaround for the "ImportError: attempted relative import with no known parent package" problem:
 DEV_MODE = False  # Set this to False for distribution
 HALLR_LIBRARY = None
+
+
+class HallrException(Exception):
+    def __init__(self, message):
+        self.message = str(message)
 
 
 class Vector3(ctypes.Structure):
@@ -200,6 +206,7 @@ def handle_windows_line_modify_active_object(vertices, indices):
     This function assumes that the line is in the ".window(2)" format,
     I.e. indices are [0, 1, 2, 3, ...], where each set of 2 is a line
     """
+    print("inside handle_windows_line_modify_active_object")
     # Ensure that the active object is a mesh object
     active_obj = bpy.context.view_layer.objects.active
     if not active_obj or active_obj.type != 'MESH':
@@ -209,21 +216,116 @@ def handle_windows_line_modify_active_object(vertices, indices):
     # Convert the indices to Blender's edge format
     edges = [(indices[i], indices[i + 1]) for i in range(len(indices) - 1)]
 
-    # Clear the existing geometry
+    # Free the existing geometry
     bpy.ops.object.mode_set(mode='EDIT')  # Must be in edit mode to use bmesh
-    bm = bmesh.from_edit_mesh(active_obj.data)
-    bm.clear()  # Clear all geometry
+    active_obj.data.update()
+    if hasattr(active_obj.data, 'bmesh'):
+        active_obj.data.bmesh.free()
+    # Create a new BMesh
+    bm = bmesh.new()
 
     # Create new vertices and edges
     verts = [bm.verts.new(vert) for vert in vertices]
-    for edge in edges:
-        bm.edges.new((verts[edge[0]], verts[edge[1]]))
+    bm.from_pydata(verts, edges, [])
     bmesh.update_edit_mesh(active_obj.data)  # Update the mesh with the changes
 
     bpy.ops.object.mode_set(mode='OBJECT')  # Switch back to object mode
 
+    bm.to_mesh(active_obj.data)
+    bm.free()
+
     # Update the mesh
     active_obj.data.update()
+
+
+def unpack_model(options, raw_indices):
+    """Convert the received data into blender mesh edges, faces and world transform"""
+    rv_edges = []
+    rv_faces = []
+    mesh_format = options.get("mesh.format", None)
+    if mesh_format == "line_windows":
+        # Convert the indices to Blender's edge format
+        # This mode assumes that the line is in the ".window(2)" format,
+        # i.e., indices are [0, 1, 2, 3, ...], where [(0,1),(1,2),...] forms edges.
+        rv_edges = [(raw_indices[i], raw_indices[i + 1]) for i in range(len(raw_indices) - 1)]
+    elif mesh_format == "line_chunks":
+        # This mode assumes that the line is in the ".chunks(2)" format,
+        # i.e., indices are [0, 1, 2, 3, ...], where [(0,1), (2,3),...] forms edges.
+        rv_edges = [(raw_indices[i], raw_indices[i + 1]) for i in range(0, len(raw_indices) - 1, 2)]
+    elif mesh_format == "triangulated":
+        # Assuming indices are [0, 1, 2, 2, 3, 4, ...], where each set of 3 is a triangle
+        rv_faces = [tuple(raw_indices[i:i + 3]) for i in range(0, len(raw_indices), 3)]
+    else:
+        raise HallrException("Unsupported mesh_format:" + mesh_format)
+
+    # if pb_model.HasField("worldOrientation"):
+    #    pbm = pb_model.worldOrientation
+    #    mat[0][0], mat[0][1], mat[0][2], mat[0][3] = pbm.m00, pbm.m01, pbm.m02, pbm.m03
+    #    mat[1][0], mat[1][1], mat[1][2], mat[1][3] = pbm.m10, pbm.m11, pbm.m12, pbm.m13
+    #    mat[2][0], mat[2][1], mat[2][2], mat[2][3] = pbm.m20, pbm.m21, pbm.m22, pbm.m23
+    #    mat[3][0], mat[3][1], mat[3][2], mat[3][3] = pbm.m30, pbm.m31, pbm.m32, pbm.m33
+    return rv_edges, rv_faces, mathutils.Matrix.Identity(4)
+
+
+def handle_received_object(active_object, options, ffi_vertices, ffi_indices):
+    """Takes care of the raw ffi data received from rust, and create a blender mesh out of them"""
+
+    remove_doubles = False
+    remove_doubles_threshold = 0.0001
+
+    for key, value in options.items():
+        if key == "ERROR":
+            raise HallrException(str(value))
+        if key == "REMOVE_DOUBLES" and value.lower() == "true":
+            remove_doubles = True
+        if key == "REMOVE_DOUBLES_THRESHOLD":
+            try:
+                new_value = float(value)
+                remove_doubles_threshold = new_value
+            except ValueError:
+                pass
+
+    if len(ffi_vertices) == 0 or len(ffi_indices) == 0:
+        raise HallrException("No return models found")
+
+    (edges, faces, matrix) = unpack_model(options, ffi_indices)
+    if len(faces) > 0 or len(edges) > 0:
+        new_mesh = bpy.data.meshes.new(options.get("model_0_name", "new_mesh"))
+        old_mesh = active_object.data
+
+        print("vertices:", len(ffi_vertices))
+        print("edges:", len(edges))
+        print("faces:", len(faces))
+        new_mesh.from_pydata(ffi_vertices, edges, faces)
+        new_mesh.update(calc_edges=True)
+        bm = bmesh.new()
+        bm.from_mesh(new_mesh)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bm.to_mesh(active_object.data)
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        # print("active_object.update_from_editmode():", active_object.update_from_editmode())
+        if not (old_mesh.users or old_mesh.use_fake_user):
+            bpy.data.meshes.remove(old_mesh)
+            print("removed old mesh")
+        else:
+            print("did not remove old mesh")
+
+        if matrix:
+            active_object.matrix_world = matrix
+
+        if remove_doubles:
+            # sometimes 'mode_set' does not take right away  :/
+            # bpy.ops.object.editmode_toggle()
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.remove_doubles(threshold=remove_doubles_threshold)
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.ops.object.mode_set(mode='EDIT')
+        # if set_origin_to_cursor:
+        #    bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
+    else:
+        print("handle_received_object() error: len(faces):", len(faces), " len(edges):", len(edges))
 
 
 def handle_chunks_line_modify_active_object(vertices, indices):
@@ -232,6 +334,7 @@ def handle_chunks_line_modify_active_object(vertices, indices):
     This function assumes that the line is in the ".chunks(2)" format,
     i.e., indices are [0, 1, 2, 3, ...], where [(1,2), (3,4),...] forms edges.
     """
+    print("inside handle_chunks_line_modify_active_object")
     # Ensure that the active object is a mesh object
     active_obj = bpy.context.view_layer.objects.active
     if not active_obj or active_obj.type != 'MESH':
@@ -239,7 +342,9 @@ def handle_chunks_line_modify_active_object(vertices, indices):
         return
 
     # Convert the indices to Blender's edge format
+    # print(indices)
     edges = [(indices[i], indices[i + 1]) for i in range(0, len(indices) - 1, 2)]
+    # print(edges)
 
     # Check if the length is odd and print a warning
     if len(indices) % 2 != 0:
@@ -247,18 +352,24 @@ def handle_chunks_line_modify_active_object(vertices, indices):
         print("indices:", indices)
         print("edges:", edges)
 
-    # Clear the existing geometry
+    # Free the existing geometry
     bpy.ops.object.mode_set(mode='EDIT')  # Must be in edit mode to use bmesh
-    bm = bmesh.from_edit_mesh(active_obj.data)
-    bm.clear()  # Clear all geometry
+    active_obj.data.update()
+    if hasattr(active_obj.data, 'bmesh'):
+        active_obj.data.bmesh.free()
+    # Create a new BMesh
+    bm = bmesh.new()
 
     # Create new vertices and edges
     verts = [bm.verts.new(vert) for vert in vertices]
-    for edge in edges:
-        bm.edges.new((verts[edge[0]], verts[edge[1]]))
-    bmesh.update_edit_mesh(active_obj.data)  # Update the mesh with the changes
+    bm.from_pydata(verts, edges, [])
+    # Free the existing BMesh data (if any)
+    if active_obj.data.is_editmode:
+        # If in edit mode, toggle back to object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
 
-    bpy.ops.object.mode_set(mode='OBJECT')  # Switch back to object mode
+    bm.to_mesh(active_obj.data)
+    bm.free()
 
     # Update the mesh
     active_obj.data.update()
@@ -373,17 +484,16 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
         vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in active_obj_to_process.data.vertices]
 
     # Keeping track of the current number of vertices before adding bounding shape
-    start_vertex_index_for_bounding = len(vertices)
-
+    first_vertex_model_1 = len(vertices)
+    first_index_model_1 = len(indices)
     if bounding_shape:
         # Appending vertices from the bounding shape
         vertices += [Vector3(v.co.x, v.co.y, v.co.z) for v in bounding_obj_to_process.data.vertices]
 
-        # Take note of the starting index for the bounding shape in the indices list
-        start_index_for_bounding = len(indices)
-
-        config["start_vertex_index_for_bounding"] = str(start_vertex_index_for_bounding)
-        config["start_index_for_bounding"] = str(start_index_for_bounding)
+        config["first_vertex_model_0"] = str(0)
+        config["first_index_model_0"] = str(0)
+        config["first_vertex_model_1"] = str(first_vertex_model_1)
+        config["first_index_model_1"] = str(first_index_model_1)
 
         # Appending edge vertex indices from the bounding shape, adjusting based on the start_vertex_index
         for edge in bounding_obj_to_process.data.edges:
@@ -428,7 +538,7 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
     rust_lib.free_process_results(rust_result)
 
     # 11. try to close the .dylib so that it is "fresh" for the next invocation.
-    # this does not seem to work anymore, though. It requires restart of blender to work
+    # When running in release mode, this does nothing.
     ctypes_close_library(rust_lib)
 
     return output_vertices, output_indices, output_map
@@ -439,27 +549,43 @@ def call_rust_direct(config, active_obj, expect_line_chunks=False):
     A simpler version of call_rust that only processes the active_object.
     When `expect_line_chunks` is set, the data will iterate over each edge(a,b) and use a list of
     indices in .chunks(2) format.
+    If `expect_line_chunks` is not set, the code expect the mesh to be triangulated.
     """
 
     rust_lib = load_latest_dylib()
 
     active_obj_to_process = prepare_object_for_processing_direct(active_obj)
+    # handle the vertices
     vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in active_obj_to_process.data.vertices]
     vertices_ptr = (Vector3 * len(vertices))(*vertices)
 
+    # Handle the indices
     if expect_line_chunks:
+        if len(active_obj_to_process.data.polygons) > 0:
+            raise HallrException("The model should not contain any polygons for this operation, only edges! Hint: use "
+                                 "the 2d_outline operation to convert a mesh to a 2d outline.")
         indices = [v for edge in active_obj_to_process.data.edges for v in edge.vertices]
     else:
-        indices = [vert_idx for face in active_obj_to_process.data.polygons for vert_idx in face.vertices]
-
+        # Collect vertices and check if the mesh is fully triangulated
+        indices = []
+        for face in active_obj_to_process.data.polygons:
+            if len(face.vertices) != 3:
+                raise HallrException("The mesh is not fully triangulated!")
+            indices.extend(face.vertices)
+        if len(indices) == 0:
+            raise HallrException("No polygons found, maybe the mesh is not fully triangulated?")
     indices_ptr = (ctypes.c_size_t * len(indices))(*indices)
+
+    # Add the mandatory mesh indexes
+    config["first_vertex_model_0"] = str(0)
+    config["first_index_model_0"] = str(0)
 
     keys_list = list(config.keys())
     values_list = list(config.values())
     keys_array = (ctypes.c_char_p * len(keys_list))(*[k.encode('utf-8') for k in keys_list])
     values_array = (ctypes.c_char_p * len(values_list))(*[v.encode('utf-8') for v in values_list])
     map_data = StringMap(keys_array, values_array, len(keys_list))
-
+    # This calls the rust library
     rust_result = rust_lib.process_geometry(vertices_ptr, len(vertices), indices_ptr, len(indices), map_data)
 
     output_vertices = [(vec.x, vec.y, vec.z) for vec in
@@ -471,8 +597,9 @@ def call_rust_direct(config, active_obj, expect_line_chunks=False):
         key = ctypes.string_at(rust_result.map.keys[i]).decode('utf-8')
         value = ctypes.string_at(rust_result.map.values[i]).decode('utf-8')
         output_map[key] = value
-
+    # This should free the data owned by Rust
     rust_lib.free_process_results(rust_result)
+    # In development mode this tries to close the library, in release mode it does nothing
     ctypes_close_library(rust_lib)
 
     return output_vertices, output_indices, output_map
