@@ -484,14 +484,16 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
         vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in active_obj_to_process.data.vertices]
 
     # Keeping track of the current number of vertices before adding bounding shape
-    first_vertex_model_1 = len(vertices)
-    first_index_model_1 = len(indices)
+    config["first_vertex_model_0"] = str(0)
+    config["first_index_model_0"] = str(0)
+
     if bounding_shape:
+
+        first_vertex_model_1 = len(vertices)
+        first_index_model_1 = len(indices)
         # Appending vertices from the bounding shape
         vertices += [Vector3(v.co.x, v.co.y, v.co.z) for v in bounding_obj_to_process.data.vertices]
 
-        config["first_vertex_model_0"] = str(0)
-        config["first_index_model_0"] = str(0)
         config["first_vertex_model_1"] = str(first_vertex_model_1)
         config["first_index_model_1"] = str(first_index_model_1)
 
@@ -520,8 +522,8 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
     # 8. Make the call to rust
     rust_result = rust_lib.process_geometry(vertices_ptr, len(vertices), indices_ptr, len(indices), map_data)
 
-    print("python received: ", rust_result.geometry.vertex_count, "vertices")
-    print("python received: ", rust_result.geometry.indices_count, "indices")
+    print("python received: ", rust_result.geometry.vertex_count, "vertices",
+          rust_result.geometry.indices_count, "indices")
     # 9. Handle the results
     output_vertices = [(vec.x, vec.y, vec.z) for vec in
                        (rust_result.geometry.vertices[i] for i in range(rust_result.geometry.vertex_count))]

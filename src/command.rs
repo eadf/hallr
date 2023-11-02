@@ -121,7 +121,7 @@ pub(crate) fn process_command(
 
     Ok(match config.get_mandatory_option("command")? {
         "surface_scan" => surface_scan::process_command::<T>(config, models)?,
-        "convex_hull_2d" => convex_hull_2d::process_command::<T>(config, vertices, indices)?,
+        "convex_hull_2d" => convex_hull_2d::process_command::<T>(config, models)?,
         "simplify_rdp" => simplify_rdp::process_command::<T>(config, models)?,
         "2d_delaunay_triangulation" => {
             delaunay_triangulation_2d::process_command::<T>(config, models)?

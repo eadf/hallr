@@ -1,4 +1,3 @@
-import bpy
 import sys
 
 bl_info = {
@@ -25,6 +24,7 @@ from . import hallr_simplify_rdp
 from . import hallr_2d_delaunay_triangulation
 from . import hallr_2d_outline
 from . import hallr_centerline
+from . import hallr_standalone_operators
 
 
 # define modules for registration
@@ -34,7 +34,8 @@ modules = (
     hallr_simplify_rdp,
     hallr_2d_delaunay_triangulation,
     hallr_2d_outline,
-    hallr_centerline
+    hallr_centerline,
+    hallr_standalone_operators
 )
 
 
