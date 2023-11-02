@@ -120,14 +120,14 @@ pub(crate) fn process_command(
     let models = collect_models::<T>(vertices, indices, &config)?;
 
     Ok(match config.get_mandatory_option("command")? {
-        "surface_scan" => surface_scan::process_command::<T>(models, config)?,
-        "convex_hull_2d" => convex_hull_2d::process_command::<T>(vertices, indices, config)?,
-        "simplify_rdp" => simplify_rdp::process_command::<T>(vertices, indices, config)?,
+        "surface_scan" => surface_scan::process_command::<T>(config, models)?,
+        "convex_hull_2d" => convex_hull_2d::process_command::<T>(config, vertices, indices)?,
+        "simplify_rdp" => simplify_rdp::process_command::<T>(config, models)?,
         "2d_delaunay_triangulation" => {
-            delaunay_triangulation_2d::process_command::<T>(vertices, indices, config)?
+            delaunay_triangulation_2d::process_command::<T>(config, models)?
         }
-        "centerline" => cmd_centerline::process_command::<T>(models, config)?,
-        "2d_outline" => cmd_2d_outline::process_command::<T>(models, config)?,
+        "centerline" => cmd_centerline::process_command::<T>(config, models)?,
+        "2d_outline" => cmd_2d_outline::process_command::<T>(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(
             "Invalid command:{}",
             illegal_command

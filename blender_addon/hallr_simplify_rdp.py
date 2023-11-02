@@ -10,6 +10,11 @@ class OBJECT_OT_hallr_simplify_rdp(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     epsilon_props: bpy.props.FloatProperty(name="Epsilon", default=0.1, min=0, description="Amount of simplification")
+    simplify_3d_props: bpy.props.BoolProperty(
+        name="Simplify 3d",
+        description="When selected simplification will be done in 3d",
+        default=True
+    )
 
     @classmethod
     def poll(cls, context):
@@ -25,7 +30,8 @@ class OBJECT_OT_hallr_simplify_rdp(bpy.types.Operator):
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "simplify_rdp", "epsilon": str(self.epsilon_props)}
+        config = {"command": "simplify_rdp", "epsilon": str(self.epsilon_props),
+                  "simplify_3d": str(self.simplify_3d_props).lower()}
 
         # Call the Rust function
         vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, expect_line_chunks=True)
@@ -39,7 +45,8 @@ class OBJECT_OT_hallr_simplify_rdp(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "epsilon_props", text="Epsion")
+        layout.prop(self, "epsilon_props")
+        layout.prop(self, "simplify_3d_props")
 
 
 def VIEW3D_MT_hallr_simplify_rdp_menu_item(self, context):

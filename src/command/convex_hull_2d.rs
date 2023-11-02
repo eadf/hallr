@@ -6,9 +6,9 @@ use linestring::linestring_2d::convex_hull;
 use vector_traits::{approx::UlpsEq, GenericScalar, GenericVector2, GenericVector3};
 
 pub(crate) fn process_command<T: GenericVector3>(
+    _config: ConfigType,
     vertices: &[FFIVector3],
     _indices: &[usize],
-    _config: ConfigType,
 ) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
     T::Vector2: PointTrait<PScalar = T::Scalar>,

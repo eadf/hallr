@@ -112,8 +112,8 @@ where
 }
 
 pub(crate) fn process_command<T: GenericVector3>(
-    models: Vec<Model<'_>>,
     config: ConfigType,
+    models: Vec<Model<'_>>,
 ) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
     T::Vector2: PointTrait<PScalar = T::Scalar>,

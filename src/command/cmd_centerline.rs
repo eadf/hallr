@@ -17,14 +17,14 @@ use vector_traits::{
 };
 
 /// converts to a private, comparable and hashable format
-/// only use this for floats that are f64::is_finite()
+/// only use this for floats that are f32::is_finite()
 /// This will only work for floats that's identical in every bit.
 /// The z coordinate will not be used because it might be slightly different
 /// depending on how it was calculated. Not using z will also make the calculations faster.
 #[inline(always)]
-fn transmute_to_u64<T: HasXYZ>(a: &T) -> (u64, u64) {
-    let x: f64 = a.x().as_();
-    let y: f64 = a.x().as_();
+fn transmute_to_u32<T: HasXYZ>(a: &T) -> (u32, u32) {
+    let x: f32 = a.x().as_();
+    let y: f32 = a.y().as_();
     (x.to_bits(), y.to_bits())
 }
 
@@ -135,62 +135,42 @@ where
         * 5)
         / 4;
 
-    let mut output_pb_model_vertices = Vec::<FFIVector3>::with_capacity(estimated_capacity);
-    let mut output_pb_model_faces = Vec::<(u64, u64)>::with_capacity(estimated_capacity);
+    let mut output_model_vertices = Vec::<FFIVector3>::with_capacity(estimated_capacity);
+    let mut output_model_edges = Vec::<(u32, u32)>::with_capacity(estimated_capacity);
 
     // map between 'meta-vertex' and vertex index
-    let mut v_map = ahash::AHashMap::<(u64, u64), usize>::default();
+    let mut v_map = ahash::AHashMap::<(u32, u32), usize>::default();
 
     for shape in shapes {
         // Draw the input segments
         if cmd_arg_keep_input {
-            for linestring in shape.0.set().iter() {
-                if linestring.points().len() < 2 {
+            for input_linestring in shape.0.set().iter() {
+                if input_linestring.points().len() < 3 {
                     return Err(HallrError::InternalError(
-                        "Linestring with less than 2 points found".to_string(),
+                        "Linestring with less than 3 points found (loop-around vertex is repeated)"
+                            .to_string(),
                     ));
                 }
-                // unwrap of first and last is safe now that we know there are at least 2 vertices in the list
-                let v0 = linestring.points().first().unwrap().to_3d(T::Scalar::ZERO);
-                let v1 = linestring.points().last().unwrap().to_3d(T::Scalar::ZERO);
-                let v0_key = transmute_to_u64(&v0);
-                let v0_index = *v_map.entry(v0_key).or_insert_with(|| {
-                    let new_index = output_pb_model_vertices.len();
-                    output_pb_model_vertices.push(inverted_transform.transform_point3(v0).to());
-                    //println!("i0 pushed ({},{},{})", v0.x, v0.y, v0.z);
-                    new_index
+                //println!("Input linestring: {:?}", input_linestring.0);
+                //let input_linestring = &input_linestring.0;
+                //println!("Input linestring: {:?}", input_linestring);
+                //println!("output_model_vertices:{:?}",output_model_vertices);
+
+                let vertex_index_iterator = input_linestring.0.iter().map(|p| {
+                    let v2 = p.to_3d(T::Scalar::ZERO);
+                    let v2_key = transmute_to_u32(&v2);
+                    //println!("testing {:?} as key {:?}", v2, v2_key);
+                    let v2_index = *v_map.entry(v2_key).or_insert_with(|| {
+                        let new_index = output_model_vertices.len();
+                        output_model_vertices.push(inverted_transform.transform_point3(v2).to());
+                        //println!("i2 pushed ({},{},{}) as {}", v2.x(), v2.y(), v2.z(), new_index);
+                        new_index
+                    });
+                    v2_index
                 });
-                let v1_key = transmute_to_u64(&v1);
-                let v1_index = *v_map.entry(v1_key).or_insert_with(|| {
-                    let new_index = output_pb_model_vertices.len();
-                    output_pb_model_vertices.push(inverted_transform.transform_point3(v1).to());
-                    //println!("i1 pushed ({},{},{})", v1.x, v1.y, v1.z);
-                    new_index
-                });
-                let vertex_index_iterator = Some(v0_index)
-                    .into_iter()
-                    .chain(
-                        linestring
-                            .points()
-                            .iter()
-                            .skip(1)
-                            .take(linestring.points().len() - 2)
-                            .map(|p| {
-                                let v2 = p.to_3d(T::Scalar::ZERO);
-                                let v2_key = transmute_to_u64(&v2);
-                                let v2_index = *v_map.entry(v2_key).or_insert_with(|| {
-                                    let new_index = output_pb_model_vertices.len();
-                                    output_pb_model_vertices
-                                        .push(inverted_transform.transform_point3(v2).to());
-                                    //println!("i2 pushed ({},{},{})", v2.x, v2.y, v2.z);
-                                    new_index
-                                });
-                                v2_index
-                            }),
-                    )
-                    .chain(Some(v1_index).into_iter());
                 for p in vertex_index_iterator.tuple_windows::<(_, _)>() {
-                    output_pb_model_faces.push((p.0 as u64, p.1 as u64));
+                    //println!("input edge: {}-{}", p.0, p.1);
+                    output_model_edges.push((p.0 as u32, p.1 as u32));
                 }
             }
         }
@@ -207,19 +187,19 @@ where
             if v0 == v1 {
                 continue;
             }
-            let v0_key = transmute_to_u64(&v0);
+            let v0_key = transmute_to_u32(&v0);
             let v0_index = *v_map.entry(v0_key).or_insert_with(|| {
-                let new_index = output_pb_model_vertices.len();
-                output_pb_model_vertices.push(transform_point(v0).to());
+                let new_index = output_model_vertices.len();
+                output_model_vertices.push(transform_point(v0).to());
                 //println!("s0 pushed ({},{},{})", v0.x, v0.y, v0.z);
                 new_index
             });
 
-            let v1_key = transmute_to_u64(&v1);
+            let v1_key = transmute_to_u32(&v1);
             let v1_index = *v_map.entry(v1_key).or_insert_with(|| {
-                let new_index = output_pb_model_vertices.len();
+                let new_index = output_model_vertices.len();
 
-                output_pb_model_vertices.push(transform_point(v1).to());
+                output_model_vertices.push(transform_point(v1).to());
                 //println!("s1 pushed ({},{},{})", v1.x, v1.y, v1.z);
                 new_index
             });
@@ -231,7 +211,7 @@ where
                 );
                 continue;
             }
-            output_pb_model_faces.push((v0_index as u64, v1_index as u64));
+            output_model_edges.push((v0_index as u32, v1_index as u32));
         }
 
         // draw the concatenated line strings of the voronoi output
@@ -244,18 +224,18 @@ where
             // unwrap of first and last is safe now that we know there are at least 2 vertices in the list
             let v0 = linestring.points().first().unwrap();
             let v1 = linestring.points().last().unwrap();
-            let v0_key = transmute_to_u64(v0);
+            let v0_key = transmute_to_u32(v0);
             let v0_index = *v_map.entry(v0_key).or_insert_with(|| {
-                let new_index = output_pb_model_vertices.len();
-                output_pb_model_vertices.push(transform_point(*v0).to());
+                let new_index = output_model_vertices.len();
+                output_model_vertices.push(transform_point(*v0).to());
                 //println!("ls0 pushed ({},{},{})", v0.x, v0.y, v0.z);
                 new_index
             });
-            let v1_key = transmute_to_u64(v1);
+            let v1_key = transmute_to_u32(v1);
             let v1_index = *v_map.entry(v1_key).or_insert_with(|| {
-                let new_index = output_pb_model_vertices.len();
+                let new_index = output_model_vertices.len();
 
-                output_pb_model_vertices.push(transform_point(*v1).to());
+                output_model_vertices.push(transform_point(*v1).to());
                 new_index
             });
             // we only need to lookup the start and end points for vertex duplication
@@ -268,45 +248,45 @@ where
                         .skip(1)
                         .take(linestring.points().len() - 2)
                         .map(|p| {
-                            let new_index = output_pb_model_vertices.len();
-                            output_pb_model_vertices.push(transform_point(*p).to());
+                            let new_index = output_model_vertices.len();
+                            output_model_vertices.push(transform_point(*p).to());
                             new_index
                         }),
                 )
                 .chain(Some(v1_index).into_iter());
             for p in vertex_index_iterator.tuple_windows::<(_, _)>() {
-                output_pb_model_faces.push((p.0 as u64, p.1 as u64));
+                output_model_edges.push((p.0 as u32, p.1 as u32));
             }
         }
     }
     //println!("allocated {} needed {} and {}", count, output_pb_model_vertices.len(), output_pb_model_faces.len());
     // Todo: store in the output_pb_model_indices format in the first place
-    let mut output_pb_model_indices = Vec::<usize>::with_capacity(output_pb_model_faces.len() * 2);
-    for (a, b) in output_pb_model_faces {
-        if a!=b {
+    let mut output_pb_model_indices = Vec::<usize>::with_capacity(output_model_edges.len() * 2);
+    for (a, b) in output_model_edges {
+        if a != b {
             output_pb_model_indices.push(a as usize);
             output_pb_model_indices.push(b as usize);
         } else {
             println!("Something is wrong wanted to add edge {} to {}", a, b);
         }
     }
-    println!("Resulting centerline model:{:?}", output_pb_model_indices);
-    for p in output_pb_model_indices.chunks(2) {
+    //println!("Resulting centerline model:{:?}", output_pb_model_indices);
+    /*for p in output_pb_model_indices.chunks(2) {
         print!("{}-{}, ", p[0], p[1]);
     }
-    println!();
+    println!();*/
     Ok(OwnedModel {
         //name: input_pb_model.name.clone(),
         //world_orientation: input_pb_model.world_orientation.clone(),
-        vertices: output_pb_model_vertices,
+        vertices: output_model_vertices,
         indices: output_pb_model_indices,
     })
 }
 
 /// Run the centerline command
 pub(crate) fn process_command<T: GenericVector3>(
-    models: Vec<Model<'_>>,
     config: ConfigType,
+    models: Vec<Model<'_>>,
 ) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
     T: ConvertTo<FFIVector3> + HasMatrix4,
@@ -318,7 +298,7 @@ where
 {
     let default_max_voronoi_dimension: T::Scalar =
         NumCast::from(super::DEFAULT_MAX_VORONOI_DIMENSION).unwrap();
-    if true {
+    if false {
         // use this to generate test data from blender
         println!("Some test data:");
         println!("model:indices:{:?}", models[0].indices);
@@ -361,8 +341,8 @@ where
         .unwrap_or(true);
 
     let (cmd_arg_weld, cmd_arg_keep_input) = {
-        let mut cmd_arg_weld = config.get_parsed_option("KEEP_INPUT")?.unwrap_or(true);
-        let cmd_arg_keep_input = config.get_parsed_option("WELD")?.unwrap_or(true);
+        let mut cmd_arg_weld = config.get_parsed_option("WELD")?.unwrap_or(true);
+        let cmd_arg_keep_input = config.get_parsed_option("KEEP_INPUT")?.unwrap_or(true);
 
         if !cmd_arg_keep_input {
             // cmd_arg_keep_input overrides cmd_arg_weld
@@ -399,7 +379,7 @@ where
 
     // The dot product between normalized vectors of edge and the segment that created it.
     // Can also be described as cos(angle) between edge and segment.
-    let dot_limit = cmd_arg_angle.to_degrees().cos();
+    let dot_limit = cmd_arg_angle.to_radians().cos().abs();
 
     println!("cmd_centerline got command");
     //println!("model.vertices:{:?}", model.vertices.len());
@@ -410,6 +390,7 @@ where
         model.world_orientation.as_ref().map_or(0, |_| 16)
     );*/
     println!("ANGLE:{:?}°", cmd_arg_angle);
+    println!("dot_limit:{:?}", dot_limit);
     println!("REMOVE_INTERNALS:{:?}", cmd_arg_remove_internals);
     println!("SIMPLIFY:{:?}", cmd_arg_simplify);
     println!("WELD:{:?}", cmd_arg_weld);
@@ -423,7 +404,7 @@ where
     //let mut obj = Obj::<FFIVector3>::new("cmd_centerline");
     //println!("rust: vertices.len():{}", vertices.len());
     //println!("rust: indices.len():{}", indices.len());
-    println!("rust: indices:{:?}", model.indices);
+    //println!("rust: indices:{:?}", model.indices);
 
     // convert the input vertices to 2d point cloud
     //let vertices: Vec<T::Vector2> = vertices.iter().map(|v| v.to().to_2d()).collect();
@@ -431,10 +412,10 @@ where
     //println!("Indices:{:?}", indices);
 
     let (edges, vertices, total_aabb) = parse_input(model)?;
-    println!("edge set: {:?}", edges);
-    println!("-> divide_into_shapes");
+    //println!("edge set: {:?}", edges);
+    //println!("-> divide_into_shapes");
     let lines = centerline::divide_into_shapes(edges, vertices)?;
-    println!("-> get_transform_relaxed");
+    //println!("-> get_transform_relaxed");
     let (_plane, transform, _voronoi_input_aabb) = centerline::get_transform_relaxed(
         total_aabb,
         cmd_arg_max_voronoi_dimension,
@@ -442,13 +423,17 @@ where
         T::Scalar::default_max_ulps(),
     )?;
 
-    let inverted_transform = transform
-        .safe_inverse()
-        .ok_or(HallrError::InternalError("".to_string()))?;
+    let inverted_transform = transform.safe_inverse().ok_or(HallrError::InternalError(
+        "Could not generate the inverse matrix.".to_string(),
+    ))?;
 
     //println!("-> transform");
+    /*for s in lines.iter() {
+        println!("3d line: {:?}", s.set);
+    }*/
+
     // transform each linestring to 2d
-    let mut raw_data: Vec<linestring::linestring_2d::LineStringSet2<T::Vector2>> = lines
+    let mut lines_as_2d: Vec<linestring::linestring_2d::LineStringSet2<T::Vector2>> = lines
         .par_iter()
         .map(|x| {
             x.clone()
@@ -461,13 +446,16 @@ where
         let round_float = |v: <T as GenericVector3>::Vector2| -> <T as GenericVector3>::Vector2 {
             <T as GenericVector3>::Vector2::new_2d(v.x().round(), v.y().round())
         };
-        for r in raw_data.iter_mut() {
+        for r in lines_as_2d.iter_mut() {
             r.apply(&round_float);
         }
     }
+    //for s in lines_as_2d.iter() {
+    //    println!("2d line: {:?}", s.set());
+    //}
 
     // calculate the hull of each shape
-    let raw_data: Vec<linestring::linestring_2d::LineStringSet2<T::Vector2>> = raw_data
+    let lines_as_2d: Vec<linestring::linestring_2d::LineStringSet2<T::Vector2>> = lines_as_2d
         .into_par_iter()
         .map(|mut x| {
             let _ = x.calculate_convex_hull();
@@ -476,9 +464,9 @@ where
         .collect();
 
     //println!("Started with {} shapes", raw_data.len());
-    let raw_data = centerline::consolidate_shapes(raw_data)?;
+    let lines_as_2d = centerline::consolidate_shapes(lines_as_2d)?;
 
-    let shapes = raw_data
+    let shapes = lines_as_2d
         .into_par_iter()
         .map(|shape| {
             let mut segments =
@@ -554,11 +542,11 @@ where
     let mut return_config = ConfigType::new();
     let _ = return_config.insert("mesh.format".to_string(), "line_chunks".to_string());
     println!(
-        "simplify_rdp operation returning {} vertices, {} indices",
+        "centerline operation returning {} vertices, {} indices",
         model.vertices.len(),
         model.indices.len()
     );
     //println!("rv:vertices:{:?}", model.vertices);
-    println!("rv:indices:{:?}", model.indices);
+    //println!("rv:indices:{:?}", model.indices);
     Ok((model.vertices, model.indices, return_config))
 }

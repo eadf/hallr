@@ -34,7 +34,7 @@ class OBJECT_OT_hallr_centerline(bpy.types.Operator):
 
     negative_radius_props: bpy.props.BoolProperty(
         name="Negative radius",
-        description="Represent the radius distance as a negative value",
+        description="Represent voronoi edge distance to input geometry as a negative Z value",
         default=True
     )
 
@@ -93,7 +93,6 @@ class OBJECT_OT_hallr_centerline(bpy.types.Operator):
                   : str(self.weld_props).lower(),
                   "mesh.format": "line_chunks",
                   }
-        raise hallr_ffi_utils.HallrException("Not implemented")
         # Call the Rust function
         vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, expect_line_chunks=True)
         hallr_ffi_utils.handle_received_object(obj, config_out, vertices, indices)
@@ -137,4 +136,3 @@ def unregister():
 if __name__ == "__main__":
     unregister()
     register()
-

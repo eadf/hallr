@@ -1,4 +1,4 @@
-use super::{ConfigType, Options};
+use super::{ConfigType, Model, Options};
 use crate::{geo::HashableVector2, prelude::*};
 use hronn::prelude::*;
 
@@ -8,23 +8,23 @@ use vector_traits::{num_traits::AsPrimitive, GenericVector3, HasXY};
 
 fn aabb_delaunay_triangulation_2d<T: GenericVector3>(
     _config: ConfigType,
-    object_vertices: &[FFIVector3],
-    _object_indices: &[usize],
-    bounding_vertices: &[FFIVector3],
-    _bounding_indices: &[usize],
+    models: Vec<Model<'_>>,
 ) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
     T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
 {
-    if bounding_vertices.is_empty() {
+    let model = &models[0];
+    let bounding_shape = &models[1];
+
+    if bounding_shape.vertices.is_empty() {
         return Err(HallrError::NoData("The bounding box is empty".to_string()));
     }
     // compute the AABB of the bounding_vertices regardless of interconnection
     let aabb = {
         let mut aabb = Aabb2::<T::Vector2>::default();
-        for v in bounding_vertices {
+        for v in bounding_shape.vertices {
             aabb.update_with_point(v.to().to_2d());
         }
         aabb
@@ -37,7 +37,7 @@ where
         //.map(|v| v.to_3d(T::Scalar::ZERO).to())
         .collect();
 
-    let results = triangulate_vertices::<T, FFIVector3>(aabb, &hull, object_vertices)?;
+    let results = triangulate_vertices::<T, FFIVector3>(aabb, &hull, model.vertices)?;
     let mut return_config = ConfigType::new();
     let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
     Ok((results.0, results.1, return_config))
@@ -45,47 +45,40 @@ where
 
 fn convex_hull_delaunay_triangulation_2d<T: GenericVector3>(
     _config: ConfigType,
-    object_vertices: &[FFIVector3],
-    _object_indices: &[usize],
-    bounding_vertices: &[FFIVector3],
-    bounding_indices: &[usize],
+    models: Vec<Model<'_>>,
 ) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
     T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
 {
-    if bounding_vertices.is_empty() {
-        return Err(HallrError::NoData("The bounding box is empty".to_string()));
-    }
+    let model = &models[0];
+    let bounding_shape = &models[1];
 
     // do not limit us to a line bound, - yet
     //let bounding_indices =
     //    crate::collision::continuous_loop_from_unordered_edges(bounding_indices)?;
-    println!("bounding_indices {:?}", bounding_indices.len());
-    println!("bounding_vertices {:?}", bounding_vertices.len());
+    println!("bounding_indices {:?}", bounding_shape.indices.len());
+    println!("bounding_vertices {:?}", bounding_shape.vertices.len());
 
     let convex_hull: LineString2<T::Vector2> = {
         // strip the Z coordinate off the bounding shape
         let point_cloud = LineString2::<T::Vector2>::with_iter(
-            bounding_indices
-                .iter()
-                .map(|i| bounding_vertices[*i].to().to_2d()),
+            bounding_shape.vertices.iter().map(|v| v.to().to_2d()),
         );
         convex_hull::graham_scan(&point_cloud.0)
     };
     let aabb = Aabb2::with_points(&convex_hull.0);
 
-    let results = triangulate_vertices::<T, FFIVector3>(aabb, &convex_hull.0, object_vertices)?;
+    let results = triangulate_vertices::<T, FFIVector3>(aabb, &convex_hull.0, model.vertices)?;
     let mut return_config = ConfigType::new();
     let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
     Ok((results.0, results.1, return_config))
 }
 
 pub(crate) fn process_command<T: GenericVector3>(
-    vertices: &[FFIVector3],
-    indices: &[usize],
     config: ConfigType,
+    models: Vec<Model<'_>>,
 ) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
     T::Vector2: PointTrait<PScalar = T::Scalar>,
@@ -94,32 +87,16 @@ where
     T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
     HashableVector2: From<T::Vector2>,
 {
-    let start_vertex_index_for_bounding: usize =
-        config.get_mandatory_parsed_option("start_vertex_index_for_bounding")?;
-    let start_index_for_bounding: usize =
-        config.get_mandatory_parsed_option("start_index_for_bounding")?;
-
-    let object_vertices = &vertices[0..start_vertex_index_for_bounding];
-    let object_indices = &indices[0..start_index_for_bounding];
-
-    let bounding_indices = &indices[start_index_for_bounding..];
-    let bounding_vertices = &vertices[start_vertex_index_for_bounding..];
+    if models.is_empty() {
+        return Err(HallrError::NoData("No models found".to_string()));
+    }
+    if models.len() < 2 {
+        return Err(HallrError::NoData("Bounding shape not found".to_string()));
+    }
 
     match config.get_mandatory_option("bounds")? {
-        "CONVEX_HULL" => convex_hull_delaunay_triangulation_2d::<T>(
-            config,
-            object_vertices,
-            object_indices,
-            bounding_vertices,
-            bounding_indices,
-        ),
-        "AABB" => aabb_delaunay_triangulation_2d::<T>(
-            config,
-            object_vertices,
-            object_indices,
-            bounding_vertices,
-            bounding_indices,
-        ),
+        "CONVEX_HULL" => convex_hull_delaunay_triangulation_2d::<T>(config, models),
+        "AABB" => aabb_delaunay_triangulation_2d::<T>(config, models),
         bounds => Err(HallrError::InvalidParameter(format!(
             "{} is not a valid \"bounds\" parameter",
             bounds

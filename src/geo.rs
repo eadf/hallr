@@ -21,6 +21,7 @@ impl HashableVector2 {
 }
 
 /// constructs the adjacency map for unordered edges.
+#[allow(dead_code)]
 #[allow(clippy::type_complexity)]
 pub fn adjacency_map_from_unordered_edges(
     edges: &[usize],
@@ -87,6 +88,7 @@ pub fn adjacency_map_from_unordered_edges(
 ///
 /// The function assumes that the input edge list is valid, i.e., forms a closed loop
 /// without isolated vertices or unconnected components.
+#[allow(dead_code)]
 pub fn reconstruct_from_unordered_edges(edges: &[usize]) -> Result<Vec<usize>, HallrError> {
     if edges.len() < 2 {
         return Err(HallrError::InvalidParameter(

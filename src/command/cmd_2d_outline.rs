@@ -148,8 +148,8 @@ where
 
 /// Run the 2d_outline command
 pub(crate) fn process_command<T: GenericVector3>(
-    models: Vec<Model<'_>>,
     _config: ConfigType,
+    models: Vec<Model<'_>>,
 ) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
     T: ConvertTo<FFIVector3> + HasMatrix4,

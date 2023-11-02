@@ -45,9 +45,9 @@ fn test_centerline_1() -> Result<(), HallrError> {
         vertices: &vertices,
         indices: &indices,
     }];
-    let rv = process_command::<Vec3>(models, config)?;
-    println!("rv.vertices: {:?}", rv.0);
-    println!("rv.indices: {:?}", rv.1);
-    println!("rv.config: {:?}", rv.2);
+    let _rv = process_command::<Vec3>(models, config)?;
+    //println!("rv.vertices: {:?}", rv.0);
+    //println!("rv.indices: {:?}", rv.1);
+    //println!("rv.config: {:?}", rv.2);
     Ok(())
 }
