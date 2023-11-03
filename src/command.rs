@@ -44,6 +44,28 @@ pub struct OwnedModel {
     indices: Vec<usize>,
 }
 
+impl OwnedModel {
+    fn with_capacity(vertices_cap: usize, indices_cap: usize) -> Self {
+        Self {
+            vertices: Vec::<FFIVector3>::with_capacity(vertices_cap),
+            indices: Vec::<usize>::with_capacity(indices_cap),
+        }
+    }
+
+    /// close the loop
+    fn push(&mut self, value: FFIVector3) {
+        self.indices.push(self.vertices.len());
+        self.vertices.push(value);
+    }
+
+    /// close the loop by adding first index last
+    fn close_loop(&mut self) {
+        if !self.indices.is_empty() {
+            self.indices.push(*self.indices.first().unwrap())
+        }
+    }
+}
+
 /// Sanity check
 pub fn validate_input_data<'a, T: GenericVector3>(
     vertices: &'a [FFIVector3],

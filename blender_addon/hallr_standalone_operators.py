@@ -46,8 +46,8 @@ class Hallr_SelectEndVertices(bpy.types.Operator):
 
 
 class Hallr_SelectCollinearEdges(bpy.types.Operator):
-    """Selects edges that are connected to the selected edges, but limit by an angle constraint. (non rust addon)
-       You must select at least two neighbouring vertices to get this operation going. """
+    """Selects edges that are connected to the selected edges, but limit by an angle constraint.
+       You must select at least one edge to get this operation going.(non rust addon)"""
     bl_idname = "mesh.hallr_meshtools_select_collinear_edges"
     bl_label = "Select collinear edges"
     bl_description = ("Selects edges that are connected to the selected edges, but limit by an angle constraint ("
@@ -91,36 +91,28 @@ class Hallr_SelectCollinearEdges(bpy.types.Operator):
             vertex_dict[e.verts[1].index].append(e)
             if e.select:
                 work_queue.add(e)
-        # print("work_queue.len():", len(work_queue))
+
+        def process_edge(direction, e):
+            to_v = e.verts[direction].index
+            for candidate_e in vertex_dict.get(to_v, []):
+                if candidate_e.select or candidate_e.index == e.index:
+                    continue
+
+                if to_v == candidate_e.verts[0].index:
+                    angle = bm.verts[to_v].calc_edge_angle(candidate_e.verts[1])
+                elif to_v == candidate_e.verts[1].index:
+                    angle = bm.verts[to_v].calc_edge_angle(candidate_e.verts[0])
+
+                if math.degrees(angle) <= angle_criteria:
+                    work_queue.add(candidate_e)
+
         while len(work_queue) > 0:
             e = work_queue.pop()
             if e.index in already_selected:
                 continue
 
-            from_v = e.verts[0].index
-            to_v = e.verts[1].index
-            # print("from_v:", from_v," to_v:", to_v)
-
-            for candidate_e in vertex_dict.get(to_v, []):
-                # print("candidate:", candidate_e)
-                if candidate_e.select or candidate_e.index == e.index:
-                    continue
-
-                if to_v == candidate_e.verts[0].index:
-                    # Use vertex.calc_edge_angle()
-                    angle = bm.verts[to_v].calc_edge_angle(candidate_e.verts[1])
-                    # print("angle:", angle, " angle_criteria:", angle_criteria)
-                    if math.degrees(angle) <= angle_criteria:
-                        # print("added to queue:", candidate_e)
-                        work_queue.add(candidate_e)
-
-                elif to_v == candidate_e.verts[1].index:
-                    # Use vertex.calc_edge_angle()
-                    angle = bm.verts[to_v].calc_edge_angle(candidate_e.verts[0])
-                    # print("angle:", angle, " angle_criteria:", angle_criteria)
-                    if math.degrees(angle) <= angle_criteria:
-                        # print("added to queue:", candidate_e)
-                        work_queue.add(candidate_e)
+            process_edge(1, e)  # Process edges in one direction
+            process_edge(0, e)  # Process edges in the other direction
 
             e.select = True
             already_selected.add(e.index)

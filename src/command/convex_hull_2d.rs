@@ -1,5 +1,5 @@
-use super::{ConfigType, Model};
-use crate::{geo::HashableVector2, /*obj::Obj,*/ prelude::*};
+use super::{ConfigType, Model, OwnedModel};
+use crate::{geo::HashableVector2, prelude::*};
 use hronn::prelude::*;
 use krakel::PointTrait;
 use linestring::linestring_2d::convex_hull;
@@ -24,17 +24,18 @@ where
     let model = &models[0];
     // convert the input vertices to 2d point cloud
     let input: Vec<_> = model.vertices.iter().map(|v| v.to().to_2d()).collect();
-    let mut obj = Obj::<FFIVector3>::new("convex_hull");
     // calculate the convex hull, and convert back to 3d FFIVector3 vertices
+    let mut rv_model = OwnedModel::with_capacity(model.vertices.len(), model.indices.len());
     convex_hull::graham_scan(&input)
         .points()
         .iter()
-        .for_each(|v| obj.continue_line(v.to_3d(T::Scalar::ZERO).to()));
+        .for_each(|v| rv_model.push(v.to_3d(T::Scalar::ZERO).to()));
+    rv_model.close_loop();
     let mut config = ConfigType::new();
-    let _ = config.insert("mesh.format".to_string(), "line".to_string());
+    let _ = config.insert("mesh.format".to_string(), "line_windows".to_string());
     println!(
         "convex_hull_2d operation returning {} vertices",
-        obj.vertices.len()
+        rv_model.indices.len()
     );
-    Ok((obj.vertices, obj.lines.pop().unwrap_or_default(), config))
+    Ok((rv_model.vertices, rv_model.indices, config))
 }

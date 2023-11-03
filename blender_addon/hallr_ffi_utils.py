@@ -149,6 +149,7 @@ def handle_line_mesh(vertices, indices):
 """
 
 
+# TODO: unify all "new" object handlers
 def handle_windows_line_new_object(vertices, indices):
     """"
     Convert the indices to Blender's edge format
@@ -171,6 +172,7 @@ def handle_windows_line_new_object(vertices, indices):
         handle_new_object(mesh_obj)
 
 
+# TODO: unify all "new" object handlers
 def handle_chunks_line_new_object(vertices, indices):
     """
     Convert the indices to Blender's edge format
