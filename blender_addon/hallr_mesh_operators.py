@@ -3,6 +3,47 @@ import bmesh
 import math
 import array
 from collections import defaultdict
+from . import hallr_ffi_utils
+
+
+class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
+    """A 2D convex hull operator that works in the XY plane, remember to apply any transformations"""
+
+    bl_idname = "mesh.hallr_convex_hull_2d"
+    bl_label = "Hallr Convex Hull 2d"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def execute(self, context):
+        active_object = context.active_object
+        if active_object is None or active_object.type != 'MESH':
+            self.report({'ERROR'}, "Active object is not a mesh!")
+            return {'CANCELLED'}
+
+        if context.mode != 'EDIT_MESH':
+            self.report({'ERROR'}, "Must be in edit mode!")
+            return {'CANCELLED'}
+
+        # Switch to object mode to gather data without changing the user's selection
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        bpy.context.view_layer.update()
+
+        config = {"command": "convex_hull_2d"}
+
+        # Call the Rust function
+
+        vertices, indices, config_out = hallr_ffi_utils.call_rust(config, active_object, only_selected_vertices=True)
+        hallr_ffi_utils.handle_windows_line_new_object(vertices, indices)
+
+        # Switch back to edit mode
+        bpy.context.view_layer.objects.active = active_object
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        return {'FINISHED'}
 
 
 class Hallr_SelectEndVertices(bpy.types.Operator):
@@ -82,7 +123,7 @@ class Hallr_SelectCollinearEdges(bpy.types.Operator):
 
         angle_criteria = math.degrees(self.angle_props)
 
-        vertex_dict = defaultdict(list)   # key by vertex.index to [edges]
+        vertex_dict = defaultdict(list)  # key by vertex.index to [edges]
         already_selected = set()  # key by edge.index
         work_queue = set()  # edges
 
@@ -225,6 +266,7 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         # layout.operator("mesh.hallr_meshtools_knife_intersect")
+        layout.operator("mesh.hallr_convex_hull_2d")
         layout.operator("mesh.hallr_meshtools_select_end_vertices")
         layout.operator("mesh.hallr_meshtools_select_collinear_edges")
         layout.operator("mesh.hallr_meshtools_select_vertices_until_intersection")
@@ -244,6 +286,7 @@ classes = (
     Hallr_SelectIntersectionVertices,
     Hallr_SelectVerticesUntilIntersection,
     Hallr_SelectCollinearEdges,
+    MESH_OT_hallr_convex_hull_2d
 )
 
 
