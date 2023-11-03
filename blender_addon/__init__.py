@@ -4,10 +4,10 @@ bl_info = {
     "name": "Hallr",
     "blender": (3, 4, 1),
     "category": "Object",
-    "description": "A collection of addons written in rust",
+    "description": "A collection of addons written in Rust",
     "author": "EAD",
-    "version": (0, 1, 0),
-    "warning": "This executes rust code on your computer",
+    "version": (0, 1, 1),
+    "warning": "This executes compiled rust code on your computer",
 }
 
 DEV_MODE = False  # Set this to False for distribution
@@ -25,33 +25,33 @@ from . import hallr_2d_outline
 from . import hallr_centerline
 from . import hallr_mesh_operators
 
-
 # define modules for registration
 modules = (
+    hallr_mesh_operators,  # always register hallr_mesh_operators first
     hallr_collision,
     hallr_simplify_rdp,
     hallr_2d_delaunay_triangulation,
     hallr_2d_outline,
     hallr_centerline,
-    hallr_mesh_operators
 )
 
 
 def register():
-    for module in modules:
-        module.register()
+    for a_module in modules:
+        a_module.register()
 
 
 def unregister():
-    for module in modules:
-        module.unregister()
+    for a_module in modules:
+        a_module.unregister()
 
 
 if __name__ == "__main__":
     unregister()  # Unregister everything
 
     import importlib
-    # special treatment for the non-bpy module hallr_ffi_utils
+
+    # special treatment for the plain python module hallr_ffi_utils
     importlib.reload(hallr_ffi_utils)
     for module in modules:
         importlib.reload(module)
