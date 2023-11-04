@@ -1,5 +1,5 @@
 [package]
-version = "0.1.1"
+version = "0.1.2"
 name = "hallr"
 edition = "2021"
 readme = "README.md"
@@ -13,9 +13,8 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 thiserror = "1.0.50"
-linestring = "0.10.1"
+linestring = "0.10.2"
 centerline = { version="0.8.0", features = ["glam"]}
-#centerline = { path="../centerline.rs", features = ["glam"]}
 vector-traits = { version = "0.2.0", features = ["glam"] }
 krakel = {version = "0.2.0", features = ["glam"]}
 hronn = { version = "0.1.0", features = ["glam"]}
@@ -25,6 +24,3 @@ boostvoronoi = { version = "0.11.0" }
 rayon = "1.8.0"
 itertools = "0.11.0"
 vob = "3.0.3"
-
-#[dev-dependencies]
-#rand = "0.8.5"

@@ -168,7 +168,7 @@ checksum = "b5418c17512bdf42730f9032c74e1ae39afc408745ebb2acf72fbc4691c17945"
 
 [[package]]
 name = "hallr"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "ahash",
  "boostvoronoi",
@@ -237,13 +237,14 @@ checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 
 [[package]]
 name = "linestring"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0b075cce51acc2b143013593f1e721fa07fa5c7a99bcc830accb3bbd1f04c74"
+checksum = "6e467785f280cd30976c9a0c77326a3408e9f30b698482be58f41a7218d52c39"
 dependencies = [
  "ahash",
  "itertools",
  "rayon",
+ "smallvec",
  "thiserror",
  "vector-traits",
  "vob",
