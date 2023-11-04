@@ -25,11 +25,11 @@ class OBJECT_OT_hallr_simplify_rdp(bpy.types.Operator):
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "2d_outline", "mesh.format": "triangulated"}
+        config = {"command": "2d_outline"}
 
         # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, expect_line_chunks=False)
-        hallr_ffi_utils.handle_received_object(obj, config_out, vertices, indices)
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=False)
+        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
 
         return {'FINISHED'}
 

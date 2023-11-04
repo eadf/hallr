@@ -7,7 +7,43 @@ use ahash::{AHashMap, AHashSet};
 use hronn::prelude::MaximumTracker;
 use smallvec::SmallVec;
 use std::{cmp::Reverse, fmt::Debug};
-use vector_traits::approx::*;
+use vector_traits::{approx::*, num_traits::AsPrimitive, HasXY};
+
+pub(crate) trait GrowingVob {
+    fn fill(initial_size: usize) -> vob::Vob<u32>;
+    fn set_grow(&mut self, bit: usize, state: bool) -> bool;
+    /// get with default value: false
+    fn get_f(&self, bit: usize) -> bool;
+}
+
+impl GrowingVob for vob::Vob<u32> {
+    fn fill(initial_size: usize) -> Self {
+        let mut v: vob::Vob<u32> = vob::Vob::<u32>::new_with_storage_type(0);
+        v.resize(initial_size, false);
+        v
+    }
+    #[inline]
+    fn set_grow(&mut self, bit: usize, state: bool) -> bool {
+        if bit >= self.len() {
+            self.resize(bit + 512, false);
+        }
+        self.set(bit, state)
+    }
+    #[inline]
+    fn get_f(&self, bit: usize) -> bool {
+        self.get(bit).unwrap_or(false)
+    }
+}
+
+/// converts the x,y coordinates to to a private, comparable and hashable format
+/// only use this for floats that are f32::is_finite()
+#[allow(dead_code)]
+#[inline(always)]
+pub(crate) fn transmute_xy_to_u64<T: HasXY>(a: T) -> u64 {
+    let x: f32 = a.x().as_();
+    let y: f32 = a.y().as_();
+    u64::from(x.to_bits()) << 32 | u64::from(y.to_bits())
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct HashableVector2 {

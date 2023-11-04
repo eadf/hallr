@@ -2,7 +2,7 @@
 mod tests;
 
 use super::{ConfigType, Model, Options, OwnedModel};
-use crate::{geo::HashableVector2, prelude::*};
+use crate::{prelude::*, utils::HashableVector2};
 use boostvoronoi as BV;
 use boostvoronoi::OutputType;
 use centerline::{HasMatrix4, Matrix4};

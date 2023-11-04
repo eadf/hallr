@@ -1,5 +1,5 @@
 use super::{ConfigType, Model, OwnedModel};
-use crate::{geo::HashableVector2, prelude::*};
+use crate::{prelude::*, utils::HashableVector2};
 use hronn::prelude::*;
 use krakel::PointTrait;
 use linestring::linestring_2d::convex_hull;

@@ -19,7 +19,7 @@
 //mod collision;
 pub mod command;
 pub mod ffi;
-mod geo;
+mod utils;
 
 use centerline::CenterlineError;
 use hronn::prelude::*;

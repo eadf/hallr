@@ -1,10 +1,12 @@
 mod cmd_2d_outline;
 mod cmd_centerline;
-mod convex_hull_2d;
-mod delaunay_triangulation_2d;
+mod cmd_convex_hull_2d;
+mod cmd_delaunay_triangulation_2d;
+mod cmd_knife_intersect;
+mod cmd_simplify_rdp;
+pub mod cmd_surface_scan;
+mod create_test;
 mod impls;
-mod simplify_rdp;
-pub mod surface_scan;
 
 use crate::{ffi::FFIVector3, prelude::*};
 use std::collections::HashMap;
@@ -141,15 +143,19 @@ pub(crate) fn process_command(
     validate_input_data::<T>(vertices, indices, &config)?;
     let models = collect_models::<T>(vertices, indices, &config)?;
 
+    if false {
+        create_test::process_command(&config, &models)?
+    }
     Ok(match config.get_mandatory_option("command")? {
-        "surface_scan" => surface_scan::process_command::<T>(config, models)?,
-        "convex_hull_2d" => convex_hull_2d::process_command::<T>(config, models)?,
-        "simplify_rdp" => simplify_rdp::process_command::<T>(config, models)?,
+        "surface_scan" => cmd_surface_scan::process_command::<T>(config, models)?,
+        "convex_hull_2d" => cmd_convex_hull_2d::process_command::<T>(config, models)?,
+        "simplify_rdp" => cmd_simplify_rdp::process_command::<T>(config, models)?,
         "2d_delaunay_triangulation" => {
-            delaunay_triangulation_2d::process_command::<T>(config, models)?
+            cmd_delaunay_triangulation_2d::process_command::<T>(config, models)?
         }
         "centerline" => cmd_centerline::process_command::<T>(config, models)?,
         "2d_outline" => cmd_2d_outline::process_command::<T>(config, models)?,
+        "knife_intersect" => cmd_knife_intersect::process_command::<T>(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(
             "Invalid command:{}",
             illegal_command

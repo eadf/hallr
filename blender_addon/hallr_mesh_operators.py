@@ -6,6 +6,46 @@ from collections import defaultdict
 from . import hallr_ffi_utils
 
 
+class MESH_OT_hallr_knife_intersect(bpy.types.Operator):
+    """A knife intersect operator that works in the XY plane, remember to apply any transformations"""
+
+    bl_idname = "mesh.hallr_knife_intersect_2d"
+    bl_label = "Hallr Knife Intersect 2d"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def execute(self, context):
+        active_object = context.active_object
+        if active_object is None or active_object.type != 'MESH':
+            self.report({'ERROR'}, "Active object is not a mesh!")
+            return {'CANCELLED'}
+
+        if context.mode != 'EDIT_MESH':
+            self.report({'ERROR'}, "Must be in edit mode!")
+            return {'CANCELLED'}
+
+        # Switch to object mode to gather data without changing the user's selection
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        bpy.context.view_layer.update()
+
+        config = {"command": "knife_intersect"}
+
+        # Call the Rust function
+
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, active_object, use_line_chunks=True)
+        hallr_ffi_utils.handle_received_object_replace_active(active_object, config_out, vertices, indices)
+
+        # Switch back to edit mode
+        bpy.context.view_layer.objects.active = active_object
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        return {'FINISHED'}
+
+
 class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
     """A 2D convex hull operator that works in the XY plane, remember to apply any transformations"""
 
@@ -47,7 +87,7 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
 
 
 class Hallr_SelectEndVertices(bpy.types.Operator):
-    """Selects all vertices that are only connected to one other vertex (offline plugin)"""
+    """Selects all vertices that are only connected to one other vertex or none (offline plugin)"""
     bl_idname = "mesh.hallr_meshtools_select_end_vertices"
     bl_label = "Select end vertices"
     bl_description = "Selects all vertices that are only connected to one other vertex (offline plugin)"
@@ -88,7 +128,7 @@ class Hallr_SelectEndVertices(bpy.types.Operator):
 
 class Hallr_SelectCollinearEdges(bpy.types.Operator):
     """Selects edges that are connected to the selected edges, but limit by an angle constraint.
-       You must select at least one edge to get this operation going.(non rust addon)"""
+       You must select at least one edge to get this operation going"""
     bl_idname = "mesh.hallr_meshtools_select_collinear_edges"
     bl_label = "Select collinear edges"
     bl_description = ("Selects edges that are connected to the selected edges, but limit by an angle constraint ("
@@ -165,10 +205,10 @@ class Hallr_SelectCollinearEdges(bpy.types.Operator):
 
 
 class Hallr_SelectIntersectionVertices(bpy.types.Operator):
-    """Selects all vertices that are connected to more than two other vertices (non rust addon)"""
+    """Selects all vertices that are connected to more than two other vertices"""
     bl_idname = "mesh.hallr_meshtools_select_intersection_vertices"
     bl_label = "Select intersection vertices"
-    bl_description = "Selects all vertices that are connected to more than two other vertices (non rust addon)"
+    bl_description = "Selects all vertices that are connected to more than two other vertices"
     bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
 
     @classmethod
@@ -206,11 +246,11 @@ class Hallr_SelectIntersectionVertices(bpy.types.Operator):
 
 class Hallr_SelectVerticesUntilIntersection(bpy.types.Operator):
     """Selects all (wire-frame) vertices that are connected to already selected vertices until an intersection is
-    detected (non rust addon)"""
+    detected. The intersection vertex will not be selected."""
     bl_idname = "mesh.hallr_meshtools_select_vertices_until_intersection"
     bl_label = "Select vertices until intersection"
     bl_description = ("Selects all (wire-frame) vertices that are connected to already selected vertices until an "
-                      "intersection is detected (non rust addon)")
+                      "intersection is detected")
     bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
 
     @classmethod
@@ -271,6 +311,7 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
         layout.operator("mesh.hallr_meshtools_select_collinear_edges")
         layout.operator("mesh.hallr_meshtools_select_vertices_until_intersection")
         layout.operator("mesh.hallr_meshtools_select_intersection_vertices")
+        layout.operator("mesh.hallr_knife_intersect_2d")
 
 
 # draw function for integration in menus
@@ -286,7 +327,8 @@ classes = (
     Hallr_SelectIntersectionVertices,
     Hallr_SelectVerticesUntilIntersection,
     Hallr_SelectCollinearEdges,
-    MESH_OT_hallr_convex_hull_2d
+    MESH_OT_hallr_convex_hull_2d,
+    MESH_OT_hallr_knife_intersect
 )
 
 

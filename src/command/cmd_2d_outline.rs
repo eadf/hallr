@@ -1,7 +1,7 @@
 use crate::{
     command::{ConfigType, Model, OwnedModel},
-    geo::HashableVector2,
     prelude::FFIVector3,
+    utils::HashableVector2,
     HallrError,
 };
 use centerline::HasMatrix4;

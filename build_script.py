@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     # Run the cargo build command
     # Run the command
-    result = subprocess.run(["cargo", "build", "--release"]) #"--features", "ffi"
+    result = subprocess.run(["cargo", "build", "--release"])
 
     # Check the return status
     if result.returncode != 0:
@@ -70,11 +70,12 @@ if __name__ == "__main__":
         print(f"Could not find the libfile in ´target/release´.")
         exit(1)
 
-    old_lib_files = [f for f in os.listdir(dest_lib_directory) if
-                     f.startswith("libhallr_") and f.endswith(library_extension)]
-    for lib_file in old_lib_files:
-        old_file = os.path.join(dest_lib_directory, lib_file)
-        os.remove(old_file)
+    if args.dev_mode:
+        old_lib_files = [f for f in os.listdir(dest_lib_directory) if
+                         f.startswith("libhallr_") and f.endswith(library_extension)]
+        for lib_file in old_lib_files:
+            old_file = os.path.join(dest_lib_directory, lib_file)
+            os.remove(old_file)
 
     for lib_file in lib_files:
         if args.dev_mode:

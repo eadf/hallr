@@ -91,11 +91,10 @@ class OBJECT_OT_hallr_centerline(bpy.types.Operator):
                   : str(self.simplify_props).lower(),
                   "WELD"
                   : str(self.weld_props).lower(),
-                  "mesh.format": "line_chunks",
                   }
         # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, expect_line_chunks=True)
-        hallr_ffi_utils.handle_received_object(obj, config_out, vertices, indices)
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
+        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
 
         return {'FINISHED'}
 

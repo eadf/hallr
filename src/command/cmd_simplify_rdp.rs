@@ -1,5 +1,5 @@
 use super::{ConfigType, Model, Options};
-use crate::{geo::HashableVector2, prelude::*};
+use crate::{prelude::*, utils::HashableVector2};
 use hronn::prelude::*;
 use linestring::linestring_3d::Plane;
 use vector_traits::{
@@ -11,6 +11,7 @@ use vector_traits::{
 /// This will only work for floats that's identical in every bit.
 /// The z coordinate will not be used because it might be slightly different
 /// depending on how it was calculated. Not using z will also make the calculations faster.
+// todo: replace with utils function
 #[inline(always)]
 fn transmute_xy_to_u32<T: HasXYZ>(a: &T) -> (u32, u32) {
     let x: f32 = a.x().as_();

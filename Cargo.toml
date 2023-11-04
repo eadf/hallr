@@ -24,7 +24,7 @@ smallvec = "1.11.1"
 boostvoronoi = { version = "0.11.0" }
 rayon = "1.8.0"
 itertools = "0.11.0"
-
+vob = "3.0.3"
 
 #[dev-dependencies]
 #rand = "0.8.5"

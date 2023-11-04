@@ -34,8 +34,8 @@ class OBJECT_OT_hallr_simplify_rdp(bpy.types.Operator):
                   "simplify_3d": str(self.simplify_3d_props).lower()}
 
         # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, expect_line_chunks=True)
-        hallr_ffi_utils.handle_received_object(obj, config_out, vertices, indices)
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
+        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
 
         return {'FINISHED'}
 

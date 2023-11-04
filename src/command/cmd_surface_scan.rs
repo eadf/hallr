@@ -1,7 +1,7 @@
 use super::{ConfigType, Model};
 use hronn::prelude::*;
 
-use crate::{command::Options, geo::HashableVector2, prelude::FFIVector3, HallrError};
+use crate::{command::Options, prelude::FFIVector3, utils::HashableVector2, HallrError};
 use krakel::PointTrait;
 use vector_traits::{num_traits::AsPrimitive, Approx, GenericVector3, HasXY};
 

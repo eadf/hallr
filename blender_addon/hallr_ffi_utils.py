@@ -269,7 +269,7 @@ def unpack_model(options, raw_indices):
     return rv_edges, rv_faces, mathutils.Matrix.Identity(4)
 
 
-def handle_received_object(active_object, options, ffi_vertices, ffi_indices):
+def handle_received_object_replace_active(active_object, options, ffi_vertices, ffi_indices):
     """Takes care of the raw ffi data received from rust, and create a blender mesh out of them"""
 
     remove_doubles = False
@@ -548,7 +548,7 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
     return output_vertices, output_indices, output_map
 
 
-def call_rust_direct(config, active_obj, expect_line_chunks=False):
+def call_rust_direct(config, active_obj, use_line_chunks=False):
     """
     A simpler version of call_rust that only processes the active_object.
     When `expect_line_chunks` is set, the data will iterate over each edge(a,b) and use a list of
@@ -564,12 +564,14 @@ def call_rust_direct(config, active_obj, expect_line_chunks=False):
     vertices_ptr = (Vector3 * len(vertices))(*vertices)
 
     # Handle the indices
-    if expect_line_chunks:
+    if use_line_chunks:
+        config["mesh.format"] = "line_chunks"
         if len(active_obj_to_process.data.polygons) > 0:
             raise HallrException("The model should not contain any polygons for this operation, only edges! Hint: use "
                                  "the 2d_outline operation to convert a mesh to a 2d outline.")
         indices = [v for edge in active_obj_to_process.data.edges for v in edge.vertices]
     else:
+        config["mesh.format"] = "triangulated"
         # Collect vertices and check if the mesh is fully triangulated
         indices = []
         for face in active_obj_to_process.data.polygons:
