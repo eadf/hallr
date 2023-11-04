@@ -1,5 +1,5 @@
 use super::{ConfigType, Model, OwnedModel};
-use crate::{prelude::*, utils::HashableVector2};
+use crate::{ffi::FFIVector3, utils::HashableVector2, HallrError};
 use hronn::prelude::ConvertTo;
 use itertools::Itertools;
 use linestring::{

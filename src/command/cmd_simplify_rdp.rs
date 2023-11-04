@@ -1,10 +1,13 @@
 use super::{ConfigType, Model, Options};
 use crate::{prelude::*, utils::HashableVector2};
-use hronn::prelude::*;
+use hronn::prelude::ConvertTo;
 use linestring::linestring_3d::Plane;
 use vector_traits::{
     num_traits::AsPrimitive, GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ,
 };
+
+#[cfg(test)]
+mod tests;
 
 /// converts to a private, comparable and hashable format
 /// only use this for floats that are f32::is_finite()

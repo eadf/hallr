@@ -22,7 +22,7 @@ pub mod ffi;
 mod utils;
 
 use centerline::CenterlineError;
-use hronn::prelude::*;
+use hronn::HronnError;
 
 pub mod prelude {
     pub use crate::{

@@ -1,53 +1,77 @@
 use crate::{
-    command::{cmd_centerline::process_command, ConfigType, Model},
-    prelude::FFIVector3,
+    command::{ConfigType, Model, OwnedModel},
     HallrError,
 };
 use vector_traits::glam::Vec3;
 
-#[cfg(test)]
-fn indices() -> Vec<usize> {
-    vec![0, 3, 1, 0, 2, 1, 2, 3]
-}
+#[test]
+fn test_centerline_1() -> Result<(), HallrError> {
+    let mut config = ConfigType::default();
+    let _ = config.insert("KEEP_INPUT".to_string(), "true".to_string());
+    let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
+    let _ = config.insert("NEGATIVE_RADIUS".to_string(), "true".to_string());
+    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert("WELD".to_string(), "true".to_string());
+    let _ = config.insert("command".to_string(), "centerline".to_string());
+    let _ = config.insert("REMOVE_INTERNALS".to_string(), "true".to_string());
+    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
+    let _ = config.insert("DISTANCE".to_string(), "0.004999999888241291".to_string());
+    let _ = config.insert("ANGLE".to_string(), "89.00000133828577".to_string());
+    let _ = config.insert("SIMPLIFY".to_string(), "true".to_string());
 
-#[cfg(test)]
-fn vertices() -> Vec<FFIVector3> {
-    vec![
-        (0.0, 0.0, 0.0).into(),
-        (0.0, 0.5, 0.0).into(),
-        (0.5, 0.5, 0.0).into(),
-        (0.5, 0.0, 0.0).into(),
-    ]
-}
+    let owned_model_0 = OwnedModel {
+        vertices: vec![
+            (-1.8870333, -0.39229375, 0.010461569).into(),
+            (-0.3180092, -2.0773406, 0.010461569).into(),
+            (2.680789, 0.5384001, 0.010461569).into(),
+            (-0.4052546, 2.4733071, 0.010461569).into(),
+        ],
+        indices: vec![0, 3, 0, 1, 2, 1, 3, 2],
+    };
 
-#[cfg(test)]
-fn config() -> ConfigType {
-    let mut a_map = ConfigType::new();
-
-    let _ = a_map.insert("command".to_string(), "cmd_centerline".to_string());
-    let _ = a_map.insert("ANGLE".to_string(), "89".to_string());
-    let _ = a_map.insert("SIMPLIFY".to_string(), "true".to_string());
-    let _ = a_map.insert("KEEP_INPUT".to_string(), "true".to_string());
-    let _ = a_map.insert("mesh.format".to_string(), "line_chunks".to_string());
-    let _ = a_map.insert("NEGATIVE_RADIUS".to_string(), "true".to_string());
-    let _ = a_map.insert("REMOVE_INTERNALS".to_string(), "true".to_string());
-    let _ = a_map.insert("DISTANCE".to_string(), "0.004999999888241291".to_string());
-    let _ = a_map.insert("WELD".to_string(), "true".to_string());
-    a_map
+    let model_0 = Model {
+        indices: &owned_model_0.indices,
+        vertices: &owned_model_0.vertices,
+    };
+    let models = vec![model_0];
+    let result = super::process_command::<Vec3>(config, models)?;
+    assert_eq!(6, result.0.len()); // vertices
+    assert_eq!(18, result.1.len()); // indices
+    Ok(())
 }
 
 #[test]
-fn test_centerline_1() -> Result<(), HallrError> {
-    let indices = indices();
-    let vertices = vertices();
-    let config = config();
-    let models = vec![Model {
-        vertices: &vertices,
-        indices: &indices,
-    }];
-    let _rv = process_command::<Vec3>(config, models)?;
-    //println!("rv.vertices: {:?}", rv.0);
-    //println!("rv.indices: {:?}", rv.1);
-    //println!("rv.config: {:?}", rv.2);
+fn test_centerline_2() -> Result<(), HallrError> {
+    let mut config = ConfigType::default();
+    let _ = config.insert("NEGATIVE_RADIUS".to_string(), "false".to_string());
+    let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
+    let _ = config.insert("SIMPLIFY".to_string(), "true".to_string());
+    let _ = config.insert("REMOVE_INTERNALS".to_string(), "true".to_string());
+    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert("KEEP_INPUT".to_string(), "false".to_string());
+    let _ = config.insert("DISTANCE".to_string(), "0.004999999888241291".to_string());
+    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
+    let _ = config.insert("WELD".to_string(), "true".to_string());
+    let _ = config.insert("command".to_string(), "centerline".to_string());
+    let _ = config.insert("ANGLE".to_string(), "89.00000133828577".to_string());
+
+    let owned_model_0 = OwnedModel {
+        vertices: vec![
+            (-1.8870333, -0.39229375, 0.010461569).into(),
+            (-0.3180092, -2.0773406, 0.010461569).into(),
+            (2.680789, 0.5384001, 0.010461569).into(),
+            (-0.4052546, 2.4733071, 0.010461569).into(),
+        ],
+        indices: vec![0, 3, 0, 1, 2, 1, 3, 2],
+    };
+
+    let model_0 = Model {
+        indices: &owned_model_0.indices,
+        vertices: &owned_model_0.vertices,
+    };
+    let models = vec![model_0];
+    let result = super::process_command::<Vec3>(config, models)?;
+    assert_eq!(6, result.0.len()); // vertices
+    assert_eq!(10, result.1.len()); // indices
     Ok(())
 }

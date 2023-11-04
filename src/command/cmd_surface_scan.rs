@@ -1,10 +1,20 @@
 use super::{ConfigType, Model};
-use hronn::prelude::*;
+use hronn::{
+    generate_aabb_then_convex_hull, generate_convex_hull_then_aabb,
+    prelude::{
+        AdaptiveSearchConfig, BallNoseProbe, ConvertTo, MeanderPattern, MeshAnalyzer,
+        MeshAnalyzerBuilder, Probe, SearchPattern, SearchPatternConfig, SquareEndProbe,
+        TriangulatePattern,
+    },
+    HronnError,
+};
 
 use crate::{command::Options, prelude::FFIVector3, utils::HashableVector2, HallrError};
 use krakel::PointTrait;
 use vector_traits::{num_traits::AsPrimitive, Approx, GenericVector3, HasXY};
 
+#[cfg(test)]
+mod tests;
 fn do_meander_scan<T: GenericVector3>(
     config: ConfigType,
     bounding_vertices: &[FFIVector3],

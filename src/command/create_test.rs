@@ -1,5 +1,3 @@
-//use vector_traits::GenericVector3;
-//use crate::ffi::FFIVector3;
 use super::{ConfigType, Model, Options};
 use crate::HallrError;
 
@@ -27,10 +25,17 @@ pub(crate) fn process_command(
     let command = config.get_mandatory_option("command")?;
 
     println!();
+    println!(
+        r###"
+    use vector_traits::glam::Vec3;
+use crate::command::{{ConfigType, Model, OwnedModel}};
+use crate::HallrError;
+"###
+    );
     println!();
     println!(
         r###"#[test]
-fn {}_1() -> Result<(),HallrError> {{"###,
+fn test_{}_1() -> Result<(),HallrError> {{"###,
         command
     );
 
@@ -42,28 +47,36 @@ fn {}_1() -> Result<(),HallrError> {{"###,
         );
     }
     if !models.is_empty() {
-        println!(
-            r###"
-    let owned_model = OwnedModel{{vertices:vec!["###
-        );
-        let model = &models[0];
-        for v in model.vertices.iter() {
-            print!("({},{},{}).into(),", v.x.dr(), v.y.dr(), v.z.dr());
+        for (i, model) in models.iter().enumerate() {
+            println!(
+                r###"
+    let owned_model_{} = OwnedModel{{vertices:vec!["###,
+                i
+            );
+            for v in model.vertices.iter() {
+                print!("({},{},{}).into(),", v.x.dr(), v.y.dr(), v.z.dr());
+            }
+            println!("],");
+            println!("indices:vec![");
+            for i in model.indices.iter() {
+                print!("{},", i);
+            }
+            println!("]}};");
         }
-        println!("],");
-        println!("indices:vec![");
-        for i in model.indices.iter() {
-            print!("{},", i);
-        }
-        println!("]}};");
         println!();
-        println!(
-            "let model = Model{{vertices:&owned_model.vertices, indices:&owned_model.indices}};"
-        );
-        println!("let result = super::process_command::<Vec3>(config, vec![model])?;");
-        println!("assert_eq!({},result.1.chunks(2).count());", 0);
-        println!("assert_eq!({},result.1.len();", 0);
-        println!("assert_eq!({},result.0.len();", 0);
+        for i in 0..models.len() {
+            print!("let model_{}=Model{{indices:&owned_model_{}.indices, vertices:&owned_model_{}.vertices }};", i,i, i);
+        }
+        println!();
+        print!("let models = vec![");
+        for i in 0..models.len() {
+            print!("model_{}, ", i);
+        }
+        println!("];");
+        println!("let result = super::process_command::<Vec3>(config, models)?;");
+        //println!("assert_eq!({},result.1.chunks(2).count());", 0);
+        println!("assert_eq!({},result.0.len()); // vertices", 0);
+        println!("assert_eq!({},result.1.len()); // indices", 0);
 
         println!("Ok(())");
         println!("}}");

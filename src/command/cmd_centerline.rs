@@ -1,20 +1,23 @@
-#[cfg(test)]
-mod tests;
-
 use super::{ConfigType, Model, Options, OwnedModel};
-use crate::{prelude::*, utils::HashableVector2};
+use crate::{ffi::FFIVector3, utils::HashableVector2, HallrError};
 use boostvoronoi as BV;
 use boostvoronoi::OutputType;
 use centerline::{HasMatrix4, Matrix4};
 use hronn::prelude::*;
 use itertools::Itertools;
 use linestring::linestring_3d::{Aabb3, Plane};
-use rayon::prelude::*;
+use rayon::{
+    iter::ParallelIterator,
+    prelude::{IntoParallelIterator, IntoParallelRefIterator},
+};
 use vector_traits::{
     approx::{AbsDiffEq, UlpsEq},
     num_traits::{real::Real, AsPrimitive, NumCast},
     GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ,
 };
+
+#[cfg(test)]
+mod tests;
 
 /// converts to a private, comparable and hashable format
 /// only use this for floats that are f32::is_finite()

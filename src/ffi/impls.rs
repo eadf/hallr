@@ -1,5 +1,5 @@
 use super::FFIVector3;
-use hronn::prelude::*;
+use hronn::prelude::ConvertTo;
 use std::fmt;
 use vector_traits::{
     approx::{AbsDiffEq, UlpsEq},

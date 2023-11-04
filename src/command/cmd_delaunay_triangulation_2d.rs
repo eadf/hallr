@@ -1,10 +1,13 @@
 use super::{ConfigType, Model, Options};
 use crate::{prelude::*, utils::HashableVector2};
-use hronn::prelude::*;
+use hronn::prelude::{triangulate_vertices, ConvertTo};
 
 use krakel::PointTrait;
 use linestring::linestring_2d::{convex_hull, Aabb2, LineString2};
 use vector_traits::{num_traits::AsPrimitive, GenericVector3, HasXY};
+
+#[cfg(test)]
+mod tests;
 
 fn aabb_delaunay_triangulation_2d<T: GenericVector3>(
     _config: ConfigType,

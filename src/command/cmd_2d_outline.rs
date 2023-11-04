@@ -13,6 +13,9 @@ use vector_traits::{
     GenericScalar, GenericVector3, HasXY, HasXYZ,
 };
 
+#[cfg(test)]
+mod tests;
+
 #[inline(always)]
 /// make a key from v0 and v1, lowest index will always be first
 fn make_edge_key(v0: u32, v1: u32) -> (u32, u32) {

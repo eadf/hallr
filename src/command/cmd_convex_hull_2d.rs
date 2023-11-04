@@ -1,9 +1,12 @@
 use super::{ConfigType, Model, OwnedModel};
-use crate::{prelude::*, utils::HashableVector2};
-use hronn::prelude::*;
+use crate::{ffi::FFIVector3, utils::HashableVector2, HallrError};
+use hronn::prelude::ConvertTo;
 use krakel::PointTrait;
 use linestring::linestring_2d::convex_hull;
 use vector_traits::{approx::UlpsEq, GenericScalar, GenericVector2, GenericVector3};
+
+#[cfg(test)]
+mod tests;
 
 pub(crate) fn process_command<T: GenericVector3>(
     _config: ConfigType,
