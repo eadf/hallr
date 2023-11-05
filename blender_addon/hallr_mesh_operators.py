@@ -6,6 +6,28 @@ from collections import defaultdict
 from . import hallr_ffi_utils
 
 
+def angle_between_edges(p0, p1, p2):
+    """ angle between the two vectors defined as p0->p1 and p1->p2
+    return value in degrees. We can't use vertex.calc_edge_angle() because it only accepts
+    vertices only connected to two other vertices (and that is far from the norm in a mesh)"""
+    v1 = p1 - p0
+    v2 = p2 - p1
+
+    v1mag = math.sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z)
+    if v1mag == 0.0:
+        return 0.0
+
+    v1norm = [v1.x / v1mag, v1.y / v1mag, v1.z / v1mag]
+    v2mag = math.sqrt(v2.x * v2.x + v2.y * v2.y + v2.z * v2.z)
+    if v2mag == 0.0:
+        return 0.0
+
+    v2norm = [v2.x / v2mag, v2.y / v2mag, v2.z / v2mag]
+    res = v1norm[0] * v2norm[0] + v1norm[1] * v2norm[1] + v1norm[2] * v2norm[2]
+    angle = math.degrees(math.acos(res))
+    return angle
+
+
 class MESH_OT_hallr_knife_intersect(bpy.types.Operator):
     """A knife intersect operator that works in the XY plane, remember to apply any transformations"""
 
@@ -173,19 +195,25 @@ class Hallr_SelectCollinearEdges(bpy.types.Operator):
             if e.select:
                 work_queue.add(e)
 
-        def process_edge(direction, e):
-            to_v = e.verts[direction].index
+        def process_edge(direction, edge):
+            # from_v = edge.verts[0].index if direction == 1 else edge.verts[1].index
+            from_v = edge.verts[direction ^ 1].index
+            to_v = edge.verts[direction].index
             for candidate_e in vertex_dict.get(to_v, []):
-                if candidate_e.select or candidate_e.index == e.index:
+                if candidate_e.select or candidate_e.index == edge.index:
                     continue
 
                 if to_v == candidate_e.verts[0].index:
-                    angle = bm.verts[to_v].calc_edge_angle(candidate_e.verts[1])
-                elif to_v == candidate_e.verts[1].index:
-                    angle = bm.verts[to_v].calc_edge_angle(candidate_e.verts[0])
+                    angle = angle_between_edges(bm.verts[from_v].co, bm.verts[to_v].co,
+                                                bm.verts[candidate_e.verts[1].index].co)
+                    if angle <= angle_criteria:
+                        work_queue.add(candidate_e)
 
-                if math.degrees(angle) <= angle_criteria:
-                    work_queue.add(candidate_e)
+                elif to_v == candidate_e.verts[1].index:
+                    angle = angle_between_edges(bm.verts[from_v].co, bm.verts[to_v].co,
+                                                bm.verts[candidate_e.verts[0].index].co)
+                    if angle <= angle_criteria:
+                        work_queue.add(candidate_e)
 
         while len(work_queue) > 0:
             e = work_queue.pop()
