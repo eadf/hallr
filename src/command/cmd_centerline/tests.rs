@@ -75,3 +75,40 @@ fn test_centerline_2() -> Result<(), HallrError> {
     assert_eq!(10, result.1.len()); // indices
     Ok(())
 }
+
+#[test]
+fn test_centerline_3() -> Result<(), HallrError> {
+    let mut config = ConfigType::default();
+    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
+    let _ = config.insert("REMOVE_INTERNALS".to_string(), "true".to_string());
+    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert("command".to_string(), "centerline".to_string());
+    let _ = config.insert("NEGATIVE_RADIUS".to_string(), "true".to_string());
+    let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
+    let _ = config.insert("ANGLE".to_string(), "89.00000133828577".to_string());
+    let _ = config.insert("KEEP_INPUT".to_string(), "true".to_string());
+    let _ = config.insert("DISTANCE".to_string(), "0.004999999888241291".to_string());
+    let _ = config.insert("SIMPLIFY".to_string(), "true".to_string());
+    let _ = config.insert("WELD".to_string(), "true".to_string());
+
+    let owned_model_0 = OwnedModel {
+        vertices: vec![
+            (-1.49995, -0.7401614, 0.0).into(),
+            (-0.39808625, 0.6056829, 0.0).into(),
+            (1.3165288, -0.969334, 0.0).into(),
+            (-0.08538532, -0.1297079, 0.0).into(),
+            (0.09803593, 1.5797875, 0.0).into(),
+        ],
+        indices: vec![0, 1, 2, 4, 1, 4, 3, 2, 3, 0],
+    };
+
+    let model_0 = Model {
+        indices: &owned_model_0.indices,
+        vertices: &owned_model_0.vertices,
+    };
+    let models = vec![model_0];
+    let result = super::process_command::<Vec3>(config, models)?;
+    assert_eq!(20, result.0.len()); // vertices
+    assert_eq!(44, result.1.len()); // indices
+    Ok(())
+}
