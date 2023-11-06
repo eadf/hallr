@@ -5,7 +5,8 @@
 ![license](https://img.shields.io/crates/l/hallr)
 [![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/eadf)
 
-# Hallr
+![hallr](img/hallr.png)
+
 Experimental Blender addon written in Rust. Work in progress, expect wildly fluctuating API:s.
 
 ## Usage

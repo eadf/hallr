@@ -6,6 +6,7 @@ impl Options for HashMap<String, String> {
     fn get_mandatory_parsed_option<'a, T: std::str::FromStr>(
         &'a self,
         key: &'a str,
+        default: Option<T>,
     ) -> Result<T, HallrError> {
         match self.get(key) {
             Some(v) => match v.parse() {
@@ -15,9 +16,15 @@ impl Options for HashMap<String, String> {
                     key, v
                 ))),
             },
-            None => Err(HallrError::MissingParameter(
-                format!("The parameter \"{key}\" was missing").to_string(),
-            )),
+            None => {
+                if let Some(default) = default {
+                    Ok(default)
+                } else {
+                    Err(HallrError::MissingParameter(
+                        format!("The parameter \"{key}\" was missing").to_string(),
+                    ))
+                }
+            }
         }
     }
 

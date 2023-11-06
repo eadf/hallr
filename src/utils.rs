@@ -1,6 +1,7 @@
 mod impls;
 #[cfg(test)]
 mod tests;
+pub(crate) mod voronoi_utils;
 
 use crate::HallrError;
 use ahash::{AHashMap, AHashSet};

@@ -327,6 +327,53 @@ class Hallr_SelectVerticesUntilIntersection(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# Voronoi mesh operator
+class Hallr_Voronoi_Mesh(bpy.types.Operator):
+    bl_idname = "mesh.hallr_meshtools_voronoi_mesh"
+    bl_label = "Voronoi Mesh"
+    bl_description = "Calculate voronoi diagram and add mesh, the geometry must be flat and on a plane intersecting origin."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    distance: bpy.props.FloatProperty(
+        name="Discretization distance",
+        description="Discretization distance as a percentage of the total AABB size. This value is used when sampling "
+                    "parabolic arc edges. Smaller value gives a finer step distance.",
+        default=0.005,
+        min=0.0001,
+        max=4.9999,
+        precision=6,
+        subtype='PERCENTAGE'
+    )
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.active_object
+        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
+
+    def execute(self, context):
+        obj = context.active_object
+
+        if obj.type != 'MESH':
+            self.report({'ERROR'}, "Active object is not a mesh!")
+            return {'CANCELLED'}
+
+        # Ensure the object is in object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        config = {"command": "voronoi_mesh",
+                  "DISTANCE": str(math.degrees(self.distance)),
+                  }
+        # Call the Rust function
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
+        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+
 # menu containing all tools
 class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
     bl_label = "Hallr meshtools"
@@ -340,6 +387,7 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
         layout.operator("mesh.hallr_meshtools_select_vertices_until_intersection")
         layout.operator("mesh.hallr_meshtools_select_intersection_vertices")
         layout.operator("mesh.hallr_knife_intersect_2d")
+        layout.operator("mesh.hallr_meshtools_voronoi_mesh")
 
 
 # draw function for integration in menus
@@ -356,7 +404,8 @@ classes = (
     Hallr_SelectVerticesUntilIntersection,
     Hallr_SelectCollinearEdges,
     MESH_OT_hallr_convex_hull_2d,
-    MESH_OT_hallr_knife_intersect
+    MESH_OT_hallr_knife_intersect,
+    Hallr_Voronoi_Mesh
 )
 
 

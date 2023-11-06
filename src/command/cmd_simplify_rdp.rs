@@ -329,7 +329,7 @@ where
     FFIVector3: ConvertTo<T>,
     HashableVector2: From<T::Vector2>,
 {
-    let epsilon: T::Scalar = config.get_mandatory_parsed_option("epsilon")?;
+    let epsilon: T::Scalar = config.get_mandatory_parsed_option("epsilon", None)?;
     //println!("rust: vertices.len():{}", vertices.len());
     //println!("rust: indices.len():{}", indices.len());
     //println!("rust: indices:{:?}", indices);

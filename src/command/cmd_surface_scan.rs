@@ -35,11 +35,14 @@ where
     let search_config = if config.does_option_exist("xy_sample_dist_multiplier")? {
         SearchPatternConfig::<T, FFIVector3>::new(probe, minimum_z).with_adaptive_config(
             AdaptiveSearchConfig::new(
-                config.get_mandatory_parsed_option::<T::Scalar>("xy_sample_dist_multiplier")?
+                config
+                    .get_mandatory_parsed_option::<T::Scalar>("xy_sample_dist_multiplier", None)?
                     * step,
-                config.get_mandatory_parsed_option::<T::Scalar>("z_jump_threshold_multiplier")?
-                    * step,
-                config.get_mandatory_parsed_option::<bool>("reduce_adaptive")?,
+                config.get_mandatory_parsed_option::<T::Scalar>(
+                    "z_jump_threshold_multiplier",
+                    None,
+                )? * step,
+                config.get_mandatory_parsed_option::<bool>("reduce_adaptive", None)?,
             ),
         )
     } else {
@@ -102,11 +105,14 @@ where
     let search_config = if config.does_option_exist("xy_sample_dist_multiplier")? {
         SearchPatternConfig::<T, FFIVector3>::new(probe, minimum_z).with_adaptive_config(
             AdaptiveSearchConfig::new(
-                config.get_mandatory_parsed_option::<T::Scalar>("xy_sample_dist_multiplier")?
+                config
+                    .get_mandatory_parsed_option::<T::Scalar>("xy_sample_dist_multiplier", None)?
                     * step,
-                config.get_mandatory_parsed_option::<T::Scalar>("z_jump_threshold_multiplier")?
-                    * step,
-                config.get_mandatory_parsed_option::<bool>("reduce_adaptive")?,
+                config.get_mandatory_parsed_option::<T::Scalar>(
+                    "z_jump_threshold_multiplier",
+                    None,
+                )? * step,
+                config.get_mandatory_parsed_option::<bool>("reduce_adaptive", None)?,
             ),
         )
     } else {
@@ -148,9 +154,9 @@ where
     let bounding_indices = bounding_shape.indices;
     let bounding_vertices = bounding_shape.vertices;
 
-    let probe_radius = config.get_mandatory_parsed_option("probe_radius")?;
-    let minimum_z = config.get_mandatory_parsed_option("minimum_z")?;
-    let step = config.get_mandatory_parsed_option("step")?;
+    let probe_radius = config.get_mandatory_parsed_option("probe_radius", None)?;
+    let minimum_z = config.get_mandatory_parsed_option("minimum_z", None)?;
+    let step = config.get_mandatory_parsed_option("step", None)?;
     let probe: Box<dyn Probe<T, FFIVector3>> = match config.get_mandatory_option("probe")? {
         "SQUARE_END" => Box::new(SquareEndProbe::new(&mesh_analyzer, probe_radius)?),
         "BALL_NOSE" => Box::new(BallNoseProbe::new(&mesh_analyzer, probe_radius)?),

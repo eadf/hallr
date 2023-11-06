@@ -19,8 +19,7 @@
 //mod collision;
 pub mod command;
 pub mod ffi;
-mod utils;
-
+pub(crate) mod utils;
 use centerline::CenterlineError;
 use hronn::HronnError;
 
@@ -33,6 +32,12 @@ pub mod prelude {
 
 #[derive(thiserror::Error, Debug)]
 pub enum HallrError {
+    #[error(transparent)]
+    EarcutrError(#[from] earcutr::Error),
+
+    #[error(transparent)]
+    BoostVoronoiError(#[from] boostvoronoi::BvError),
+
     #[error(transparent)]
     CenterlineError(#[from] CenterlineError),
 

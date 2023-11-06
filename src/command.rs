@@ -5,6 +5,7 @@ mod cmd_delaunay_triangulation_2d;
 mod cmd_knife_intersect;
 mod cmd_simplify_rdp;
 pub mod cmd_surface_scan;
+mod cmd_voronoi_mesh;
 mod create_test;
 mod impls;
 
@@ -15,10 +16,17 @@ use vector_traits::{glam::Vec3, GenericVector3};
 /// The largest dimension of the voronoi input, totally arbitrarily selected.
 const DEFAULT_MAX_VORONOI_DIMENSION: f64 = 200000.0;
 
+/// The length of one 'step' for curved edges discretization as a percentage of the longest
+/// AABB axis of the object.
+const DEFAULT_VORONOI_DISCRETE_DISTANCE: f64 = 0.0001;
+
 trait Options {
     /// Will return an option parsed as a `T` or an Err
-    fn get_mandatory_parsed_option<T: std::str::FromStr>(&self, key: &str)
-        -> Result<T, HallrError>;
+    fn get_mandatory_parsed_option<T: std::str::FromStr>(
+        &self,
+        key: &str,
+        default: Option<T>,
+    ) -> Result<T, HallrError>;
 
     /// Will return an option parsed as a `T` or None.
     /// If the option is missing None is returned, if it there but if it can't be parsed an error
@@ -84,8 +92,8 @@ pub fn validate_input_data<'a, T: GenericVector3>(
             "No more than u32::MAX indices are supported".to_string(),
         ))?
     }
-    let _ = config.get_mandatory_parsed_option::<usize>("first_vertex_model_0")?;
-    let _ = config.get_mandatory_parsed_option::<usize>("first_index_model_0")?;
+    let _ = config.get_mandatory_parsed_option::<usize>("first_vertex_model_0", None)?;
+    let _ = config.get_mandatory_parsed_option::<usize>("first_index_model_0", None)?;
     Ok(())
 }
 
@@ -106,9 +114,11 @@ pub fn collect_models<'a, T: GenericVector3>(
         // Check if the keys exist in the config
         if config.does_option_exist(&vertices_key)? {
             // Retrieve the vertex and index data as strings
-            let vertices_idx: usize = config.get_mandatory_parsed_option(&vertices_key)?;
-            let indices_idx: usize = config
-                .get_mandatory_parsed_option(&format!("first_index_model_{}", model_counter))?;
+            let vertices_idx: usize = config.get_mandatory_parsed_option(&vertices_key, None)?;
+            let indices_idx: usize = config.get_mandatory_parsed_option(
+                &format!("first_index_model_{}", model_counter),
+                None,
+            )?;
             let vertices_end_idx: usize = config
                 .get_parsed_option(&format!("first_vertex_model_{}", model_counter + 1))?
                 .unwrap_or(vertices.len());
@@ -156,6 +166,7 @@ pub(crate) fn process_command(
         "centerline" => cmd_centerline::process_command::<T>(config, models)?,
         "2d_outline" => cmd_2d_outline::process_command::<T>(config, models)?,
         "knife_intersect" => cmd_knife_intersect::process_command::<T>(config, models)?,
+        "voronoi_mesh" => cmd_voronoi_mesh::process_command::<T>(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(
             "Invalid command:{}",
             illegal_command

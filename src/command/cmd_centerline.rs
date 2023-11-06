@@ -309,7 +309,7 @@ where
         println!("config{:?}", config);
     }
     // angle is supposed to be in degrees
-    let cmd_arg_angle: T::Scalar = config.get_mandatory_parsed_option("ANGLE")?;
+    let cmd_arg_angle: T::Scalar = config.get_mandatory_parsed_option("ANGLE", None)?;
     if !(0.0.into()..=90.0.into()).contains(&cmd_arg_angle) {
         return Err(HallrError::InvalidInputData(format!(
             "The valid range of ANGLE is [0..90] :({})",
@@ -320,7 +320,7 @@ where
         .get_parsed_option::<bool>("REMOVE_INTERNALS")?
         .unwrap_or(true);
 
-    let cmd_arg_discrete_distance = config.get_mandatory_parsed_option("DISTANCE")?;
+    let cmd_arg_discrete_distance = config.get_mandatory_parsed_option("DISTANCE", None)?;
     if !(0.004.into()..100.0.into()).contains(&cmd_arg_discrete_distance) {
         return Err(HallrError::InvalidInputData(format!(
             "The valid range of DISTANCE is [0.005..100[% :({:?})",
