@@ -25,3 +25,6 @@ rayon = "1.8.0"
 itertools = "0.11.0"
 vob = "3.0.3"
 earcutr = "0.4.3"
+
+[dev-dependencies]
+rand = "0.8.5"

@@ -6,6 +6,7 @@ use hronn::prelude::ConvertTo;
 use linestring::linestring_3d::{LineString3, Plane};
 use smallvec::SmallVec;
 use std::collections::BTreeMap;
+use linestring::prelude::LineString2;
 //use linestring::prelude::LineString2;
 use vector_traits::{
     num_traits::AsPrimitive, GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ,
@@ -394,7 +395,7 @@ where
                     .collect::<LineString3<T>>()
             }) {
                 let simplified = line_string.copy_to_2d(Plane::XY).simplify_rdp(epsilon);
-                simplified.iter().for_each(|line| {
+                simplified.line_iter().for_each(|line| {
                     let start = line.start;
                     let start_key = transmute_xy_to_u32(&start.to_3d(T::Scalar::ZERO));
                     //println!("testing {:?} as key {:?}", v2, v2_key);

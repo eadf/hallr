@@ -29,10 +29,10 @@ where
     let input: Vec<_> = model.vertices.iter().map(|v| v.to().to_2d()).collect();
     // calculate the convex hull, and convert back to 3d FFIVector3 vertices
     let mut rv_model = OwnedModel::with_capacity(model.vertices.len(), model.indices.len());
-    convex_hull::graham_scan(&input)
-        .points()
+    let all_indices: Vec<usize> = (0..model.vertices.len()).collect();
+    convex_hull::convex_hull_par(&input, &all_indices, 400)?
         .iter()
-        .for_each(|v| rv_model.push(v.to_3d(T::Scalar::ZERO).to()));
+        .for_each(|i| rv_model.push(model.vertices[*i].to().to_2d().to_3d(T::Scalar::ZERO).to()));
     rv_model.close_loop();
     let mut config = ConfigType::new();
     let _ = config.insert("mesh.format".to_string(), "line_windows".to_string());

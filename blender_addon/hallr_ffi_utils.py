@@ -485,10 +485,6 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
         # 5. Convert the data to a ctypes-friendly format
         vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in active_obj_to_process.data.vertices]
 
-    # Keeping track of the current number of vertices before adding bounding shape
-    config["first_vertex_model_0"] = str(0)
-    config["first_index_model_0"] = str(0)
-
     if bounding_shape:
 
         first_vertex_model_1 = len(vertices)
@@ -581,10 +577,6 @@ def call_rust_direct(config, active_obj, use_line_chunks=False):
         if len(indices) == 0:
             raise HallrException("No polygons found, maybe the mesh is not fully triangulated?")
     indices_ptr = (ctypes.c_size_t * len(indices))(*indices)
-
-    # Add the mandatory mesh indexes
-    config["first_vertex_model_0"] = str(0)
-    config["first_index_model_0"] = str(0)
 
     keys_list = list(config.keys())
     values_list = list(config.values())

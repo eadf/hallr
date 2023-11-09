@@ -8,8 +8,6 @@ use vector_traits::glam::Vec3;
 fn test_convex_hull_2d_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("command".to_string(), "convex_hull_2d".to_string());
-    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
-    let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
 
     let owned_model = OwnedModel {
         vertices: vec![
@@ -38,8 +36,6 @@ fn test_convex_hull_2d_1() -> Result<(), HallrError> {
 #[test]
 fn test_convex_hull_2d_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
-    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
     let _ = config.insert("command".to_string(), "convex_hull_2d".to_string());
 
     let owned_model = OwnedModel {
@@ -74,5 +70,53 @@ fn test_convex_hull_2d_2() -> Result<(), HallrError> {
     let result = super::process_command::<Vec3>(config, vec![model])?;
     assert_eq!(13, result.0.len());
     assert_eq!(14, result.1.len());
+    Ok(())
+}
+
+#[test]
+fn test_convex_hull_2d_3() -> Result<(), HallrError> {
+    use rand::{rngs::StdRng, Rng, SeedableRng};
+
+    let mut config = ConfigType::default();
+    let _ = config.insert("command".to_string(), "convex_hull_2d".to_string());
+
+    let mut rng: StdRng = SeedableRng::from_seed([42; 32]);
+    let mut owned_model_0 = OwnedModel {
+        vertices: Vec::new(),
+        indices: Vec::new(),
+    };
+    for _i in 0..3023 {
+        owned_model_0.vertices.push(
+            (
+                rng.gen_range(-100_f32..100.0),
+                rng.gen_range(-100_f32..100.0),
+                0.0,
+            )
+                .into(),
+        );
+    }
+
+    let model_0 = Model {
+        indices: &owned_model_0.indices,
+        vertices: &owned_model_0.vertices,
+    };
+    let models = vec![model_0];
+    let result = super::process_command::<Vec3>(config, models)?;
+    println!("vertices: {:?}", result.0);
+    println!("indices: {:?}", result.1);
+    assert_eq!(25, result.0.len()); // vertices
+    assert_eq!(26, result.1.len()); // indices
+
+    // test that the convex hull of the convex hull remain the same
+    let mut config = ConfigType::default();
+    let _ = config.insert("command".to_string(), "convex_hull_2d".to_string());
+    let model_0 = Model {
+        indices: &vec![],
+        vertices: &result.0,
+    };
+    let models = vec![model_0];
+    let result = super::process_command::<Vec3>(config, models)?;
+    assert_eq!(25, result.0.len()); // vertices
+    assert_eq!(26, result.1.len()); // indices
     Ok(())
 }

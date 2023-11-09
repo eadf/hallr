@@ -8,7 +8,6 @@ use vector_traits::glam::Vec3;
 fn test_voronoi_mesh_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("command".to_string(), "voronoi_mesh".to_string());
-    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
     let _ = config.insert("DISTANCE".to_string(), "0.2864788911621093".to_string());
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
     let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
@@ -40,8 +39,6 @@ fn test_voronoi_mesh_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("DISTANCE".to_string(), "0.2864788911621093".to_string());
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
-    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
-    let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
     let _ = config.insert("command".to_string(), "voronoi_mesh".to_string());
 
     let owned_model_0 = OwnedModel {
@@ -73,8 +70,6 @@ fn test_voronoi_mesh_3() -> Result<(), HallrError> {
     let _ = config.insert("DISTANCE".to_string(), "0.2864788911621093".to_string());
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
     let _ = config.insert("command".to_string(), "voronoi_mesh".to_string());
-    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
-    let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
 
     let owned_model_0 = OwnedModel {
         vertices: vec![

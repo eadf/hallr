@@ -11,8 +11,6 @@ fn test_simplify_rdp_1() -> Result<(), HallrError> {
     let _ = config.insert("command".to_string(), "simplify_rdp".to_string());
     let _ = config.insert("epsilon".to_string(), "0.20000000298023224".to_string());
     let _ = config.insert("simplify_3d".to_string(), "false".to_string());
-    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
-    let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
 
     let owned_model_0 = OwnedModel {
         vertices: vec![
@@ -71,12 +69,10 @@ fn test_simplify_rdp_1() -> Result<(), HallrError> {
 #[test]
 fn test_simplify_rdp_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
     let _ = config.insert("epsilon".to_string(), "0.5".to_string());
     let _ = config.insert("simplify_3d".to_string(), "false".to_string());
     let _ = config.insert("command".to_string(), "simplify_rdp".to_string());
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
-    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
 
     let owned_model_0 = OwnedModel {
         vertices: vec![
@@ -114,9 +110,7 @@ fn test_simplify_rdp_3() -> Result<(), HallrError> {
     let _ = config.insert("simplify_3d".to_string(), "true".to_string());
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
     let _ = config.insert("command".to_string(), "simplify_rdp".to_string());
-    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
     let _ = config.insert("epsilon".to_string(), "0.5".to_string());
-    let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
 
     let owned_model_0 = OwnedModel {
         vertices: vec![

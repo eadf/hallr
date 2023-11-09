@@ -6,6 +6,7 @@ use centerline::{HasMatrix4, Matrix4};
 use hronn::prelude::*;
 use itertools::Itertools;
 use linestring::linestring_3d::{Aabb3, Plane};
+use linestring::prelude::LineString2;
 use rayon::{
     iter::ParallelIterator,
     prelude::{IntoParallelIterator, IntoParallelRefIterator},
@@ -125,7 +126,7 @@ where
     let estimated_capacity: usize = (shapes
         .iter()
         .map::<usize, _>(|(ls, cent)| {
-            ls.set().iter().map(|ls| ls.points().len()).sum::<usize>()
+            ls.set().iter().map(|ls| ls.len()).sum::<usize>()
                 + cent.lines.iter().flatten().count()
                 + cent
                     .line_strings
@@ -148,7 +149,7 @@ where
         // Draw the input segments
         if cmd_arg_keep_input {
             for input_linestring in shape.0.set().iter() {
-                if input_linestring.points().len() < 3 {
+                if input_linestring.len() < 3 {
                     return Err(HallrError::InternalError(
                         "Linestring with less than 3 points found (loop-around vertex is repeated)"
                             .to_string(),
@@ -159,7 +160,7 @@ where
                 //println!("Input linestring: {:?}", input_linestring);
                 //println!("output_model_vertices:{:?}",output_model_vertices);
 
-                let vertex_index_iterator = input_linestring.0.iter().map(|p| {
+                let vertex_index_iterator = input_linestring.iter().map(|p| {
                     let v2 = p.to_3d(T::Scalar::ZERO);
                     let v2_key = transmute_to_u32(&v2);
                     //println!("testing {:?} as key {:?}", v2, v2_key);
@@ -473,9 +474,9 @@ where
         .into_par_iter()
         .map(|shape| {
             let mut segments =
-                Vec::<BV::Line<i64>>::with_capacity(shape.set().iter().map(|x| x.0.len()).sum());
+                Vec::<BV::Line<i64>>::with_capacity(shape.set().iter().map(|x| x.len()).sum());
             for lines in shape.set().iter() {
-                for lineseq in lines.iter() {
+                for lineseq in lines.line_iter() {
                     segments.push(BV::Line::new(
                         // boost voronoi only accepts integers as coordinates
                         BV::Point {

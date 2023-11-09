@@ -7,9 +7,7 @@ use vector_traits::glam::Vec3;
 #[test]
 fn test_2d_outline_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
     let _ = config.insert("mesh.format".to_string(), "triangulated".to_string());
-    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
     let _ = config.insert("command".to_string(), "2d_outline".to_string());
 
     let owned_model = OwnedModel {
@@ -36,8 +34,6 @@ fn test_2d_outline_1() -> Result<(), HallrError> {
 fn test_2d_outline_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("mesh.format".to_string(), "triangulated".to_string());
-    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
-    let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
     let _ = config.insert("command".to_string(), "2d_outline".to_string());
 
     let owned_model = OwnedModel {

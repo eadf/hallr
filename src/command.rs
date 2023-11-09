@@ -80,7 +80,7 @@ impl OwnedModel {
 pub fn validate_input_data<'a, T: GenericVector3>(
     vertices: &'a [FFIVector3],
     indices: &'a [usize],
-    config: &ConfigType,
+    _config: &ConfigType,
 ) -> Result<(), HallrError> {
     if vertices.len() > u32::MAX as usize {
         Err(HallrError::InvalidInputData(
@@ -92,8 +92,6 @@ pub fn validate_input_data<'a, T: GenericVector3>(
             "No more than u32::MAX indices are supported".to_string(),
         ))?
     }
-    let _ = config.get_mandatory_parsed_option::<usize>("first_vertex_model_0", None)?;
-    let _ = config.get_mandatory_parsed_option::<usize>("first_index_model_0", None)?;
     Ok(())
 }
 
@@ -110,14 +108,19 @@ pub fn collect_models<'a, T: GenericVector3>(
     loop {
         // Construct the keys based on the model number
         let vertices_key = format!("first_vertex_model_{}", model_counter);
-
+        let (default_vertex_index, default_index) = if model_counter == 0 {
+            (Some(0), Some(0))
+        } else {
+            (None, None)
+        };
         // Check if the keys exist in the config
-        if config.does_option_exist(&vertices_key)? {
+        if model_counter == 0 || config.does_option_exist(&vertices_key)? {
             // Retrieve the vertex and index data as strings
-            let vertices_idx: usize = config.get_mandatory_parsed_option(&vertices_key, None)?;
+            let vertices_idx: usize =
+                config.get_mandatory_parsed_option(&vertices_key, default_vertex_index)?;
             let indices_idx: usize = config.get_mandatory_parsed_option(
                 &format!("first_index_model_{}", model_counter),
-                None,
+                default_index,
             )?;
             let vertices_end_idx: usize = config
                 .get_parsed_option(&format!("first_vertex_model_{}", model_counter + 1))?

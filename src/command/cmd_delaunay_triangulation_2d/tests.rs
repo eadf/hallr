@@ -9,8 +9,6 @@ fn test_2d_delaunay_triangulation_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
     let _ = config.insert("mesh.format".to_string(), "point_cloud".to_string());
-    let _ = config.insert("first_index_model_1".to_string(), "0".to_string());
-    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
     let _ = config.insert("bounds".to_string(), "AABB".to_string());
     let _ = config.insert(
         "command".to_string(),
@@ -76,8 +74,6 @@ fn test_2d_delaunay_triangulation_2() -> Result<(), HallrError> {
     let _ = config.insert("first_vertex_model_1".to_string(), "13".to_string());
     let _ = config.insert("first_index_model_1".to_string(), "0".to_string());
     let _ = config.insert("mesh.format".to_string(), "point_cloud".to_string());
-    let _ = config.insert("first_vertex_model_0".to_string(), "0".to_string());
-    let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
     let _ = config.insert("bounds".to_string(), "CONVEX_HULL".to_string());
 
     let owned_model_0 = OwnedModel {

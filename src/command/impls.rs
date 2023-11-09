@@ -17,11 +17,11 @@ impl Options for HashMap<String, String> {
                 ))),
             },
             None => {
-                if let Some(default) = default {
-                    Ok(default)
+                if let Some(default_value) = default {
+                    Ok(default_value)
                 } else {
                     Err(HallrError::MissingParameter(
-                        format!("The parameter \"{key}\" was missing").to_string(),
+                        format!("The mandatory parameter \"{key}\" was missing").to_string(),
                     ))
                 }
             }

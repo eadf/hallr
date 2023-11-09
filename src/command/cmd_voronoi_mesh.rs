@@ -17,7 +17,7 @@ use linestring::{
 };
 use vector_traits::{
     approx::{AbsDiffEq, UlpsEq},
-    num_traits::{real::Real, AsPrimitive},
+    num_traits::{AsPrimitive, Float},
     GenericScalar, GenericVector2, GenericVector3, HasXY,
 };
 

@@ -3,7 +3,7 @@ use crate::{prelude::*, utils::HashableVector2};
 use hronn::prelude::{triangulate_vertices, ConvertTo};
 
 use krakel::PointTrait;
-use linestring::linestring_2d::{convex_hull, Aabb2, LineString2};
+use linestring::linestring_2d::{convex_hull, Aabb2};
 use vector_traits::{num_traits::AsPrimitive, GenericVector3, HasXY};
 
 #[cfg(test)]
@@ -64,16 +64,15 @@ where
     println!("bounding_indices {:?}", bounding_shape.indices.len());
     println!("bounding_vertices {:?}", bounding_shape.vertices.len());
 
-    let convex_hull: LineString2<T::Vector2> = {
+    let convex_hull: Vec<T::Vector2> = {
         // strip the Z coordinate off the bounding shape
-        let point_cloud = LineString2::<T::Vector2>::with_iter(
-            bounding_shape.vertices.iter().map(|v| v.to().to_2d()),
-        );
-        convex_hull::graham_scan(&point_cloud.0)
+        let point_cloud:Vec<T::Vector2> =
+            bounding_shape.vertices.iter().map(|v| v.to().to_2d()).collect();
+        convex_hull::graham_scan(&point_cloud)?
     };
-    let aabb = Aabb2::with_points(&convex_hull.0);
+    let aabb = Aabb2::with_points(&convex_hull);
 
-    let results = triangulate_vertices::<T, FFIVector3>(aabb, &convex_hull.0, model.vertices)?;
+    let results = triangulate_vertices::<T, FFIVector3>(aabb, &convex_hull, model.vertices)?;
     let mut return_config = ConfigType::new();
     let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
     Ok((results.0, results.1, return_config))
