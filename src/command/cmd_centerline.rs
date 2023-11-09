@@ -5,8 +5,10 @@ use boostvoronoi::OutputType;
 use centerline::{HasMatrix4, Matrix4};
 use hronn::prelude::*;
 use itertools::Itertools;
-use linestring::linestring_3d::{Aabb3, Plane};
-use linestring::prelude::LineString2;
+use linestring::{
+    linestring_3d::{Aabb3, Plane},
+    prelude::LineString2,
+};
 use rayon::{
     iter::ParallelIterator,
     prelude::{IntoParallelIterator, IntoParallelRefIterator},
@@ -476,7 +478,7 @@ where
             let mut segments =
                 Vec::<BV::Line<i64>>::with_capacity(shape.set().iter().map(|x| x.len()).sum());
             for lines in shape.set().iter() {
-                for lineseq in lines.line_iter() {
+                for lineseq in lines.window_iter() {
                     segments.push(BV::Line::new(
                         // boost voronoi only accepts integers as coordinates
                         BV::Point {

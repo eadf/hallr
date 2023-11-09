@@ -66,8 +66,11 @@ where
 
     let convex_hull: Vec<T::Vector2> = {
         // strip the Z coordinate off the bounding shape
-        let point_cloud:Vec<T::Vector2> =
-            bounding_shape.vertices.iter().map(|v| v.to().to_2d()).collect();
+        let point_cloud: Vec<T::Vector2> = bounding_shape
+            .vertices
+            .iter()
+            .map(|v| v.to().to_2d())
+            .collect();
         convex_hull::graham_scan(&point_cloud)?
     };
     let aabb = Aabb2::with_points(&convex_hull);
