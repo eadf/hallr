@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// This file is part of the hallr crate.
+
 use crate::HallrError;
 use std::f64;
 
@@ -362,7 +366,7 @@ where
                 end_point.to_2d(),
             );
 
-            for p in arc.discretize_3d(discretization_dist).points().iter() {
+            for p in arc.discretize_3d(discretization_dist).iter() {
                 samples.push([p.x().into(), p.y().into(), p.z().into()]);
             }
         } else {

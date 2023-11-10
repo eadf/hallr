@@ -16,6 +16,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "allocator-api2"
+version = "0.2.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0942ffc6dcaadf03badf6e6a2d0228460359d5e34b57ccdc720b7382dfbd5ec5"
+
+[[package]]
 name = "approx"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -80,9 +86,9 @@ dependencies = [
 
 [[package]]
 name = "centerline"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96ad0e67a9e3614d9c927ffc2a8bcae36b94603f72d8b327be082b34f8cb23b4"
+checksum = "c2e9c6095c427db178776ee8f34c2334ec26188d7d16d8df2cbf80072432c6fc"
 dependencies = [
  "ahash",
  "bitflags",
@@ -90,6 +96,7 @@ dependencies = [
  "linestring",
  "ordered-float",
  "rayon",
+ "smallvec",
  "thiserror",
  "vector-traits",
  "vob",
@@ -188,6 +195,7 @@ dependencies = [
  "itertools",
  "krakel",
  "linestring",
+ "rand",
  "rayon",
  "smallvec",
  "thiserror",
@@ -196,12 +204,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "hronn"
-version = "0.1.0"
+name = "hashbrown"
+version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c043be23773c4a43d222db8278f429bfe645b969bdd9112cd0ca69b27f5dfcd8"
+checksum = "f93e7192158dbcda357bdec5fb5788eebf8bbac027f3f33e719d29135ae84156"
 dependencies = [
  "ahash",
+ "allocator-api2",
+]
+
+[[package]]
+name = "hronn"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a776e071b6a8ebb587808144ba5380698370f486965e81298d13c258e0ef6ff"
+dependencies = [
  "itertools",
  "krakel",
  "linestring",
@@ -248,9 +265,9 @@ checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 
 [[package]]
 name = "linestring"
-version = "0.10.2"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e467785f280cd30976c9a0c77326a3408e9f30b698482be58f41a7218d52c39"
+checksum = "f3d0d29beafc3b04a5021017b959431a1eb4043f5bd05d19c0afe1e8bc33b9bc"
 dependencies = [
  "ahash",
  "itertools",
@@ -258,7 +275,6 @@ dependencies = [
  "smallvec",
  "thiserror",
  "vector-traits",
- "vob",
 ]
 
 [[package]]
@@ -286,12 +302,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
 
 [[package]]
-name = "optional"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "978aa494585d3ca4ad74929863093e87cac9790d81fe7aba2b3dc2890643a0fc"
-
-[[package]]
 name = "ordered-float"
 version = "4.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -299,6 +309,12 @@ checksum = "536900a8093134cf9ccf00a27deb3532421099e958d9dd431135d0c7543ca1e8"
 dependencies = [
  "num-traits",
 ]
+
+[[package]]
+name = "ppv-lite86"
+version = "0.2.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
 name = "proc-macro2"
@@ -316,6 +332,36 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5267fca4496028628a95160fc423a33e8b2e6af8a5302579e322e4b520293cae"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "rand"
+version = "0.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
+dependencies = [
+ "libc",
+ "rand_chacha",
+ "rand_core",
+]
+
+[[package]]
+name = "rand_chacha"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
+dependencies = [
+ "ppv-lite86",
+ "rand_core",
+]
+
+[[package]]
+name = "rand_core"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
+dependencies = [
+ "getrandom",
 ]
 
 [[package]]
@@ -340,9 +386,9 @@ dependencies = [
 
 [[package]]
 name = "robust"
-version = "0.2.3"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5864e7ef1a6b7bcf1d6ca3f655e65e724ed3b52546a0d0a663c991522f552ea"
+checksum = "cbf4a6aa5f6d6888f39e980649f3ad6b666acdce1d78e95b8a2cb076e687ae30"
 
 [[package]]
 name = "rustc_version"
@@ -367,18 +413,18 @@ checksum = "836fa6a3e1e547f9a2c4040802ec865b5d85f4014efe00555d7090a3dcaa1090"
 
 [[package]]
 name = "smallvec"
-version = "1.11.1"
+version = "1.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "942b4a808e05215192e39f4ab80813e599068285906cc91aa64f923db842bd5a"
+checksum = "4dccd0940a2dcdf68d092b8cbab7dc0ad8fa938bf95787e1b916b0e3d0e8e970"
 
 [[package]]
 name = "spade"
-version = "2.2.0"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88e65803986868d2372c582007c39ba89936a36ea5f236bf7a7728dc258f04f9"
+checksum = "6c39e369d9638e42586b226e67df08a7358d1e02eb80629d596b944b7c16f44f"
 dependencies = [
+ "hashbrown",
  "num-traits",
- "optional",
  "robust",
  "smallvec",
 ]
@@ -422,9 +468,9 @@ checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 
 [[package]]
 name = "vector-traits"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eda7454f6fcc0e42c65a714ef6ab60736d8556361d9a477c0f64f635e56e1939"
+checksum = "4add533efef6609c02eba6d8058e0ccc536d681c8d853af03e0f32857c3d3e55"
 dependencies = [
  "approx",
  "glam",

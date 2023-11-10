@@ -1,6 +1,11 @@
+"""
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+This file is part of the hallr crate.
+"""
+
 import bpy
 from . import hallr_ffi_utils
-
 
 class OBJECT_OT_hallr_simplify_rdp(bpy.types.Operator):
     """2D Line Simplification using the RDP Algorithm, works in the XY plane"""

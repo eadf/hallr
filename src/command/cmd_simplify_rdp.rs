@@ -13,6 +13,9 @@ use std::collections::BTreeMap;
 use vector_traits::{
     num_traits::AsPrimitive, GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ,
 };
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// This file is part of the hallr crate.
 
 #[cfg(test)]
 mod tests;
@@ -357,14 +360,13 @@ where
             let mut v_3d_map =
                 AHashMap::<(u32, u32, u32), usize>::with_capacity(model.indices.len());
 
-            for line_string in divide_into_shapes(model.indices).into_iter().map(|line| {
-                line.iter()
-                    .map(|i| vertices[*i])
-                    .collect::<LineString3<T>>()
-            }) {
+            for line_string in divide_into_shapes(model.indices)
+                .into_iter()
+                .map(|line| line.iter().map(|i| vertices[*i]).collect::<Vec<T>>())
+            {
                 //for line_string in line_string_set.set() {
                 let simplified = line_string.simplify_rdp(epsilon);
-                simplified.as_lines_iter().for_each(|line| {
+                simplified.window_iter().for_each(|line| {
                     let start = line.start;
                     let start_key = transmute_xyz_to_u32(&start);
                     //println!("testing {:?} as key {:?}", v2, v2_key);
@@ -391,11 +393,10 @@ where
         } else {
             // in 2d mode
             let mut v_2d_map = AHashMap::<(u32, u32), usize>::with_capacity(model.indices.len());
-            for line_string in divide_into_shapes(model.indices).into_iter().map(|line| {
-                line.iter()
-                    .map(|i| vertices[*i])
-                    .collect::<LineString3<T>>()
-            }) {
+            for line_string in divide_into_shapes(model.indices)
+                .into_iter()
+                .map(|line| line.iter().map(|i| vertices[*i]).collect::<Vec<T>>())
+            {
                 let simplified = line_string.copy_to_2d(Plane::XY).simplify_rdp(epsilon);
                 simplified.window_iter().for_each(|line| {
                     let start = line.start;

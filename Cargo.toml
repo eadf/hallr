@@ -12,15 +12,19 @@ authors = ["eadf"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-thiserror = "1.0.50"
-linestring = "0.10.2"
-centerline = { version="0.8.0", features = ["glam"]}
-vector-traits = { version = "0.2.0", features = ["glam"] }
+vector-traits = { version = "0.3.0", features = ["glam"] }
+#vector-traits = { path = "../vector-traits", features = ["glam"] }
+linestring = "0.11.0"
+#linestring = { path="../linestring.rs"}
+centerline = { version="0.9.0", features = ["glam"]}
+#centerline = { path="../centerline.rs"}
 krakel = {version = "0.2.0", features = ["glam"]}
-hronn = { version = "0.1.0", features = ["glam"]}
-ahash = "0.8.6"
-smallvec = "1.11.1"
+hronn = { version = "0.2.0", features = ["glam"]}
+#hronn = { path = "../hronn.rs", features = ["glam"]}
 boostvoronoi = { version = "0.11.0" }
+thiserror = "1.0.50"
+ahash = "0.8.6"
+smallvec = "1.11.2"
 rayon = "1.8.0"
 itertools = "0.11.0"
 vob = "3.0.3"

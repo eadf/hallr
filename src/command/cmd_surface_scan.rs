@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// This file is part of the hallr crate.
+
 use super::{ConfigType, Model};
 use hronn::{
     generate_aabb_then_convex_hull, generate_convex_hull_then_aabb,

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// This file is part of the hallr crate.
+
 use super::{ConfigType, Model, Options, OwnedModel};
 use crate::{ffi::FFIVector3, utils::HashableVector2, HallrError};
 use boostvoronoi as BV;
@@ -6,7 +10,7 @@ use centerline::{HasMatrix4, Matrix4};
 use hronn::prelude::*;
 use itertools::Itertools;
 use linestring::{
-    linestring_3d::{Aabb3, Plane},
+    linestring_3d::{Aabb3, LineString3, Plane},
     prelude::LineString2,
 };
 use rayon::{
@@ -222,14 +226,14 @@ where
 
         // draw the concatenated line strings of the voronoi output
         for linestring in shape.1.line_strings.iter().flatten() {
-            if linestring.points().len() < 2 {
+            if linestring.len() < 2 {
                 return Err(HallrError::InternalError(
                     "Linestring with less than 2 points found".to_string(),
                 ));
             }
             // unwrap of first and last is safe now that we know there are at least 2 vertices in the list
-            let v0 = linestring.points().first().unwrap();
-            let v1 = linestring.points().last().unwrap();
+            let v0 = linestring.first().unwrap();
+            let v1 = linestring.last().unwrap();
             let v0_key = transmute_to_u32(v0);
             let v0_index = *v_map.entry(v0_key).or_insert_with(|| {
                 let new_index = output_model_vertices.len();
@@ -249,10 +253,9 @@ where
                 .into_iter()
                 .chain(
                     linestring
-                        .points()
                         .iter()
                         .skip(1)
-                        .take(linestring.points().len() - 2)
+                        .take(linestring.len() - 2)
                         .map(|p| {
                             let new_index = output_model_vertices.len();
                             output_model_vertices.push(transform_point(*p).to());
@@ -442,9 +445,9 @@ where
     let mut lines_as_2d: Vec<linestring::linestring_2d::LineStringSet2<T::Vector2>> = lines
         .par_iter()
         .map(|x| {
-            x.clone()
-                .apply(&|v| transform.transform_point3(v))
-                .copy_to_2d(Plane::XY)
+            let mut xc = x.clone();
+            xc.apply(&|v| transform.transform_point3(v));
+            xc.copy_to_2d(Plane::XY)
         })
         .collect();
     {

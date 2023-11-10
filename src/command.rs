@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// This file is part of the hallr crate.
+
 mod cmd_2d_outline;
 mod cmd_centerline;
 mod cmd_convex_hull_2d;
@@ -62,13 +66,13 @@ impl OwnedModel {
         }
     }
 
-    /// close the loop
+    /// Adds a point to the end of the list
     fn push(&mut self, value: FFIVector3) {
         self.indices.push(self.vertices.len());
         self.vertices.push(value);
     }
 
-    /// close the loop by adding first index last
+    /// close the loop by appending the first index last
     fn close_loop(&mut self) {
         if !self.indices.is_empty() {
             self.indices.push(*self.indices.first().unwrap())
@@ -144,7 +148,8 @@ pub fn collect_models<'a, T: GenericVector3>(
     Ok(models)
 }
 
-/// This is the main FFI entry point, all commands will be routed through this API
+/// This is the main FFI entry point, once the FFI module has sorted out all the messy c_ptr types
+/// it will forward all request here.
 pub(crate) fn process_command(
     vertices: &[FFIVector3],
     indices: &[usize],

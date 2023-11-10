@@ -1,22 +1,31 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// This file is part of the hallr crate.
+
 #![deny(
-    rust_2018_compatibility,
-    rust_2018_idioms,
-    nonstandard_style,
-    unused,
-    future_incompatible,
-    non_camel_case_types,
-    unused_parens,
-    non_upper_case_globals,
-    unused_qualifications,
-    unused_results,
-    unused_imports,
-    unused_variables,
-    bare_trait_objects,
-    ellipsis_inclusive_range_patterns,
-    elided_lifetimes_in_paths
+rust_2018_compatibility,
+rust_2018_idioms,
+nonstandard_style,
+unused,
+future_incompatible,
+non_camel_case_types,
+unused_parens,
+non_upper_case_globals,
+unused_qualifications,
+unused_results,
+unused_imports,
+unused_variables,
+bare_trait_objects,
+ellipsis_inclusive_range_patterns,
+elided_lifetimes_in_paths
 )]
 #![warn(clippy::explicit_into_iter_loop)]
-//mod collision;
+
+///! Experimental Blender addon written in Rust. Work in progress, expect wildly fluctuating API:s.
+///!
+///! Design guideline: The Python-Rust API is as simple as possible to avoid memory leaks, dangling
+///! pointers and all kinds problems. For the same reason the API is state-less.
+
 pub mod command;
 pub mod ffi;
 pub(crate) mod utils;
