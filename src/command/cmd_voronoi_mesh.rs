@@ -2,13 +2,11 @@
 // Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
-use crate::HallrError;
-use std::f64;
-
 use crate::{
     command::{ConfigType, Model, Options, OwnedModel},
     ffi::FFIVector3,
-    utils::{voronoi_utils::triangulate_face, GrowingVob, HashableVector2},
+    utils::{voronoi_utils::triangulate_face, GrowingVob, VertexDeduplicator3D},
+    HallrError,
 };
 use boostvoronoi as BV;
 use boostvoronoi::OutputType;
@@ -25,96 +23,37 @@ use vector_traits::{
     GenericScalar, GenericVector2, GenericVector3, HasXY,
 };
 
+mod impls;
 #[cfg(test)]
 mod tests;
 
-/// Todo: clean this struct of any protobuffer stuff
+/// Todo: clean this struct of any protobuf stuff
+//#[derive(Default)]
 struct DiagramHelperRw<T: GenericVector3> {
     /// a map between hash:able 2d coordinates and the known vertex index of pb_vertices
-    vertex_map: ahash::AHashMap<(u64, u64), usize>,
-    pb_vertices: Vec<T>,
+    vertex_map: VertexDeduplicator3D<T>,
 }
-type Face = Vec<usize>;
 
-impl<T: GenericVector3> Default for DiagramHelperRw<T> {
-    fn default() -> Self {
-        Self {
-            vertex_map: ahash::AHashMap::new(),
-            pb_vertices: Vec::new(),
-        }
-    }
-}
+type Face = Vec<usize>;
 
 impl<T: GenericVector3> DiagramHelperRw<T>
 where
-    T: HasMatrix4 + ConvertTo<FFIVector3>,
-    f64: AsPrimitive<T::Scalar>,
+    T: ConvertTo<FFIVector3>,
 {
-    /// converts to a private, comparable and hash-able format
-    /// only use this for matching bit perfect float, f64::is_finite(), copies
-    /// todo: -0.0 and +0.0 are not identical
-    #[inline(always)]
-    fn transmute_xy_to_u64(x: f64, y: f64) -> (u64, u64) {
-        (x.to_bits(), y.to_bits())
-    }
-
-    #[inline(always)]
-    #[allow(dead_code)]
-    fn get_dup_checked_vertex(&self, vertex: &[f64; 2]) -> Result<usize, HallrError> {
-        let key = Self::transmute_xy_to_u64(vertex[0], vertex[1]);
-        if let Some(n) = self.vertex_map.get(&key) {
-            Ok(*n)
-        } else {
-            Err(HallrError::InternalError(format!(
-                "Could not find mapped vertex index of: ({:.12?},{:.12?})",
-                vertex[0], vertex[1]
-            )))
-        }
-    }
-
     /// transform the voronoi Point into a PB point. Perform duplication checks
     #[inline(always)]
-    fn place_new_pb_vertex_dup_check(
-        &mut self,
-        vertex: &[f64; 3],
-        inverted_transform: &T::Matrix4Type,
-    ) -> usize {
-        let mut pb_vertices = Vec::<T>::with_capacity(0);
-        std::mem::swap(&mut self.pb_vertices, &mut pb_vertices);
-
-        let key = Self::transmute_xy_to_u64(vertex[0], vertex[1]);
-        let rv = *self.vertex_map.entry(key).or_insert_with(|| {
-            let n = pb_vertices.len();
-            let transformed_v = inverted_transform.transform_point3(T::new_3d(
-                vertex[0].as_(),
-                vertex[1].as_(),
-                vertex[2].as_(),
-            ));
-            pb_vertices.push(transformed_v);
-            n
-        });
-
-        std::mem::swap(&mut self.pb_vertices, &mut pb_vertices);
-        rv
+    fn place_new_vertex_dup_check(&mut self, vertex: T) -> Result<usize, HallrError> {
+        let rv = self.vertex_map.get_index_or_insert(vertex)? as usize;
+        Ok(rv)
     }
 
-    /// transform the voronoi Point into a PB point. Does not perform any de-duplication checks
+    /// Place the point in the list. Does not perform any de-duplication checks
     #[allow(dead_code)]
     #[inline(always)]
-    fn place_new_pb_vertex_unchecked(
-        &mut self,
-        vertex: &[f64; 2],
-        z_coord: f64,
-        inverted_transform: &T::Matrix4Type,
-    ) -> usize {
-        let v = inverted_transform.transform_point3(T::new_3d(
-            vertex[0].as_(),
-            vertex[1].as_(),
-            z_coord.as_(),
-        ));
-        let n = self.pb_vertices.len();
-        self.pb_vertices.push(v);
-        n
+    fn place_new_vertex_unchecked(&mut self, vertex: T) -> Result<usize, HallrError> {
+        let n = self.vertex_map.vertices.len();
+        self.vertex_map.vertices.push(vertex);
+        Ok(n)
     }
 }
 
@@ -139,10 +78,8 @@ impl<T: GenericVector3> DiagramHelperRo<T>
 where
     T: HasMatrix4 + ConvertTo<FFIVector3>,
     T::Scalar: OutputType,
-    T::Scalar: AsPrimitive<f64>,
     i64: AsPrimitive<T::Scalar>,
     f32: AsPrimitive<T::Scalar>,
-    f64: AsPrimitive<T::Scalar>,
 {
     /// Retrieves a point from the voronoi input in the order it was presented to
     /// the voronoi builder
@@ -173,7 +110,7 @@ where
     /// intersect with the segment that created the edge. So we need to re-create it.
     /// Secondary edges can also be half internal and half external i.e. the two vertices may
     /// be on opposite sides of the inside/outside boundary.
-    fn convert_secondary_edge(&self, edge: &BV::Edge) -> Result<Vec<[f64; 3]>, HallrError> {
+    fn convert_secondary_edge(&self, edge: &BV::Edge) -> Result<Vec<T>, HallrError> {
         let edge_id = edge.id();
         let edge_twin_id = self.diagram.edge_get_twin(edge_id)?;
         let cell_id = self.diagram.edge_get_cell(edge_id)?;
@@ -190,7 +127,7 @@ where
 
         let start_point = if let Some(vertex0_id) = vertex0_id {
             let vertex0 = self.diagram.vertex_get(vertex0_id)?.get();
-            if !self.internal_vertices.get_f(vertex0.get_id().0) {
+            if !self.internal_vertices[vertex0.get_id().0] {
                 None
             } else if vertex0.is_site_point() {
                 Some(T::new_3d(vertex0.x(), vertex0.y(), T::Scalar::ZERO))
@@ -203,7 +140,7 @@ where
 
         let end_point = if let Some(vertex1_id) = vertex1_id {
             let vertex1 = self.diagram.vertex_get(vertex1_id)?.get();
-            if !self.internal_vertices.get_f(vertex1.get_id().0) {
+            if !self.internal_vertices[vertex1.get_id().0] {
                 None
             } else if vertex1.is_site_point() {
                 Some(T::new_3d(vertex1.x(), vertex1.y(), T::Scalar::ZERO))
@@ -230,45 +167,33 @@ where
             segment.end.y.as_(),
         ]);
 
-        let mut samples = Vec::<[f64; 3]>::new();
+        let mut samples = Vec::<T>::new();
 
-        if let Some(start_point) = start_point {
+        if let Some(mut start_point) = start_point {
             if start_point.z().is_finite() {
-                samples.push([
-                    start_point.x().into(),
-                    start_point.y().into(),
-                    start_point.z().into(),
-                ]);
+                samples.push(start_point);
             } else {
-                let z_comp = if cell.contains_point() {
-                    -cell_point.distance(T::Vector2::new_2d(start_point.x(), start_point.y()))
+                start_point.set_z(if cell.contains_point() {
+                    -cell_point.distance(start_point.to_2d())
                 } else {
                     -linestring::linestring_2d::distance_to_line_squared_safe(
                         segment.start,
                         segment.end,
-                        T::Vector2::new_2d(start_point.x(), start_point.y()),
+                        start_point.to_2d(),
                     )
                     .sqrt()
-                };
-                samples.push([
-                    start_point.x().into(),
-                    start_point.y().into(),
-                    z_comp.into(),
-                ]);
+                });
+                samples.push(start_point);
             }
         }
 
-        samples.push([cell_point.x().into(), cell_point.y().into(), 0.0]);
+        samples.push(T::new_3d(cell_point.x(), cell_point.y(), T::Scalar::ZERO));
 
-        if let Some(end_point) = end_point {
+        if let Some(mut end_point) = end_point {
             if end_point.z().is_finite() {
-                samples.push([
-                    end_point.x().into(),
-                    end_point.y().into(),
-                    end_point.z().into(),
-                ]);
+                samples.push(end_point);
             } else {
-                let z_comp = if cell.contains_point() {
+                end_point.set_z(if cell.contains_point() {
                     -cell_point.distance(end_point.to_2d())
                 } else {
                     -linestring::linestring_2d::distance_to_line_squared_safe(
@@ -277,8 +202,8 @@ where
                         end_point.to_2d(),
                     )
                     .sqrt()
-                };
-                samples.push([end_point.x().into(), end_point.y().into(), z_comp.into()]);
+                });
+                samples.push(end_point);
             }
         }
         Ok(samples)
@@ -291,8 +216,8 @@ where
     fn convert_edge(
         &self,
         edge: &BV::Edge,
-        discretization_dist: T::Scalar,
-    ) -> Result<Vec<[f64; 3]>, HallrError> {
+        discretization_distance: T::Scalar,
+    ) -> Result<Vec<T>, HallrError> {
         let edge_id = edge.id();
         let edge_twin_id = self.diagram.edge_get_twin(edge_id)?;
         let cell_id = self.diagram.edge_get_cell(edge_id)?;
@@ -310,12 +235,9 @@ where
             let start_point = if vertex0.is_site_point() {
                 T::new_3d(vertex0.x(), vertex0.y(), T::Scalar::ZERO)
             } else {
-                T::new_3d(vertex0.x(), vertex0.y(), f64::NAN.as_())
+                T::new_3d(vertex0.x(), vertex0.y(), f32::NAN.as_())
             };
-            (
-                start_point,
-                self.internal_vertices.get_f(vertex0.get_id().0),
-            )
+            (start_point, self.internal_vertices[vertex0.get_id().0])
         } else {
             return Err(HallrError::InternalError(format!(
                 "Edge vertex0 could not be found. {}:{}",
@@ -331,9 +253,9 @@ where
                 let end_point = if vertex1.is_site_point() {
                     T::new_3d(vertex1.x(), vertex1.y(), T::Scalar::ZERO)
                 } else {
-                    T::new_3d(vertex1.x(), vertex1.y(), f64::NAN.as_())
+                    T::new_3d(vertex1.x(), vertex1.y(), f32::NAN.as_())
                 };
-                (end_point, self.internal_vertices.get_f(vertex1.get_id().0))
+                (end_point, self.internal_vertices[vertex1.get_id().0])
             } else {
                 return Err(HallrError::InternalError(format!(
                     "Edge vertex1 could not be found. {}:{}",
@@ -356,7 +278,7 @@ where
             segment.end.y.as_(),
         ]);
 
-        let mut samples = Vec::<[f64; 3]>::new();
+        let mut samples = Vec::<T>::new();
 
         if edge.is_curved() {
             let arc = VoronoiParabolicArc::new(
@@ -366,17 +288,13 @@ where
                 end_point.to_2d(),
             );
 
-            for p in arc.discretize_3d(discretization_dist).iter() {
-                samples.push([p.x().into(), p.y().into(), p.z().into()]);
+            for p in arc.discretize_3d(discretization_distance).iter() {
+                samples.push(*p);
             }
         } else {
             if startpoint_is_internal {
                 if start_point.z().is_finite() {
-                    samples.push([
-                        start_point.x().into(),
-                        start_point.y().into(),
-                        start_point.z().into(),
-                    ]);
+                    samples.push(start_point);
                 } else {
                     let z_comp = if cell.contains_point() {
                         -cell_point.distance(start_point.to_2d())
@@ -388,21 +306,13 @@ where
                         )
                         .sqrt()
                     };
-                    samples.push([
-                        start_point.x().into(),
-                        start_point.y().into(),
-                        z_comp.into(),
-                    ]);
+                    samples.push(T::new_3d(start_point.x(), start_point.y(), z_comp));
                 }
             }
 
             if end_point_is_internal {
                 if end_point.z().is_finite() {
-                    samples.push([
-                        end_point.x().into(),
-                        end_point.y().into(),
-                        end_point.z().into(),
-                    ]);
+                    samples.push(end_point);
                 } else {
                     let z_comp = if cell.contains_point() {
                         -cell_point.distance(end_point.to_2d())
@@ -414,7 +324,7 @@ where
                         )
                         .sqrt()
                     };
-                    samples.push([end_point.x().into(), end_point.y().into(), z_comp.into()]);
+                    samples.push(T::new_3d(end_point.x(), end_point.y(), z_comp));
                 }
             }
         }
@@ -426,36 +336,16 @@ where
     #[allow(clippy::type_complexity)]
     fn convert_edges(
         &self,
-        discretization_dist: T::Scalar,
+        discretization_distance: T::Scalar,
     ) -> Result<(DiagramHelperRw<T>, ahash::AHashMap<usize, Vec<usize>>), HallrError> {
         let mut hrw = DiagramHelperRw::default();
         let mut rv = ahash::AHashMap::<usize, Vec<usize>>::new();
-
-        // this block is not really needed, just makes it convenient to debug
-        /*{
-            for v in self.vertices.iter() {
-                let _ = hrw.place_new_pb_vertex_dup_check(
-                    &[v.x as f64, v.y as f64, 0.0],
-                    &self.inverted_transform,
-                );
-            }
-            for l in self.segments.iter() {
-                let _ = hrw.place_new_pb_vertex_dup_check(
-                    &[l.start.x as f64, l.start.y as f64, 0.0],
-                    &self.inverted_transform,
-                );
-                let _ = hrw.place_new_pb_vertex_dup_check(
-                    &[l.end.x as f64, l.end.y as f64, 0.0],
-                    &self.inverted_transform,
-                );
-            }
-        }*/
 
         for edge in self.diagram.edges() {
             let edge = edge.get();
             let edge_id = edge.id();
             // secondary edges may be in the rejected list while still contain needed data
-            if !edge.is_secondary() && self.rejected_edges.get_f(edge_id.0) {
+            if !edge.is_secondary() && self.rejected_edges[edge_id.0] {
                 // ignore rejected edges, but only non-secondary ones.
                 continue;
             }
@@ -467,12 +357,11 @@ where
                 let samples = if edge.is_secondary() {
                     self.convert_secondary_edge(&edge)?
                 } else {
-                    self.convert_edge(&edge, discretization_dist)?
+                    self.convert_edge(&edge, discretization_distance)?
                 };
                 let mut pb_edge: Vec<usize> = Vec::with_capacity(samples.len());
-                for v in samples.into_iter().map(|coord| {
-                    hrw.place_new_pb_vertex_dup_check(&coord, &self.inverted_transform)
-                }) {
+                for coord in samples {
+                    let v = hrw.place_new_vertex_dup_check(coord)?;
                     if !pb_edge.contains(&v) {
                         pb_edge.push(v);
                     }
@@ -531,17 +420,18 @@ where
             if cell.contains_point() {
                 let cell_point = {
                     let cp = self.retrieve_point(cell_id)?;
-                    dhrw.place_new_pb_vertex_dup_check(
-                        &[cp.x as f64, cp.y as f64, 0.0],
-                        &self.inverted_transform,
-                    )
+                    dhrw.place_new_vertex_dup_check(T::new_3d(
+                        cp.x.as_(),
+                        cp.y.as_(),
+                        T::Scalar::ZERO,
+                    ))?
                 };
 
                 for edge_id in self.diagram.cell_edge_iterator(cell_id) {
                     let edge = self.diagram.get_edge(edge_id)?.get();
                     let twin_id = edge.twin()?;
 
-                    if self.rejected_edges.get_f(edge_id.0) && !edge.is_secondary() {
+                    if self.rejected_edges[edge_id.0] && !edge.is_secondary() {
                         continue;
                     }
                     let mod_edge: Box<dyn ExactSizeIterator<Item = &usize>> = {
@@ -574,7 +464,11 @@ where
                             pb_face.append(&mut face);
                             //print!(" pb:{:?},", pb_face.vertices);
                             if pb_face.len() > 2 {
-                                triangulate_face(&mut return_indices, &dhrw.pb_vertices, &pb_face)?
+                                triangulate_face(
+                                    &mut return_indices,
+                                    &dhrw.vertex_map.vertices,
+                                    &pb_face,
+                                )?
                             } else {
                                 //print!("ignored ");
                             }
@@ -585,14 +479,16 @@ where
             }
             if cell.contains_segment() {
                 let segment = self.retrieve_segment(cell_id)?;
-                let v0n = dhrw.place_new_pb_vertex_dup_check(
-                    &[segment.start.x as f64, segment.start.y as f64, 0.0],
-                    &self.inverted_transform,
-                );
-                let v1n = dhrw.place_new_pb_vertex_dup_check(
-                    &[segment.end.x as f64, segment.end.y as f64, 0.0],
-                    &self.inverted_transform,
-                );
+                let v0n = dhrw.place_new_vertex_dup_check(T::new_3d(
+                    segment.start.x.as_(),
+                    segment.start.y.as_(),
+                    T::Scalar::ZERO,
+                ))?;
+                let v1n = dhrw.place_new_vertex_dup_check(T::new_3d(
+                    segment.end.x.as_(),
+                    segment.end.y.as_(),
+                    T::Scalar::ZERO,
+                ))?;
                 //print!("SCell:{} v0:{} v1:{} ", cell_id.0, v0n, v1n);
                 let mut new_face = Vec::new();
                 for edge_id in self.diagram.cell_edge_iterator(cell_id) {
@@ -617,21 +513,30 @@ where
                         }
                     }
                 }
+
                 if let Some((split_a, split_b)) =
                     self.split_pb_face_by_segment(v0n, v1n, &new_face)?
                 {
                     if split_a.len() > 2 {
-                        triangulate_face(&mut return_indices, &dhrw.pb_vertices, &split_a)?;
+                        triangulate_face(&mut return_indices, &dhrw.vertex_map.vertices, &split_a)?;
                     }
                     if split_b.len() > 2 {
-                        triangulate_face(&mut return_indices, &dhrw.pb_vertices, &split_b)?;
+                        triangulate_face(&mut return_indices, &dhrw.vertex_map.vertices, &split_b)?;
                     }
                 } else if new_face.len() > 2 {
-                    triangulate_face(&mut return_indices, &dhrw.pb_vertices, &new_face)?;
+                    triangulate_face(&mut return_indices, &dhrw.vertex_map.vertices, &new_face)?;
                 }
             }
         }
-        Ok((return_indices, dhrw.pb_vertices))
+        //println!("indices:{:?}", return_indices);
+        //println!("vertices:{:?}", dhrw.vertex_map.vertices);
+        let vertices = dhrw
+            .vertex_map
+            .vertices
+            .into_iter()
+            .map(|v| self.inverted_transform.transform_point3(v))
+            .collect();
+        Ok((return_indices, vertices))
     }
 }
 
@@ -669,11 +574,8 @@ where
             aabb_d.x(), aabb_d.y(), aabb_d.z(), aabb_c.x(), aabb_c.y(), aabb_c.z()))
     })?;
 
-    // I have forgotten to implement Ord on `Plane` so this is a work-around
-    // todo: use != when it's available
-    match plane {
-        Plane::XY => (),
-        _ => return Err(HallrError::InvalidInputData(format!("At the moment the voronoi mesh operation only supports input data in the XY plane. {:?}", plane)))
+    if plane != Plane::XY {
+        return Err(HallrError::InvalidInputData(format!("At the moment the voronoi mesh operation only supports input data in the XY plane. {:?}", plane)));
     }
 
     let inverse_transform = transform.safe_inverse().ok_or(HallrError::InternalError(
@@ -681,6 +583,7 @@ where
     ))?;
 
     println!("voronoi: data was in plane:{:?} aabb:{:?}", plane, aabb);
+
     //println!("input Lines:{:?}", input_pb_model.vertices);
 
     let mut vor_lines = Vec::<BV::Line<i64>>::with_capacity(input_model.indices.len() / 2);
@@ -714,7 +617,7 @@ where
     let vor_vertices: Vec<BV::Point<i64>> = vor_vertices
         .into_iter()
         .enumerate()
-        .filter(|x| !used_vertices.get_f(x.0))
+        .filter(|x| !used_vertices[x.0])
         .map(|x| x.1)
         .collect();
     Ok((vor_vertices, vor_lines, vor_aabb, inverse_transform))
@@ -733,7 +636,7 @@ where
         .edges()
         .iter()
         .enumerate()
-        .filter(|(eid, _)| !rejected_edges.get_f(*eid))
+        .filter(|(eid, _)| !rejected_edges[*eid])
     {
         let e = e.get();
         if e.is_primary() {
@@ -766,7 +669,6 @@ fn compute_voronoi_mesh<T: GenericVector3>(
 where
     T: HasMatrix4,
     f32: AsPrimitive<T::Scalar>,
-    f64: AsPrimitive<T::Scalar>,
     i64: AsPrimitive<T::Scalar>,
     T::Scalar: OutputType,
     T: ConvertTo<FFIVector3>,
@@ -780,10 +682,10 @@ where
             .with_segments(vor_lines.iter())?
             .build()?
     };
-    let discretization_dist: T::Scalar = {
+
+    let discretization_distance: T::Scalar = {
         let max_dist: T::Vector2 = vor_aabb2.high().unwrap() - vor_aabb2.low().unwrap();
-        let max_dist: T::Scalar = max_dist.x().max(max_dist.y());
-        cmd_discretization_distance * max_dist / 100.0.into()
+        cmd_discretization_distance * max_dist.magnitude() / 100.0.into()
     };
 
     let reject_edges = crate::utils::voronoi_utils::reject_external_edges::<T>(&vor_diagram)?;
@@ -797,18 +699,9 @@ where
         inverted_transform,
     };
 
-    let (dhrw, mod_edges) = diagram_helper.convert_edges(discretization_dist)?;
+    let (dhrw, mod_edges) = diagram_helper.convert_edges(discretization_distance)?;
     let (indices, vertices) = diagram_helper.iterate_cells(dhrw, mod_edges)?;
-    /*let mut indices: Face = Vec::with_capacity(faces.len() * 3);
-    for aface in &faces {
-        match aface.0.len() {
-            3 => indices.extend(aface.0.iter()),
-            0..=2 => Err(HallrError::InternalError(
-                "Found a malformed face".to_string(),
-            ))?,
-            _ => triangulate_face(&mut indices, &vertices, &aface.0)?,
-        }
-    }*/
+
     Ok(OwnedModel {
         //name: input_pb_model.name.clone(),
         //world_orientation: input_pb_model.world_orientation.clone(),
@@ -818,7 +711,6 @@ where
 }
 
 /// Run the voronoi_mesh command
-/// Run the centerline command
 pub(crate) fn process_command<T: GenericVector3>(
     config: ConfigType,
     models: Vec<Model<'_>>,
@@ -826,11 +718,9 @@ pub(crate) fn process_command<T: GenericVector3>(
 where
     T: ConvertTo<FFIVector3> + HasMatrix4,
     FFIVector3: ConvertTo<T>,
-    HashableVector2: From<T::Vector2>,
     T::Scalar: OutputType,
     i64: AsPrimitive<T::Scalar>,
     T::Scalar: AsPrimitive<i64>,
-    f64: AsPrimitive<T::Scalar>,
     f32: AsPrimitive<T::Scalar>,
 {
     if models.is_empty() {
@@ -864,8 +754,8 @@ where
         Some(super::DEFAULT_VORONOI_DISCRETE_DISTANCE.as_()),
     )?;
 
-    if !(super::DEFAULT_VORONOI_DISCRETE_DISTANCE..5.0)
-        .contains(&cmd_arg_discretization_distance.into())
+    if !(super::DEFAULT_VORONOI_DISCRETE_DISTANCE.as_()..5.0.into())
+        .contains(&cmd_arg_discretization_distance)
     {
         return Err(HallrError::InvalidInputData(format!(
             "The valid range of DISTANCE is [{}..5.0[% :({})",

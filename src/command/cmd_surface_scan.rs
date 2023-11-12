@@ -13,7 +13,7 @@ use hronn::{
     HronnError,
 };
 
-use crate::{command::Options, prelude::FFIVector3, utils::HashableVector2, HallrError};
+use crate::{command::Options, prelude::FFIVector3, HallrError};
 use krakel::PointTrait;
 use vector_traits::{num_traits::AsPrimitive, Approx, GenericVector3, HasXY};
 
@@ -142,7 +142,6 @@ where
     u32: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
     u32: AsPrimitive<T::Scalar>,
     T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
-    HashableVector2: From<T::Vector2>,
 {
     if models.len() < 2 {
         Err(HronnError::InvalidParameter(

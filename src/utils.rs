@@ -11,8 +11,8 @@ use crate::HallrError;
 use ahash::{AHashMap, AHashSet};
 use hronn::prelude::MaximumTracker;
 use smallvec::SmallVec;
-use std::{cmp::Reverse, fmt::Debug};
-use vector_traits::{approx::*, num_traits::AsPrimitive, HasXY};
+use std::cmp::Reverse;
+use vector_traits::{num_traits::float::FloatCore, GenericScalar, GenericVector2, GenericVector3};
 
 pub(crate) trait GrowingVob {
     fn fill(initial_size: usize) -> vob::Vob<u32>;
@@ -40,24 +40,103 @@ impl GrowingVob for vob::Vob<u32> {
     }
 }
 
-/// converts the x,y coordinates to to a private, comparable and hashable format
-/// only use this for floats that are f32::is_finite()
-#[allow(dead_code)]
-#[inline(always)]
-pub(crate) fn transmute_xy_to_u64<T: HasXY>(a: T) -> u64 {
-    let x: f32 = a.x().as_();
-    let y: f32 = a.y().as_();
-    u64::from(x.to_bits()) << 32 | u64::from(y.to_bits())
+#[allow(clippy::type_complexity)]
+#[derive(Default)]
+pub(crate) struct VertexDeduplicator2D<T: GenericVector2> {
+    set: AHashMap<
+        (
+            <T::Scalar as GenericScalar>::BitsType,
+            <T::Scalar as GenericScalar>::BitsType,
+        ),
+        u32,
+    >,
+    pub vertices: Vec<T>,
 }
 
-#[derive(Clone, Copy, Debug)]
-pub struct HashableVector2 {
-    x: f32,
-    y: f32,
+impl<T: GenericVector2> VertexDeduplicator2D<T> {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            set: AHashMap::with_capacity(capacity),
+            vertices: Vec::with_capacity(capacity),
+        }
+    }
+
+    pub fn get_index_or_insert(&mut self, vector: T) -> Result<u32, HallrError> {
+        // try to get rid of the -0.0 value
+        let x: T::Scalar = vector.x() + T::Scalar::ZERO;
+        let y: T::Scalar = vector.y() + T::Scalar::ZERO;
+        if !(x.is_finite() && y.is_finite()) {
+            return Err(HallrError::FloatNotFinite(format!(
+                "The vector was not finite {:?}, {:?}",
+                x, y
+            )));
+        }
+        let index = self
+            .set
+            .entry((x.to_bits(), y.to_bits()))
+            .or_insert_with(|| {
+                let new_index = self.vertices.len();
+                self.vertices.push(vector);
+                new_index as u32
+            });
+        Ok(*index)
+    }
 }
-impl HashableVector2 {
-    pub fn new(x: f32, y: f32) -> Self {
-        Self { x, y }
+
+#[allow(clippy::type_complexity)]
+pub(crate) struct VertexDeduplicator3D<T: GenericVector3> {
+    set: AHashMap<
+        (
+            <T::Scalar as GenericScalar>::BitsType,
+            <T::Scalar as GenericScalar>::BitsType,
+            <T::Scalar as GenericScalar>::BitsType,
+        ),
+        u32,
+    >,
+    pub vertices: Vec<T>,
+}
+
+impl<T: GenericVector3> VertexDeduplicator3D<T> {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            set: AHashMap::with_capacity(capacity),
+            vertices: Vec::with_capacity(capacity),
+        }
+    }
+
+    /// get a previously defined index, or insert the vertex and return the new index
+    pub fn get_index_or_insert(&mut self, vector: T) -> Result<u32, HallrError> {
+        // try to get rid of the -0.0 value
+        let x: T::Scalar = vector.x() + T::Scalar::ZERO;
+        let y: T::Scalar = vector.y() + T::Scalar::ZERO;
+        let z: T::Scalar = vector.z() + T::Scalar::ZERO;
+        if !(x.is_finite() && y.is_finite() && z.is_finite()) {
+            return Err(HallrError::FloatNotFinite(format!(
+                "The vector was not finite ({:?},{:?},{:?})",
+                x, y, z
+            )));
+        }
+        let index = self
+            .set
+            .entry((x.to_bits(), y.to_bits(), z.to_bits()))
+            .or_insert_with(|| {
+                let new_index = self.vertices.len();
+                self.vertices.push(vector);
+                new_index as u32
+            });
+        Ok(*index)
+    }
+
+    /// inserts a vertex without de-dup checking
+    pub fn get_index_and_insert(&mut self, vector: T) -> u32 {
+        let index = self.vertices.len() as u32;
+        self.vertices.push(vector);
+        index
+    }
+
+    /// clear the hashset, effectively creating a new set of unique points
+    pub fn clear_dedup_cache(&mut self) {
+        self.set.clear()
     }
 }
 

@@ -37,7 +37,7 @@ fn test_centerline_1() -> Result<(), HallrError> {
     };
     let models = vec![model_0];
     let result = super::process_command::<Vec3>(config, models)?;
-    assert_eq!(6, result.0.len()); // vertices
+    assert_eq!(7, result.0.len()); // vertices
     assert_eq!(18, result.1.len()); // indices
     Ok(())
 }
@@ -71,7 +71,7 @@ fn test_centerline_2() -> Result<(), HallrError> {
     };
     let models = vec![model_0];
     let result = super::process_command::<Vec3>(config, models)?;
-    assert_eq!(6, result.0.len()); // vertices
+    assert_eq!(7, result.0.len()); // vertices
     assert_eq!(10, result.1.len()); // indices
     Ok(())
 }
@@ -92,10 +92,10 @@ fn test_centerline_3() -> Result<(), HallrError> {
 
     let owned_model_0 = OwnedModel {
         vertices: vec![
-            (-1.49995, -0.7401614, 0.0).into(),
-            (-0.39808625, 0.6056829, 0.0).into(),
+            (-1.49995, -0.7411614, 0.0).into(),
+            (-0.39808625, 0.6156829, 0.0).into(),
             (1.3165288, -0.969334, 0.0).into(),
-            (-0.08538532, -0.1297079, 0.0).into(),
+            (-0.08538532, -0.12297079, 0.0).into(),
             (0.09803593, 1.5797875, 0.0).into(),
         ],
         indices: vec![0, 1, 2, 4, 1, 4, 3, 2, 3, 0],
@@ -107,7 +107,7 @@ fn test_centerline_3() -> Result<(), HallrError> {
     };
     let models = vec![model_0];
     let result = super::process_command::<Vec3>(config, models)?;
-    assert_eq!(20, result.0.len()); // vertices
+    assert_eq!(21, result.0.len()); // vertices
     assert_eq!(44, result.1.len()); // indices
     Ok(())
 }

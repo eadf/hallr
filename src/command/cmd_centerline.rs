@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, Options, OwnedModel};
-use crate::{ffi::FFIVector3, utils::HashableVector2, HallrError};
+use crate::{ffi::FFIVector3, utils, HallrError};
 use boostvoronoi as BV;
 use boostvoronoi::OutputType;
 use centerline::{HasMatrix4, Matrix4};
@@ -25,18 +25,6 @@ use vector_traits::{
 
 #[cfg(test)]
 mod tests;
-
-/// converts to a private, comparable and hashable format
-/// only use this for floats that are f32::is_finite()
-/// This will only work for floats that's identical in every bit.
-/// The z coordinate will not be used because it might be slightly different
-/// depending on how it was calculated. Not using z will also make the calculations faster.
-#[inline(always)]
-fn transmute_to_u32<T: HasXYZ>(a: &T) -> (u32, u32) {
-    let x: f32 = a.x().as_();
-    let y: f32 = a.y().as_();
-    (x.to_bits(), y.to_bits())
-}
 
 #[inline(always)]
 /// make a key from v0 and v1, lowest index will always be first
@@ -118,15 +106,6 @@ where
     T: HasMatrix4 + ConvertTo<FFIVector3>,
     T::Scalar: OutputType,
 {
-    let transform_point = |point: T| -> T {
-        if cmd_arg_negative_radius {
-            inverted_transform.transform_point3(point)
-        } else {
-            let point = inverted_transform.transform_point3(point);
-            T::new_3d(point.x(), point.y(), -point.z())
-        }
-    };
-
     //let input_pb_model = &a_command.models[0];
 
     let estimated_capacity: usize = (shapes
@@ -145,11 +124,10 @@ where
         * 5)
         / 4;
 
-    let mut output_model_vertices = Vec::<FFIVector3>::with_capacity(estimated_capacity);
     let mut output_model_edges = Vec::<(u32, u32)>::with_capacity(estimated_capacity);
 
-    // map between 'meta-vertex' and vertex index
-    let mut v_map = ahash::AHashMap::<(u32, u32), usize>::default();
+    // map between vertex and vertex index
+    let mut v_map = utils::VertexDeduplicator3D::<T>::default();
 
     for shape in shapes {
         // Draw the input segments
@@ -166,28 +144,21 @@ where
                 //println!("Input linestring: {:?}", input_linestring);
                 //println!("output_model_vertices:{:?}",output_model_vertices);
 
-                let vertex_index_iterator = input_linestring.iter().map(|p| {
-                    let v2 = p.to_3d(T::Scalar::ZERO);
-                    let v2_key = transmute_to_u32(&v2);
-                    //println!("testing {:?} as key {:?}", v2, v2_key);
-                    let v2_index = *v_map.entry(v2_key).or_insert_with(|| {
-                        let new_index = output_model_vertices.len();
-                        output_model_vertices.push(inverted_transform.transform_point3(v2).to());
-                        //println!("i2 pushed ({},{},{}) as {}", v2.x(), v2.y(), v2.z(), new_index);
-                        new_index
-                    });
-                    v2_index
-                });
-                for p in vertex_index_iterator.tuple_windows::<(_, _)>() {
+                for (v0, v1) in input_linestring.iter().tuple_windows::<(_, _)>() {
+                    let v0 = v0.to_3d(T::Scalar::ZERO);
+                    let i0 = v_map.get_index_or_insert(v0)?;
+                    let v1 = v1.to_3d(T::Scalar::ZERO);
+                    let i1 = v_map.get_index_or_insert(v1)?;
+
                     //println!("input edge: {}-{}", p.0, p.1);
-                    output_model_edges.push((p.0 as u32, p.1 as u32));
+                    output_model_edges.push((i0, i1));
                 }
             }
         }
 
         if !cmd_arg_weld {
             // Do not share any vertices between input geometry and center line if cmd_arg_weld is false
-            v_map.clear()
+            v_map.clear_dedup_cache()
         }
 
         // draw the straight edges of the voronoi output
@@ -197,22 +168,8 @@ where
             if v0 == v1 {
                 continue;
             }
-            let v0_key = transmute_to_u32(&v0);
-            let v0_index = *v_map.entry(v0_key).or_insert_with(|| {
-                let new_index = output_model_vertices.len();
-                output_model_vertices.push(transform_point(v0).to());
-                //println!("s0 pushed ({},{},{})", v0.x, v0.y, v0.z);
-                new_index
-            });
-
-            let v1_key = transmute_to_u32(&v1);
-            let v1_index = *v_map.entry(v1_key).or_insert_with(|| {
-                let new_index = output_model_vertices.len();
-
-                output_model_vertices.push(transform_point(v1).to());
-                //println!("s1 pushed ({},{},{})", v1.x, v1.y, v1.z);
-                new_index
-            });
+            let v0_index = v_map.get_index_or_insert(v0)?;
+            let v1_index = v_map.get_index_or_insert(v1)?;
 
             if v0_index == v1_index {
                 println!(
@@ -221,7 +178,7 @@ where
                 );
                 continue;
             }
-            output_model_edges.push((v0_index as u32, v1_index as u32));
+            output_model_edges.push((v0_index, v1_index));
         }
 
         // draw the concatenated line strings of the voronoi output
@@ -234,20 +191,8 @@ where
             // unwrap of first and last is safe now that we know there are at least 2 vertices in the list
             let v0 = linestring.first().unwrap();
             let v1 = linestring.last().unwrap();
-            let v0_key = transmute_to_u32(v0);
-            let v0_index = *v_map.entry(v0_key).or_insert_with(|| {
-                let new_index = output_model_vertices.len();
-                output_model_vertices.push(transform_point(*v0).to());
-                //println!("ls0 pushed ({},{},{})", v0.x, v0.y, v0.z);
-                new_index
-            });
-            let v1_key = transmute_to_u32(v1);
-            let v1_index = *v_map.entry(v1_key).or_insert_with(|| {
-                let new_index = output_model_vertices.len();
-
-                output_model_vertices.push(transform_point(*v1).to());
-                new_index
-            });
+            let v0_index = v_map.get_index_or_insert(*v0)?;
+            let v1_index = v_map.get_index_or_insert(*v1)?;
             // we only need to lookup the start and end points for vertex duplication
             let vertex_index_iterator = Some(v0_index)
                 .into_iter()
@@ -256,15 +201,11 @@ where
                         .iter()
                         .skip(1)
                         .take(linestring.len() - 2)
-                        .map(|p| {
-                            let new_index = output_model_vertices.len();
-                            output_model_vertices.push(transform_point(*p).to());
-                            new_index
-                        }),
+                        .map(|p| v_map.get_index_and_insert(*p)),
                 )
                 .chain(Some(v1_index).into_iter());
             for p in vertex_index_iterator.tuple_windows::<(_, _)>() {
-                output_model_edges.push((p.0 as u32, p.1 as u32));
+                output_model_edges.push((p.0, p.1));
             }
         }
     }
@@ -284,6 +225,24 @@ where
         print!("{}-{}, ", p[0], p[1]);
     }
     println!();*/
+
+    let output_model_vertices: Vec<FFIVector3> = if cmd_arg_negative_radius {
+        v_map
+            .vertices
+            .into_iter()
+            .map(|v| inverted_transform.transform_point3(v).to())
+            .collect()
+    } else {
+        v_map
+            .vertices
+            .into_iter()
+            .map(|v| {
+                let point = inverted_transform.transform_point3(v);
+                T::new_3d(point.x(), point.y(), -point.z()).to()
+            })
+            .collect()
+    };
+
     Ok(OwnedModel {
         //name: input_pb_model.name.clone(),
         //world_orientation: input_pb_model.world_orientation.clone(),
@@ -300,7 +259,6 @@ pub(crate) fn process_command<T: GenericVector3>(
 where
     T: ConvertTo<FFIVector3> + HasMatrix4,
     FFIVector3: ConvertTo<T>,
-    HashableVector2: From<T::Vector2>,
     T::Scalar: OutputType,
     i64: AsPrimitive<T::Scalar>,
     T::Scalar: AsPrimitive<i64>,
@@ -327,9 +285,9 @@ where
         .unwrap_or(true);
 
     let cmd_arg_discrete_distance = config.get_mandatory_parsed_option("DISTANCE", None)?;
-    if !(0.004.into()..100.0.into()).contains(&cmd_arg_discrete_distance) {
+    if !(0.001.into()..100.0.into()).contains(&cmd_arg_discrete_distance) {
         return Err(HallrError::InvalidInputData(format!(
-            "The valid range of DISTANCE is [0.005..100[% :({:?})",
+            "The valid range of DISTANCE is [0.001..100[% :({:?})",
             cmd_arg_discrete_distance
         )));
     }

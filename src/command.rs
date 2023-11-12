@@ -2,6 +2,8 @@
 // Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
+//! This module contains the execution of the implemented commands.
+
 mod cmd_2d_outline;
 mod cmd_centerline;
 mod cmd_convex_hull_2d;
@@ -18,11 +20,11 @@ use std::collections::HashMap;
 use vector_traits::{glam::Vec3, GenericVector3};
 
 /// The largest dimension of the voronoi input, totally arbitrarily selected.
-const DEFAULT_MAX_VORONOI_DIMENSION: f64 = 200000.0;
+const DEFAULT_MAX_VORONOI_DIMENSION: f32 = 200000.0;
 
 /// The length of one 'step' for curved edges discretization as a percentage of the longest
 /// AABB axis of the object.
-const DEFAULT_VORONOI_DISCRETE_DISTANCE: f64 = 0.0001;
+const DEFAULT_VORONOI_DISCRETE_DISTANCE: f32 = 0.0001;
 
 trait Options {
     /// Will return an option parsed as a `T` or an Err

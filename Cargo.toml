@@ -12,7 +12,7 @@ authors = ["eadf"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-vector-traits = { version = "0.3.0", features = ["glam"] }
+vector-traits = { version = "0.3.1", features = ["glam"] }
 #vector-traits = { path = "../vector-traits", features = ["glam"] }
 linestring = "0.11.0"
 #linestring = { path="../linestring.rs"}
@@ -32,3 +32,7 @@ earcutr = "0.4.3"
 
 [dev-dependencies]
 rand = "0.8.5"
+criterion = "0.5.1"
+
+[profile.release]
+lto = true

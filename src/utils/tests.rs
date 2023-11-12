@@ -2,7 +2,7 @@
 // Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
-use super::*;
+use std::fmt::Debug;
 use vector_traits::glam::{DVec2, DVec3};
 
 #[allow(dead_code)]

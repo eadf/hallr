@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, OwnedModel};
-use crate::{ffi::FFIVector3, utils::HashableVector2, HallrError};
+use crate::{ffi::FFIVector3, HallrError};
 use hronn::prelude::ConvertTo;
 use krakel::PointTrait;
 use linestring::linestring_2d::convex_hull;
@@ -21,7 +21,6 @@ where
     T::Scalar: UlpsEq,
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
-    HashableVector2: From<T::Vector2>,
 {
     if models.is_empty() {
         return Err(HallrError::InvalidInputData(

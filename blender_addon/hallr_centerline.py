@@ -56,7 +56,7 @@ class OBJECT_OT_hallr_centerline(bpy.types.Operator):
         description="Discrete distance as a percentage of the AABB. This value is used when sampling parabolic arc "
                     "edges. It is also used for simplification.",
         default=0.005,
-        min=0.0001,
+        min=0.001,
         max=4.9999,
         precision=6,
         subtype='PERCENTAGE'

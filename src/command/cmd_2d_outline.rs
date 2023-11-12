@@ -5,7 +5,6 @@
 use crate::{
     command::{ConfigType, Model, OwnedModel},
     prelude::FFIVector3,
-    utils::HashableVector2,
     HallrError,
 };
 use centerline::HasMatrix4;
@@ -161,7 +160,6 @@ pub(crate) fn process_command<T: GenericVector3>(
 where
     T: ConvertTo<FFIVector3> + HasMatrix4,
     FFIVector3: ConvertTo<T>,
-    HashableVector2: From<T::Vector2>,
 {
     if models.len() > 1 {
         return Err(HallrError::InvalidInputData(

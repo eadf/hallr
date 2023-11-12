@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, Options};
-use crate::{prelude::*, utils::HashableVector2};
+use crate::prelude::*;
 use hronn::prelude::{triangulate_vertices, ConvertTo};
 
 use krakel::PointTrait;
@@ -94,7 +94,6 @@ where
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
     T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
-    HashableVector2: From<T::Vector2>,
 {
     if models.is_empty() {
         return Err(HallrError::NoData("No models found".to_string()));

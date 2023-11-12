@@ -63,7 +63,7 @@ fn test_voronoi_mesh_2() -> Result<(), HallrError> {
     };
     let models = vec![model_0];
     let result = super::process_command::<Vec3>(config, models)?;
-    assert_eq!(8, result.0.len()); // vertices
+    assert_eq!(10, result.0.len()); // vertices
     assert_eq!(27, result.1.len()); // indices
     Ok(())
 }
@@ -93,7 +93,7 @@ fn test_voronoi_mesh_3() -> Result<(), HallrError> {
     };
     let models = vec![model_0];
     let result = super::process_command::<Vec3>(config, models)?;
-    assert_eq!(25, result.0.len()); // vertices
-    assert_eq!(132, result.1.len()); // indices
+    assert_eq!(21, result.0.len()); // vertices
+    assert_eq!(96, result.1.len()); // indices
     Ok(())
 }

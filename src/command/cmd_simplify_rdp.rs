@@ -1,15 +1,16 @@
 use super::{ConfigType, Model, Options};
-use crate::{prelude::*, utils::HashableVector2};
+use crate::{
+    prelude::*,
+    utils::{VertexDeduplicator2D, VertexDeduplicator3D},
+};
 use ahash::{AHashMap, AHashSet};
 use hronn::prelude::ConvertTo;
-//use itertools::Itertools;
 use linestring::{
     linestring_3d::{LineString3, Plane},
     prelude::LineString2,
 };
 use smallvec::SmallVec;
 use std::collections::BTreeMap;
-//use linestring::prelude::LineString2;
 use vector_traits::{
     num_traits::AsPrimitive, GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ,
 };
@@ -19,30 +20,6 @@ use vector_traits::{
 
 #[cfg(test)]
 mod tests;
-
-/// converts to a private, comparable and hashable format
-/// only use this for floats that are f32::is_finite()
-/// This will only work for floats that's identical in every bit.
-/// The z coordinate will not be used because it might be slightly different
-/// depending on how it was calculated. Not using z will also make the calculations faster.
-// todo: replace with utils function
-#[inline(always)]
-fn transmute_xy_to_u32<T: HasXYZ>(a: &T) -> (u32, u32) {
-    let x: f32 = a.x().as_();
-    let y: f32 = a.y().as_();
-    (x.to_bits(), y.to_bits())
-}
-
-/// converts to a private, comparable and hashable format
-/// only use this for floats that are f32::is_finite()
-/// This will only work for floats that's identical in every bit.
-#[inline(always)]
-fn transmute_xyz_to_u32<T: HasXYZ>(a: &T) -> (u32, u32, u32) {
-    let x: f32 = a.x().as_();
-    let y: f32 = a.y().as_();
-    let z: f32 = a.z().as_();
-    (x.to_bits(), y.to_bits(), z.to_bits())
-}
 
 /// reformat the input into converted vertices.
 fn parse_input<T: GenericVector3>(model: &Model<'_>) -> Result<Vec<T>, HallrError>
@@ -333,7 +310,7 @@ pub(crate) fn process_command<T: GenericVector3>(
 where
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
-    HashableVector2: From<T::Vector2>,
+    f32: AsPrimitive<T::Scalar>,
 {
     let epsilon: T::Scalar = config.get_mandatory_parsed_option("epsilon", None)?;
     //println!("rust: vertices.len():{}", vertices.len());
@@ -357,74 +334,34 @@ where
         // todo: use another divide_into_shapes() method that uses the correct type 2d/3d
         if simpify_3d {
             // in 3d mode
-            let mut v_3d_map =
-                AHashMap::<(u32, u32, u32), usize>::with_capacity(model.indices.len());
-
-            for line_string in divide_into_shapes(model.indices)
-                .into_iter()
-                .map(|line| line.iter().map(|i| vertices[*i]).collect::<Vec<T>>())
-            {
-                //for line_string in line_string_set.set() {
+            let mut vdd = VertexDeduplicator3D::<T>::with_capacity(model.indices.len());
+            for line in divide_into_shapes(model.indices) {
+                let line_string = line.iter().map(|i| vertices[*i]).collect::<Vec<T>>();
                 let simplified = line_string.simplify_rdp(epsilon);
-                simplified.window_iter().for_each(|line| {
-                    let start = line.start;
-                    let start_key = transmute_xyz_to_u32(&start);
-                    //println!("testing {:?} as key {:?}", v2, v2_key);
-                    let start_index = *v_3d_map.entry(start_key).or_insert_with(|| {
-                        let new_index = output_vertices.len();
-                        output_vertices.push(start.to());
-                        //println!("i2 pushed ({},{},{}) as {}", v2.x(), v2.y(), v2.z(), new_index);
-                        new_index
-                    });
-                    let end = line.end;
-                    let end_key = transmute_xyz_to_u32(&end);
-                    //println!("testing {:?} as key {:?}", v2, v2_key);
-                    let end_index = *v_3d_map.entry(end_key).or_insert_with(|| {
-                        let new_index = output_vertices.len();
-                        output_vertices.push(end.to());
-                        //println!("i2 pushed ({},{},{}) as {}", v2.x(), v2.y(), v2.z(), new_index);
-                        new_index
-                    });
-                    output_indices.push(start_index);
-                    output_indices.push(end_index);
-                });
-                //}
+                for line in simplified.window_iter() {
+                    output_indices.push(vdd.get_index_or_insert(line.start)? as usize);
+                    output_indices.push(vdd.get_index_or_insert(line.end)? as usize);
+                }
+            }
+            for v in vdd.vertices {
+                output_vertices.push(v.to());
             }
         } else {
             // in 2d mode
-            let mut v_2d_map = AHashMap::<(u32, u32), usize>::with_capacity(model.indices.len());
-            for line_string in divide_into_shapes(model.indices)
-                .into_iter()
-                .map(|line| line.iter().map(|i| vertices[*i]).collect::<Vec<T>>())
-            {
+            let mut vdd = VertexDeduplicator2D::<T::Vector2>::with_capacity(model.indices.len());
+            for line in divide_into_shapes(model.indices) {
+                let line_string = line.iter().map(|i| vertices[*i]).collect::<Vec<T>>();
                 let simplified = line_string.copy_to_2d(Plane::XY).simplify_rdp(epsilon);
-                simplified.window_iter().for_each(|line| {
-                    let start = line.start;
-                    let start_key = transmute_xy_to_u32(&start.to_3d(T::Scalar::ZERO));
-                    //println!("testing {:?} as key {:?}", v2, v2_key);
-                    let start_index = *v_2d_map.entry(start_key).or_insert_with(|| {
-                        let new_index = output_vertices.len();
-                        output_vertices.push(start.to_3d(T::Scalar::ZERO).to());
-                        //println!("i2 pushed ({},{},{}) as {}", v2.x(), v2.y(), v2.z(), new_index);
-                        new_index
-                    });
-                    let end = line.end;
-                    let end_key = transmute_xy_to_u32(&end.to_3d(T::Scalar::ZERO));
-                    //println!("testing {:?} as key {:?}", v2, v2_key);
-                    let end_index = *v_2d_map.entry(end_key).or_insert_with(|| {
-                        let new_index = output_vertices.len();
-                        output_vertices.push(end.to_3d(T::Scalar::ZERO).to());
-                        //println!("i2 pushed ({},{},{}) as {}", v2.x(), v2.y(), v2.z(), new_index);
-                        new_index
-                    });
-                    output_indices.push(start_index);
-                    output_indices.push(end_index);
-                });
+                for line in simplified.window_iter() {
+                    output_indices.push(vdd.get_index_or_insert(line.start)? as usize);
+                    output_indices.push(vdd.get_index_or_insert(line.end)? as usize);
+                }
+            }
+            for v in vdd.vertices {
+                output_vertices.push(v.to_3d(T::Scalar::ZERO).to());
             }
         }
     }
-    //println!("result vertices:{:?}", obj.vertices);
-    //println!("result edges:{:?}", obj.lines.first());
     let mut config = ConfigType::new();
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
     let _ = config.insert("REMOVE_DOUBLES".to_string(), "false".to_string());
