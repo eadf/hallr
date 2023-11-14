@@ -6,7 +6,6 @@ use crate::{
     command::{ConfigType, Model, OwnedModel},
     HallrError,
 };
-use vector_traits::glam::Vec3;
 
 #[test]
 fn test_voronoi_mesh_1() -> Result<(), HallrError> {
@@ -31,7 +30,7 @@ fn test_voronoi_mesh_1() -> Result<(), HallrError> {
         vertices: &owned_model_0.vertices,
     };
     let models = vec![model_0];
-    let result = super::process_command::<Vec3>(config, models)?;
+    let result = super::process_command(config, models)?;
     assert_eq!(5, result.0.len()); // vertices
     assert_eq!(12, result.1.len()); // indices
     assert_eq!("triangulated", result.2.get("mesh.format").unwrap());
@@ -62,7 +61,7 @@ fn test_voronoi_mesh_2() -> Result<(), HallrError> {
         vertices: &owned_model_0.vertices,
     };
     let models = vec![model_0];
-    let result = super::process_command::<Vec3>(config, models)?;
+    let result = super::process_command(config, models)?;
     assert_eq!(10, result.0.len()); // vertices
     assert_eq!(27, result.1.len()); // indices
     Ok(())
@@ -92,7 +91,7 @@ fn test_voronoi_mesh_3() -> Result<(), HallrError> {
         vertices: &owned_model_0.vertices,
     };
     let models = vec![model_0];
-    let result = super::process_command::<Vec3>(config, models)?;
+    let result = super::process_command(config, models)?;
     assert_eq!(21, result.0.len()); // vertices
     assert_eq!(96, result.1.len()); // indices
     Ok(())

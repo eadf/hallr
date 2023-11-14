@@ -42,6 +42,7 @@ if __name__ == "__main__":
     # Run the cargo build command
     # Run the command
     result = subprocess.run(["cargo", "build", "--release"])
+    # result = subprocess.run(["cargo", "build", "--release", "--features", "display_sdf_chunks"])
 
     # Check the return status
     if result.returncode != 0:

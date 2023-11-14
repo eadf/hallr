@@ -29,10 +29,17 @@ rayon = "1.8.0"
 itertools = "0.11.0"
 vob = "3.0.3"
 earcutr = "0.4.3"
+ilattice = { version="0.3.0", default-features = false, features = ["glam"]}
+fast-surface-nets = "0.2.0"
 
 [dev-dependencies]
 rand = "0.8.5"
 criterion = "0.5.1"
+
+[features]
+glam-core-simd  = ["vector-traits/glam-core-simd"]
+glam-fast-math = ["vector-traits/glam-fast-math"]
+display_sdf_chunks = []
 
 [profile.release]
 lto = true

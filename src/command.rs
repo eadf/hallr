@@ -9,6 +9,7 @@ mod cmd_centerline;
 mod cmd_convex_hull_2d;
 mod cmd_delaunay_triangulation_2d;
 mod cmd_knife_intersect;
+mod cmd_sdf_mesh_2_5;
 mod cmd_simplify_rdp;
 pub mod cmd_surface_scan;
 mod cmd_voronoi_mesh;
@@ -17,7 +18,7 @@ mod impls;
 
 use crate::{ffi::FFIVector3, prelude::*};
 use std::collections::HashMap;
-use vector_traits::{glam::Vec3, GenericVector3};
+use vector_traits::{glam::Vec3A, GenericVector3};
 
 /// The largest dimension of the voronoi input, totally arbitrarily selected.
 const DEFAULT_MAX_VORONOI_DIMENSION: f32 = 200000.0;
@@ -158,7 +159,7 @@ pub(crate) fn process_command(
     config: ConfigType,
 ) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError> {
     // the type we use for the internal processing
-    type T = Vec3;
+    type T = Vec3A;
 
     validate_input_data::<T>(vertices, indices, &config)?;
     let models = collect_models::<T>(vertices, indices, &config)?;
@@ -176,7 +177,8 @@ pub(crate) fn process_command(
         "centerline" => cmd_centerline::process_command::<T>(config, models)?,
         "2d_outline" => cmd_2d_outline::process_command::<T>(config, models)?,
         "knife_intersect" => cmd_knife_intersect::process_command::<T>(config, models)?,
-        "voronoi_mesh" => cmd_voronoi_mesh::process_command::<T>(config, models)?,
+        "voronoi_mesh" => cmd_voronoi_mesh::process_command(config, models)?,
+        "sdf_mesh_2_5" => cmd_sdf_mesh_2_5::process_command(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(
             "Invalid command:{}",
             illegal_command

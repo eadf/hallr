@@ -19,6 +19,7 @@ use linestring::{
 };
 use vector_traits::{
     approx::{AbsDiffEq, UlpsEq},
+    glam::Vec3A,
     num_traits::{AsPrimitive, Float},
     GenericScalar, GenericVector2, GenericVector3, HasXY,
 };
@@ -33,8 +34,6 @@ struct DiagramHelperRw<T: GenericVector3> {
     /// a map between hash:able 2d coordinates and the known vertex index of pb_vertices
     vertex_map: VertexDeduplicator3D<T>,
 }
-
-type Face = Vec<usize>;
 
 impl<T: GenericVector3> DiagramHelperRw<T>
 where
@@ -377,12 +376,13 @@ where
 
     /// if a cell contains a segment the pb_face should be split into two faces, one
     /// on each side of the segment.
+    #[allow(clippy::type_complexity)]
     fn split_pb_face_by_segment(
         &self,
         v0n: usize,
         v1n: usize,
         pb_face: &Vec<usize>,
-    ) -> Result<Option<(Face, Face)>, HallrError> {
+    ) -> Result<Option<(Vec<usize>, Vec<usize>)>, HallrError> {
         if let Some(v0i) = pb_face.iter().position(|x| x == &v0n) {
             if let Some(v1i) = pb_face.iter().position(|x| x == &v1n) {
                 let mut a = Vec::<usize>::new();
@@ -410,7 +410,7 @@ where
         &self,
         mut dhrw: DiagramHelperRw<T>,
         edge_map: ahash::AHashMap<usize, Vec<usize>>,
-    ) -> Result<(Face, Vec<T>), HallrError> {
+    ) -> Result<(Vec<usize>, Vec<T>), HallrError> {
         let mut return_indices = Vec::<usize>::new();
 
         for cell in self.diagram.cells().iter() {
@@ -661,36 +661,29 @@ where
 
 /// Runs boost voronoi over the input and generates to output model.
 /// Removes the external edges as we can't handle infinite length edges in blender.
-fn compute_voronoi_mesh<T: GenericVector3>(
+pub(crate) fn compute_voronoi_mesh(
     input_pb_model: &Model<'_>,
-    cmd_arg_max_voronoi_dimension: T::Scalar,
-    cmd_discretization_distance: T::Scalar,
-) -> Result<OwnedModel, HallrError>
-where
-    T: HasMatrix4,
-    f32: AsPrimitive<T::Scalar>,
-    i64: AsPrimitive<T::Scalar>,
-    T::Scalar: OutputType,
-    T: ConvertTo<FFIVector3>,
-    FFIVector3: ConvertTo<T>,
-{
+    cmd_arg_max_voronoi_dimension: f32,
+    cmd_discretization_distance: f32,
+) -> Result<(Vec<Vec3A>, Vec<usize>), HallrError> {
     let (vor_vertices, vor_lines, vor_aabb2, inverted_transform) =
-        parse_input::<T>(input_pb_model, cmd_arg_max_voronoi_dimension)?;
+        parse_input::<Vec3A>(input_pb_model, cmd_arg_max_voronoi_dimension)?;
     let vor_diagram = {
-        BV::Builder::<i64, T::Scalar>::default()
+        BV::Builder::<i64, f32>::default()
             .with_vertices(vor_vertices.iter())?
             .with_segments(vor_lines.iter())?
             .build()?
     };
 
-    let discretization_distance: T::Scalar = {
-        let max_dist: T::Vector2 = vor_aabb2.high().unwrap() - vor_aabb2.low().unwrap();
-        cmd_discretization_distance * max_dist.magnitude() / 100.0.into()
+    let discretization_distance: f32 = {
+        let max_dist: <Vec3A as GenericVector3>::Vector2 =
+            vor_aabb2.high().unwrap() - vor_aabb2.low().unwrap();
+        cmd_discretization_distance * max_dist.magnitude() / 100.0
     };
 
-    let reject_edges = crate::utils::voronoi_utils::reject_external_edges::<T>(&vor_diagram)?;
-    let internal_vertices = find_internal_vertices::<T>(&vor_diagram, &reject_edges)?;
-    let diagram_helper = DiagramHelperRo::<T> {
+    let reject_edges = crate::utils::voronoi_utils::reject_external_edges::<Vec3A>(&vor_diagram)?;
+    let internal_vertices = find_internal_vertices::<Vec3A>(&vor_diagram, &reject_edges)?;
+    let diagram_helper = DiagramHelperRo::<Vec3A> {
         vertices: vor_vertices,
         segments: vor_lines,
         diagram: vor_diagram,
@@ -701,28 +694,16 @@ where
 
     let (dhrw, mod_edges) = diagram_helper.convert_edges(discretization_distance)?;
     let (indices, vertices) = diagram_helper.iterate_cells(dhrw, mod_edges)?;
-
-    Ok(OwnedModel {
-        //name: input_pb_model.name.clone(),
-        //world_orientation: input_pb_model.world_orientation.clone(),
-        indices,
-        vertices: vertices.into_iter().map(|v| v.to()).collect(),
-    })
+    Ok((vertices, indices))
 }
 
 /// Run the voronoi_mesh command
-pub(crate) fn process_command<T: GenericVector3>(
+pub(crate) fn process_command(
     config: ConfigType,
     models: Vec<Model<'_>>,
-) -> Result<(Vec<FFIVector3>, Face, ConfigType), HallrError>
-where
-    T: ConvertTo<FFIVector3> + HasMatrix4,
-    FFIVector3: ConvertTo<T>,
-    T::Scalar: OutputType,
-    i64: AsPrimitive<T::Scalar>,
-    T::Scalar: AsPrimitive<i64>,
-    f32: AsPrimitive<T::Scalar>,
-{
+) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError> {
+    type Scalar = f32;
+
     if models.is_empty() {
         return Err(HallrError::InvalidInputData(
             "This operation requires ome input model".to_string(),
@@ -735,7 +716,7 @@ where
         ));
     }
 
-    let cmd_arg_max_voronoi_dimension: T::Scalar = config.get_mandatory_parsed_option(
+    let cmd_arg_max_voronoi_dimension: Scalar = config.get_mandatory_parsed_option(
         "MAX_VORONOI_DIMENSION",
         Some(super::DEFAULT_MAX_VORONOI_DIMENSION.as_()),
     )?;
@@ -749,12 +730,12 @@ where
             cmd_arg_max_voronoi_dimension
         )));
     }
-    let cmd_arg_discretization_distance: T::Scalar = config.get_mandatory_parsed_option(
+    let cmd_arg_discretization_distance: Scalar = config.get_mandatory_parsed_option(
         "DISTANCE",
         Some(super::DEFAULT_VORONOI_DISCRETE_DISTANCE.as_()),
     )?;
 
-    if !(super::DEFAULT_VORONOI_DISCRETE_DISTANCE.as_()..5.0.into())
+    if !(super::DEFAULT_VORONOI_DISCRETE_DISTANCE.as_()..5.0)
         .contains(&cmd_arg_discretization_distance)
     {
         return Err(HallrError::InvalidInputData(format!(
@@ -765,8 +746,8 @@ where
     }
 
     // used for simplification and discretization distance
-    let max_distance =
-        cmd_arg_max_voronoi_dimension * cmd_arg_discretization_distance / 100.0.into();
+    let max_distance: Scalar =
+        cmd_arg_max_voronoi_dimension * cmd_arg_discretization_distance / 100.0;
     // we already tested a_command.models.len()
     let input_model = &models[0];
 
@@ -788,11 +769,17 @@ where
     println!();
 
     // do the actual operation
-    let output_model = compute_voronoi_mesh(
+    let (vertices, indices) = compute_voronoi_mesh(
         input_model,
         cmd_arg_max_voronoi_dimension,
         cmd_arg_discretization_distance,
     )?;
+    let output_model = OwnedModel {
+        //name: input_pb_model.name.clone(),
+        //world_orientation: input_pb_model.world_orientation.clone(),
+        indices,
+        vertices: vertices.into_iter().map(|v: Vec3A| v.to()).collect(),
+    };
 
     let mut return_config = ConfigType::new();
     let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());

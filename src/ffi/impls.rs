@@ -9,7 +9,7 @@ use hronn::prelude::ConvertTo;
 use std::fmt;
 use vector_traits::{
     approx::{AbsDiffEq, UlpsEq},
-    glam::{DVec3, Vec3},
+    glam::{vec3a, DVec3, Vec3, Vec3A},
     Approx, GenericScalar, HasXY, HasXYZ,
 };
 
@@ -135,6 +135,13 @@ impl From<FFIVector3> for Vec3 {
     }
 }
 
+impl From<FFIVector3> for Vec3A {
+    #[inline(always)]
+    fn from(v: FFIVector3) -> Self {
+        vec3a(v.x, v.y, v.z)
+    }
+}
+
 impl ConvertTo<DVec3> for FFIVector3 {
     #[inline(always)]
     fn to(self) -> DVec3 {
@@ -154,6 +161,20 @@ impl ConvertTo<Vec3> for FFIVector3 {
             y: self.y,
             z: self.z,
         }
+    }
+}
+
+impl ConvertTo<Vec3A> for FFIVector3 {
+    #[inline(always)]
+    fn to(self) -> Vec3A {
+        vec3a(self.x, self.y, self.z)
+    }
+}
+
+impl ConvertTo<FFIVector3> for Vec3A {
+    #[inline(always)]
+    fn to(self) -> FFIVector3 {
+        FFIVector3::new(self.x, self.y, self.z)
     }
 }
 

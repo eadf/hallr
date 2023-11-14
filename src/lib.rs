@@ -57,6 +57,9 @@ pub enum HallrError {
     #[error(transparent)]
     LinestringError(#[from] linestring::LinestringError),
 
+    #[error("Overflow error: {0}")]
+    Overflow(String),
+
     #[error("Invalid float value: {0}")]
     FloatNotFinite(String),
 

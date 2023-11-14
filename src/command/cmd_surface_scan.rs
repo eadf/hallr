@@ -15,7 +15,7 @@ use hronn::{
 
 use crate::{command::Options, prelude::FFIVector3, HallrError};
 use krakel::PointTrait;
-use vector_traits::{num_traits::AsPrimitive, Approx, GenericVector3, HasXY};
+use vector_traits::{num_traits::AsPrimitive, GenericVector3, HasXY};
 
 #[cfg(test)]
 mod tests;
@@ -31,7 +31,7 @@ fn do_meander_scan<T: GenericVector3>(
 where
     T::Vector2: PointTrait<PScalar = T::Scalar>,
     T: ConvertTo<FFIVector3>,
-    FFIVector3: ConvertTo<T> + Approx,
+    FFIVector3: ConvertTo<T>,
     u32: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
     u32: AsPrimitive<T::Scalar>,
     T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
@@ -92,7 +92,7 @@ fn do_triangulation_scan<T: GenericVector3>(
 where
     T::Vector2: PointTrait<PScalar = T::Scalar>,
     T: ConvertTo<FFIVector3>,
-    FFIVector3: ConvertTo<T> + Approx,
+    FFIVector3: ConvertTo<T>,
     u32: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
     u32: AsPrimitive<T::Scalar>,
     T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
@@ -138,7 +138,7 @@ pub(crate) fn process_command<T: GenericVector3>(
 where
     T::Vector2: PointTrait<PScalar = T::Scalar>,
     T: ConvertTo<FFIVector3>,
-    FFIVector3: ConvertTo<T> + Approx,
+    FFIVector3: ConvertTo<T>,
     u32: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
     u32: AsPrimitive<T::Scalar>,
     T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,

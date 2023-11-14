@@ -21,7 +21,7 @@ use vector_traits::{
 #[cfg(test)]
 mod tests;
 
-/// reformat the input into converted vertices.
+/// reformat the input from FFIVector3 to <GenericVector3> vertices.
 fn parse_input<T: GenericVector3>(model: &Model<'_>) -> Result<Vec<T>, HallrError>
 where
     FFIVector3: ConvertTo<T>,
