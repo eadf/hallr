@@ -22,6 +22,7 @@ fn test_centerline_1() -> Result<(), HallrError> {
     let _ = config.insert("SIMPLIFY".to_string(), "true".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.8870333, -0.39229375, 0.010461569).into(),
             (-0.3180092, -2.0773406, 0.010461569).into(),
@@ -32,6 +33,7 @@ fn test_centerline_1() -> Result<(), HallrError> {
     };
 
     let model_0 = Model {
+        world_orientation: &owned_model_0.world_orientation,
         indices: &owned_model_0.indices,
         vertices: &owned_model_0.vertices,
     };
@@ -56,6 +58,7 @@ fn test_centerline_2() -> Result<(), HallrError> {
     let _ = config.insert("ANGLE".to_string(), "89.00000133828577".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.8870333, -0.39229375, 0.010461569).into(),
             (-0.3180092, -2.0773406, 0.010461569).into(),
@@ -66,6 +69,7 @@ fn test_centerline_2() -> Result<(), HallrError> {
     };
 
     let model_0 = Model {
+        world_orientation: &owned_model_0.world_orientation,
         indices: &owned_model_0.indices,
         vertices: &owned_model_0.vertices,
     };
@@ -91,6 +95,7 @@ fn test_centerline_3() -> Result<(), HallrError> {
     let _ = config.insert("WELD".to_string(), "true".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.49995, -0.7411614, 0.0).into(),
             (-0.39808625, 0.6156829, 0.0).into(),
@@ -102,6 +107,7 @@ fn test_centerline_3() -> Result<(), HallrError> {
     };
 
     let model_0 = Model {
+        world_orientation: &owned_model_0.world_orientation,
         indices: &owned_model_0.indices,
         vertices: &owned_model_0.vertices,
     };

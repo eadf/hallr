@@ -244,8 +244,8 @@ where
     };
 
     Ok(OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         //name: input_pb_model.name.clone(),
-        //world_orientation: input_pb_model.world_orientation.clone(),
         vertices: output_model_vertices,
         indices: output_pb_model_indices,
     })
@@ -255,7 +255,7 @@ where
 pub(crate) fn process_command<T: GenericVector3>(
     config: ConfigType,
     models: Vec<Model<'_>>,
-) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
+) -> Result<super::CommandResult, HallrError>
 where
     T: ConvertTo<FFIVector3> + HasMatrix4,
     FFIVector3: ConvertTo<T>,
@@ -265,13 +265,7 @@ where
 {
     let default_max_voronoi_dimension: T::Scalar =
         NumCast::from(super::DEFAULT_MAX_VORONOI_DIMENSION).unwrap();
-    if false {
-        // use this to generate test data from blender
-        println!("Some test data:");
-        println!("model:indices:{:?}", models[0].indices);
-        println!("model:vertices:{:?}", models[0].vertices);
-        println!("config{:?}", config);
-    }
+
     // angle is supposed to be in degrees
     let cmd_arg_angle: T::Scalar = config.get_mandatory_parsed_option("ANGLE", None)?;
     if !(0.0.into()..=90.0.into()).contains(&cmd_arg_angle) {
@@ -344,24 +338,30 @@ where
         ));
     }
 
+    if !model.has_identity_orientation() {
+        return Err(HallrError::InvalidInputData(
+            "The centerline operation currently requires identify world orientation".to_string(),
+        ));
+    }
     // The dot product between normalized vectors of edge and the segment that created it.
     // Can also be described as cos(angle) between edge and segment.
     let dot_limit = cmd_arg_angle.to_radians().cos().abs();
 
     println!("cmd_centerline got command");
-    //println!("model.vertices:{:?}", model.vertices.len());
-    //println!("model.indices:{:?}", model.indices.len());
-    //println!("model.faces:{:?}", faces.len());
-    /*println!(
-        "model.world_orientation:{:?}",
-        model.world_orientation.as_ref().map_or(0, |_| 16)
-    );*/
-    println!("ANGLE:{:?}°", cmd_arg_angle);
-    println!("dot_limit:{:?}", dot_limit);
+    println!("model.vertices:{:?}", model.vertices.len());
+    println!("model.indices:{:?}", model.indices.len());
+    println!(
+        "model.world_orientation:{:?}:{}",
+        model.world_orientation,
+        model.has_identity_orientation()
+    );
+    println!("ANGLE:{:?}°, dot_limit:{:?}", cmd_arg_angle, dot_limit);
     println!("REMOVE_INTERNALS:{:?}", cmd_arg_remove_internals);
     println!("SIMPLIFY:{:?}", cmd_arg_simplify);
-    println!("WELD:{:?}", cmd_arg_weld);
-    println!("KEEP_INPUT:{:?}", cmd_arg_keep_input);
+    println!(
+        "KEEP_INPUT:{:?}, WELD:{:?}",
+        cmd_arg_keep_input, cmd_arg_weld
+    );
     println!("DISTANCE:{:?}%", cmd_arg_discrete_distance);
     println!("NEGATIVE_RADIUS:{:?}", cmd_arg_negative_radius);
     println!("MAX_VORONOI_DIMENSION:{:?}", cmd_arg_max_voronoi_dimension);
@@ -515,5 +515,10 @@ where
     );
     //println!("rv:vertices:{:?}", model.vertices);
     //println!("rv:indices:{:?}", model.indices);
-    Ok((model.vertices, model.indices, return_config))
+    Ok((
+        model.vertices,
+        model.indices,
+        model.world_orientation.to_vec(),
+        return_config,
+    ))
 }

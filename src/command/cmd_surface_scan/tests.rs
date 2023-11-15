@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use crate::{
-    command::{ConfigType, Model, OwnedModel},
+    command::{ConfigType, OwnedModel},
     HallrError,
 };
 use vector_traits::glam::Vec3;
@@ -23,6 +23,7 @@ fn test_surface_scan_1() -> Result<(), HallrError> {
     let _ = config.insert("probe".to_string(), "BALL_NOSE".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-0.29610628, -1.7045903, -0.9548358).into(),
             (-0.18138881, -0.23321122, 0.5500126).into(),
@@ -35,6 +36,7 @@ fn test_surface_scan_1() -> Result<(), HallrError> {
     };
 
     let owned_model_1 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.8112676, -0.21234381, 0.0).into(),
             (-1.0113943, -0.9753443, 0.0).into(),
@@ -48,15 +50,7 @@ fn test_surface_scan_1() -> Result<(), HallrError> {
         indices: vec![0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 0],
     };
 
-    let model_0 = Model {
-        indices: &owned_model_0.indices,
-        vertices: &owned_model_0.vertices,
-    };
-    let model_1 = Model {
-        indices: &owned_model_1.indices,
-        vertices: &owned_model_1.vertices,
-    };
-    let models = vec![model_0, model_1];
+    let models = vec![owned_model_0.as_model(), owned_model_1.as_model()];
     let result = super::process_command::<Vec3>(config, models)?;
     assert_eq!(35, result.0.len()); // vertices
     assert_eq!(35, result.1.len()); // indices
@@ -78,6 +72,7 @@ fn test_surface_scan_2() -> Result<(), HallrError> {
     let _ = config.insert("bounds".to_string(), "CONVEX_HULL".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-0.29610628, -1.7045903, -0.9548358).into(),
             (-0.18138881, -0.23321122, 0.5500126).into(),
@@ -90,6 +85,7 @@ fn test_surface_scan_2() -> Result<(), HallrError> {
     };
 
     let owned_model_1 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.8112676, -0.21234381, 0.0).into(),
             (-1.0113943, -0.9753443, 0.0).into(),
@@ -103,15 +99,7 @@ fn test_surface_scan_2() -> Result<(), HallrError> {
         indices: vec![0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 0],
     };
 
-    let model_0 = Model {
-        indices: &owned_model_0.indices,
-        vertices: &owned_model_0.vertices,
-    };
-    let model_1 = Model {
-        indices: &owned_model_1.indices,
-        vertices: &owned_model_1.vertices,
-    };
-    let models = vec![model_0, model_1];
+    let models = vec![owned_model_0.as_model(), owned_model_1.as_model()];
     let result = super::process_command::<Vec3>(config, models)?;
     assert_eq!(24, result.0.len()); // vertices
     assert_eq!(24, result.1.len()); // indices
@@ -133,6 +121,7 @@ fn test_surface_scan_3() -> Result<(), HallrError> {
     let _ = config.insert("probe".to_string(), "BALL_NOSE".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.49995, -0.7401614, -0.66466707).into(),
             (-0.39808625, 0.6056829, 0.09412134).into(),
@@ -144,6 +133,7 @@ fn test_surface_scan_3() -> Result<(), HallrError> {
     };
 
     let owned_model_1 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.3491066, -0.42415974, 0.0).into(),
             (0.42415974, -1.3491066, 0.0).into(),
@@ -153,15 +143,7 @@ fn test_surface_scan_3() -> Result<(), HallrError> {
         indices: vec![2, 0, 0, 1, 1, 3, 3, 2],
     };
 
-    let model_0 = Model {
-        indices: &owned_model_0.indices,
-        vertices: &owned_model_0.vertices,
-    };
-    let model_1 = Model {
-        indices: &owned_model_1.indices,
-        vertices: &owned_model_1.vertices,
-    };
-    let models = vec![model_0, model_1];
+    let models = vec![owned_model_0.as_model(), owned_model_1.as_model()];
     let result = super::process_command::<Vec3>(config, models)?;
     assert_eq!(32, result.0.len()); // vertices
     assert_eq!(138, result.1.len()); // indices
@@ -186,6 +168,7 @@ fn test_surface_scan_4() -> Result<(), HallrError> {
     let _ = config.insert("probe".to_string(), "BALL_NOSE".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.49995, -0.7401614, -0.66466707).into(),
             (-0.39808625, 0.6056829, 0.09412134).into(),
@@ -197,6 +180,7 @@ fn test_surface_scan_4() -> Result<(), HallrError> {
     };
 
     let owned_model_1 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.3491066, -0.42415974, 0.0).into(),
             (0.42415974, -1.3491066, 0.0).into(),
@@ -206,15 +190,7 @@ fn test_surface_scan_4() -> Result<(), HallrError> {
         indices: vec![2, 0, 0, 1, 1, 3, 3, 2],
     };
 
-    let model_0 = Model {
-        indices: &owned_model_0.indices,
-        vertices: &owned_model_0.vertices,
-    };
-    let model_1 = Model {
-        indices: &owned_model_1.indices,
-        vertices: &owned_model_1.vertices,
-    };
-    let models = vec![model_0, model_1];
+    let models = vec![owned_model_0.as_model(), owned_model_1.as_model()];
     let result = super::process_command::<Vec3>(config, models)?;
     assert_eq!(36, result.0.len()); // vertices
     assert_eq!(171, result.1.len()); // indices

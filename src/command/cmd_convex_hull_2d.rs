@@ -15,7 +15,7 @@ mod tests;
 pub(crate) fn process_command<T: GenericVector3>(
     _config: ConfigType,
     models: Vec<Model<'_>>,
-) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
+) -> Result<super::CommandResult, HallrError>
 where
     T::Vector2: PointTrait<PScalar = T::Scalar>,
     T::Scalar: UlpsEq,
@@ -43,5 +43,10 @@ where
         "convex_hull_2d operation returning {} vertices",
         rv_model.indices.len()
     );
-    Ok((rv_model.vertices, rv_model.indices, config))
+    Ok((
+        rv_model.vertices,
+        rv_model.indices,
+        model.world_orientation.to_vec(),
+        config,
+    ))
 }

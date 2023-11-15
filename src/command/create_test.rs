@@ -54,7 +54,7 @@ fn test_{}_1() -> Result<(),HallrError> {{"###,
         for (i, model) in models.iter().enumerate() {
             println!(
                 r###"
-    let owned_model_{} = OwnedModel{{vertices:vec!["###,
+    let owned_model_{} = OwnedModel{{world_orientation: OwnedModel::identity_matrix(), vertices:vec!["###,
                 i
             );
             for v in model.vertices.iter() {
@@ -68,13 +68,9 @@ fn test_{}_1() -> Result<(),HallrError> {{"###,
             println!("]}};");
         }
         println!();
-        for i in 0..models.len() {
-            print!("let model_{}=Model{{indices:&owned_model_{}.indices, vertices:&owned_model_{}.vertices }};", i,i, i);
-        }
-        println!();
         print!("let models = vec![");
         for i in 0..models.len() {
-            print!("model_{}, ", i);
+            print!("owned_model_{}..as_model(), ", i);
         }
         println!("];");
         println!("let result = super::process_command::<Vec3>(config, models)?;");

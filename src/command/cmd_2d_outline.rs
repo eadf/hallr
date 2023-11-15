@@ -156,7 +156,7 @@ where
 pub(crate) fn process_command<T: GenericVector3>(
     _config: ConfigType,
     models: Vec<Model<'_>>,
-) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
+) -> Result<super::CommandResult, HallrError>
 where
     T: ConvertTo<FFIVector3> + HasMatrix4,
     FFIVector3: ConvertTo<T>,
@@ -184,6 +184,7 @@ where
         let mut model = OwnedModel {
             //name: a_command.models[0].name.clone(),
             //world_orientation: input_model.world_orientation.clone(),
+            world_orientation: input_model.copy_world_orientation()?,
             vertices: rv_vector,
             indices: Vec::<usize>::with_capacity(input_model.indices.len()),
         };
@@ -194,7 +195,12 @@ where
         let mut return_config = ConfigType::new();
         let _ = return_config.insert("mesh.format".to_string(), "line_chunks".to_string());
 
-        Ok((model.vertices, model.indices, return_config))
+        Ok((
+            model.vertices,
+            model.indices,
+            model.world_orientation.to_vec(),
+            return_config,
+        ))
     } else {
         Err(HallrError::InvalidInputData(
             "Model did not contain any data".to_string(),

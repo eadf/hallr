@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use crate::{
-    command::{ConfigType, Model, OwnedModel},
+    command::{ConfigType, OwnedModel},
     HallrError,
 };
 
@@ -16,6 +16,7 @@ fn test_voronoi_mesh_1() -> Result<(), HallrError> {
     let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.3491066, -0.42415974, 0.0).into(),
             (0.42415974, -1.3491066, 0.0).into(),
@@ -25,15 +26,11 @@ fn test_voronoi_mesh_1() -> Result<(), HallrError> {
         indices: vec![2, 0, 0, 1, 1, 3, 3, 2],
     };
 
-    let model_0 = Model {
-        indices: &owned_model_0.indices,
-        vertices: &owned_model_0.vertices,
-    };
-    let models = vec![model_0];
+    let models = vec![owned_model_0.as_model()];
     let result = super::process_command(config, models)?;
     assert_eq!(5, result.0.len()); // vertices
     assert_eq!(12, result.1.len()); // indices
-    assert_eq!("triangulated", result.2.get("mesh.format").unwrap());
+    assert_eq!("triangulated", result.3.get("mesh.format").unwrap());
     Ok(())
 }
 
@@ -45,6 +42,7 @@ fn test_voronoi_mesh_2() -> Result<(), HallrError> {
     let _ = config.insert("command".to_string(), "voronoi_mesh".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.3491066, -0.42415974, 0.0).into(),
             (0.42415974, -1.3491066, 0.0).into(),
@@ -56,11 +54,7 @@ fn test_voronoi_mesh_2() -> Result<(), HallrError> {
         indices: vec![2, 0, 0, 1, 1, 3, 3, 2, 3, 4, 4, 5, 5, 2],
     };
 
-    let model_0 = Model {
-        indices: &owned_model_0.indices,
-        vertices: &owned_model_0.vertices,
-    };
-    let models = vec![model_0];
+    let models = vec![owned_model_0.as_model()];
     let result = super::process_command(config, models)?;
     assert_eq!(10, result.0.len()); // vertices
     assert_eq!(27, result.1.len()); // indices
@@ -75,6 +69,7 @@ fn test_voronoi_mesh_3() -> Result<(), HallrError> {
     let _ = config.insert("command".to_string(), "voronoi_mesh".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.3491066, -0.42415974, 0.0).into(),
             (0.42415974, -1.3491066, 0.0).into(),
@@ -86,11 +81,7 @@ fn test_voronoi_mesh_3() -> Result<(), HallrError> {
         indices: vec![2, 0, 0, 1, 1, 3, 3, 2, 3, 4],
     };
 
-    let model_0 = Model {
-        indices: &owned_model_0.indices,
-        vertices: &owned_model_0.vertices,
-    };
-    let models = vec![model_0];
+    let models = vec![owned_model_0.as_model()];
     let result = super::process_command(config, models)?;
     assert_eq!(21, result.0.len()); // vertices
     assert_eq!(96, result.1.len()); // indices

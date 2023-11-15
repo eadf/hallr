@@ -12,21 +12,27 @@ authors = ["eadf"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-vector-traits = { version = "0.3.1", features = ["glam"] }
+#vector-traits = { version = "0.3.1", features = ["glam"] }
 #vector-traits = { path = "../vector-traits", features = ["glam"] }
-linestring = "0.11.0"
+vector-traits = {git = "https://github.com/eadf/vector-traits.git", features = ["glam"]}
+#linestring = "0.11.0"
 #linestring = { path="../linestring.rs"}
-centerline = { version="0.9.0", features = ["glam"]}
-#centerline = { path="../centerline.rs"}
-krakel = {version = "0.2.0", features = ["glam"]}
-hronn = { version = "0.2.0", features = ["glam"]}
+linestring = {git = "https://github.com/eadf/linestring.rs.git"}
+#centerline = { version="0.9.0", features = ["glam"]}
+#centerline = { path="../centerline.rs", features = ["glam"]}
+centerline = {git = "https://github.com/eadf/centerline.rs.git", features = ["glam"]}
+#krakel = {version = "0.2.0", features = ["vector-traits", "glam"]}
+#krakel = {path = "../krakel", features = ["vector-traits", "glam"]}
+krakel = {git = "https://github.com/eadf/krakel.git", features = ["vector-traits", "glam"]}
+#hronn = { version = "0.2.0", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
+hronn = { git = "https://github.com/eadf/hronn.git", features = ["glam"]}
 boostvoronoi = { version = "0.11.0" }
 thiserror = "1.0.50"
 ahash = "0.8.6"
 smallvec = "1.11.2"
 rayon = "1.8.0"
-itertools = "0.11.0"
+itertools = "0.12.0"
 vob = "3.0.3"
 earcutr = "0.4.3"
 ilattice = { version="0.3.0", default-features = false, features = ["glam"]}

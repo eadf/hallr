@@ -14,6 +14,7 @@ fn test_convex_hull_2d_1() -> Result<(), HallrError> {
     let _ = config.insert("command".to_string(), "convex_hull_2d".to_string());
 
     let owned_model = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.0, 1.0, 0.0).into(),
             (-1.8112676, -0.21234381, 0.0).into(),
@@ -27,10 +28,7 @@ fn test_convex_hull_2d_1() -> Result<(), HallrError> {
         indices: vec![],
     };
 
-    let model = Model {
-        vertices: &owned_model.vertices,
-        indices: &owned_model.indices,
-    };
+    let model = owned_model.as_model();
     let result = super::process_command::<Vec3>(config, vec![model])?;
     assert_eq!(8, result.0.len());
     assert_eq!(9, result.1.len());
@@ -43,6 +41,7 @@ fn test_convex_hull_2d_2() -> Result<(), HallrError> {
     let _ = config.insert("command".to_string(), "convex_hull_2d".to_string());
 
     let owned_model = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (0.2001399, 0.3328338, 0.0).into(),
             (0.18789414, 0.3487433, 0.0).into(),
@@ -67,11 +66,7 @@ fn test_convex_hull_2d_2() -> Result<(), HallrError> {
         indices: vec![],
     };
 
-    let model = Model {
-        vertices: &owned_model.vertices,
-        indices: &owned_model.indices,
-    };
-    let result = super::process_command::<Vec3>(config, vec![model])?;
+    let result = super::process_command::<Vec3>(config, vec![owned_model.as_model()])?;
     assert_eq!(13, result.0.len());
     assert_eq!(14, result.1.len());
     Ok(())
@@ -86,6 +81,7 @@ fn test_convex_hull_2d_3() -> Result<(), HallrError> {
 
     let mut rng: StdRng = SeedableRng::from_seed([42; 32]);
     let mut owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: Vec::new(),
         indices: Vec::new(),
     };
@@ -100,10 +96,7 @@ fn test_convex_hull_2d_3() -> Result<(), HallrError> {
         );
     }
 
-    let model_0 = Model {
-        indices: &owned_model_0.indices,
-        vertices: &owned_model_0.vertices,
-    };
+    let model_0 = owned_model_0.as_model();
     let models = vec![model_0];
     let result = super::process_command::<Vec3>(config, models)?;
     println!("vertices: {:?}", result.0);
@@ -115,6 +108,7 @@ fn test_convex_hull_2d_3() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("command".to_string(), "convex_hull_2d".to_string());
     let model_0 = Model {
+        world_orientation: &owned_model_0.world_orientation,
         indices: &vec![],
         vertices: &result.0,
     };

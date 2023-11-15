@@ -402,8 +402,8 @@ pub(crate) fn build_output_model(
         );
     }
     Ok(OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         //name: pb_model_name,
-        //world_orientation: pb_world,
         vertices,
         indices,
     })
@@ -413,7 +413,7 @@ pub(crate) fn build_output_model(
 pub(crate) fn process_command(
     config: ConfigType,
     models: Vec<Model<'_>>,
-) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError> {
+) -> Result<super::CommandResult, HallrError> {
     if models.is_empty() {
         return Err(HallrError::InvalidInputData(
             "This operation requires ome input model".to_string(),
@@ -453,5 +453,10 @@ pub(crate) fn process_command(
         output_model.vertices.len(),
         output_model.indices.len()
     );
-    Ok((output_model.vertices, output_model.indices, return_config))
+    Ok((
+        output_model.vertices,
+        output_model.indices,
+        output_model.world_orientation.to_vec(),
+        return_config,
+    ))
 }

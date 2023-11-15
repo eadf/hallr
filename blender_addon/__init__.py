@@ -25,9 +25,7 @@ if DEV_MODE:
 # the string "from ." will be find-and-replaced with "" if run in DEV_MODE
 from . import hallr_collision
 from . import hallr_ffi_utils
-from . import hallr_simplify_rdp
 from . import hallr_2d_delaunay_triangulation
-from . import hallr_2d_outline
 from . import hallr_centerline
 from . import hallr_mesh_operators
 
@@ -35,9 +33,7 @@ from . import hallr_mesh_operators
 modules = (
     hallr_mesh_operators,  # always register hallr_mesh_operators first
     hallr_collision,
-    hallr_simplify_rdp,
     hallr_2d_delaunay_triangulation,
-    hallr_2d_outline,
     hallr_centerline,
 )
 

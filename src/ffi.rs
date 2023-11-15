@@ -62,12 +62,16 @@ impl FFIVector3 {
 /// * `vertex_count`: The number of vertices in the geometry.
 /// * `indices`: A pointer to an array of `usize` representing indices.
 /// * `indices_count`: The number of indices in the geometry.
+/// * `matrices`: A pointer to an array of `f32` representing world orientation (matrix)
+/// * `matrices_count`: The number of elements (f32) in `matrices`,
 #[repr(C)]
 pub struct GeometryOutput {
     vertices: *mut FFIVector3,
     vertex_count: usize,
     indices: *mut usize,
     indices_count: usize,
+    matrices: *mut f32,
+    matrices_count: usize,
 }
 
 impl GeometryOutput {
@@ -85,10 +89,9 @@ impl GeometryOutput {
     fn free(&self) {
         unsafe {
             // Convert the raw pointers back into Vecs, which will deallocate when dropped
-            let _vertices =
-                Vec::from_raw_parts(self.vertices, self.vertex_count, self.vertex_count);
-            let _indices =
-                Vec::from_raw_parts(self.indices, self.indices_count, self.indices_count);
+            let _ = Vec::from_raw_parts(self.vertices, self.vertex_count, self.vertex_count);
+            let _ = Vec::from_raw_parts(self.indices, self.indices_count, self.indices_count);
+            let _ = Vec::from_raw_parts(self.matrices, self.matrices_count, self.matrices_count);
         }
     }
 }
@@ -157,10 +160,16 @@ pub struct ProcessResult {
 fn process_command_error_handler(
     vertices: &[FFIVector3],
     indices: &[usize],
+    matrix: &[f32],
     config: HashMap<String, String>,
-) -> (Vec<FFIVector3>, Vec<usize>, HashMap<String, String>) {
+) -> (
+    Vec<FFIVector3>,
+    Vec<usize>,
+    Vec<f32>,
+    HashMap<String, String>,
+) {
     let start = Instant::now();
-    let rv = match crate::command::process_command(vertices, indices, config) {
+    let rv = match crate::command::process_command(vertices, indices, matrix, config) {
         Ok(rv) => rv,
         Err(err) => {
             eprintln!("{:?}", err);
@@ -169,7 +178,7 @@ fn process_command_error_handler(
             }
             let mut config = HashMap::new();
             let _ = config.insert("ERROR".to_string(), err.to_string());
-            (vec![], vec![], config)
+            (vec![], vec![], vec![], config)
         }
     };
     let duration = start.elapsed();
@@ -195,6 +204,8 @@ pub unsafe extern "C" fn process_geometry(
     vertex_count: usize,
     input_ffi_indices: *const usize,
     indices_count: usize,
+    input_ffi_matrix: *const f32,
+    matrix_count: usize,
     config: *const StringMap,
 ) -> ProcessResult {
     assert!(
@@ -230,15 +241,18 @@ pub unsafe extern "C" fn process_geometry(
 
     let input_vertices = slice::from_raw_parts(input_ffi_vertices, vertex_count);
     let input_indices = slice::from_raw_parts(input_ffi_indices, indices_count);
+    let input_matrix = slice::from_raw_parts(input_ffi_matrix, matrix_count);
     println!("Rust:received {} vertices", input_vertices.len());
     println!("Rust:received {} indices", input_indices.len());
+    println!("Rust:received {} matrix", input_matrix.len());
 
-    let (output_vertices, output_indices, output_config) =
-        process_command_error_handler(input_vertices, input_indices, input_config);
+    let (output_vertices, output_indices, output_matrix, output_config) =
+        process_command_error_handler(input_vertices, input_indices, input_matrix, input_config);
     println!(
-        "Rust returning: vertices:{}, indices:{}, config:{:?}",
+        "Rust returning: vertices:{}, indices:{}, matrices:{}/16, config:{:?}",
         output_vertices.len(),
         output_indices.len(),
+        output_matrix.len(),
         output_config
     );
     let rv_g = GeometryOutput {
@@ -246,6 +260,8 @@ pub unsafe extern "C" fn process_geometry(
         vertex_count: output_vertices.len(),
         indices: output_indices.as_ptr() as *mut usize,
         indices_count: output_indices.len(),
+        matrices: output_matrix.as_ptr() as *mut f32,
+        matrices_count: output_matrix.len(),
     };
 
     // Convert the HashMap into two vectors of *mut c_char
@@ -273,6 +289,7 @@ pub unsafe extern "C" fn process_geometry(
     // calls free_process_results on it.
     std::mem::forget(output_vertices);
     std::mem::forget(output_indices);
+    std::mem::forget(output_matrix);
     std::mem::forget(output_keys);
     std::mem::forget(output_values);
 
@@ -300,9 +317,10 @@ pub unsafe extern "C" fn free_process_results(result: *mut ProcessResult) {
         "Rust: free_process_results(): result ptr was null"
     );
     println!(
-        "Rust releasing memory: vertices:{}, indices:{}, map items:{}",
+        "Rust releasing memory: vertices:{}, indices:{}, matrices:{}, map items:{}",
         (*result).geometry.vertex_count,
         (*result).geometry.indices_count,
+        (*result).geometry.matrices_count,
         (*result).map.count
     );
     (*result).geometry.free();

@@ -18,7 +18,7 @@ impl Options for HashMap<String, String> {
             Some(v) => match v.parse() {
                 Ok(val) => Ok(val),
                 Err(_) => Err(HallrError::InvalidParameter(format!(
-                    "Invalid value for parameter \"{}\": \"{}\"",
+                    "Invalid value for parameter {{\"{}\"}}: {{\"{}\"}}",
                     key, v
                 ))),
             },
@@ -45,7 +45,7 @@ impl Options for HashMap<String, String> {
             Some(v) => match v.parse() {
                 Ok(val) => Ok(Some(val)),
                 Err(_) => Err(HallrError::InvalidParameter(format!(
-                    "Invalid value for parameter \"{}\": \"{}\"",
+                    "Invalid value for parameter {{\"{}\"}}: {{\"{}\"}}",
                     key, v
                 ))),
             },
@@ -58,7 +58,7 @@ impl Options for HashMap<String, String> {
         match self.get(key) {
             Some(v) => Ok(v),
             None => Err(HallrError::MissingParameter(
-                format!("The parameter \"{key}\" was missing").to_string(),
+                format!("The parameter {{\"{key}\"}} was missing").to_string(),
             )),
         }
     }

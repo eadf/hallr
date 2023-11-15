@@ -38,7 +38,9 @@ class GeometryOutput(ctypes.Structure):
     _fields_ = [("vertices", ctypes.POINTER(Vector3)),
                 ("vertex_count", ctypes.c_size_t),
                 ("indices", ctypes.POINTER(ctypes.c_size_t)),
-                ("indices_count", ctypes.c_size_t)]
+                ("indices_count", ctypes.c_size_t),
+                ("matrices", ctypes.POINTER(ctypes.c_float)),
+                ("matrices_count", ctypes.c_size_t)]
 
 
 class ProcessResult(ctypes.Structure):
@@ -85,7 +87,9 @@ def load_latest_dylib(prefix="libhallr_"):
 
     rust_lib.process_geometry.argtypes = [ctypes.POINTER(Vector3), ctypes.c_size_t,
                                           ctypes.POINTER(ctypes.c_size_t), ctypes.c_size_t,
+                                          ctypes.POINTER(ctypes.c_float), ctypes.c_size_t,
                                           ctypes.POINTER(StringMap)]
+
     rust_lib.process_geometry.restype = ProcessResult
 
     rust_lib.free_process_results.argtypes = [ctypes.POINTER(ProcessResult)]
@@ -516,6 +520,13 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
     vertices_ptr = (Vector3 * len(vertices))(*vertices)
     indices_ptr = (ctypes.c_size_t * len(indices))(*indices)
 
+    # Handle the world orientation
+    matrices = get_matrices(active_obj)
+    if bounding_shape:
+        matrices.extend(get_matrices(bounding_shape))
+
+    matrices_ptr = (ctypes.c_float * len(matrices))(*matrices)
+
     # 7. Convert the dictionary to two separate lists for keys and values
     keys_list = list(config.keys())
     values_list = list(config.values())
@@ -524,7 +535,7 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
     map_data = StringMap(keys_array, values_array, len(keys_list))
 
     # 8. Make the call to rust
-    rust_result = rust_lib.process_geometry(vertices_ptr, len(vertices), indices_ptr, len(indices), map_data)
+    rust_result = rust_lib.process_geometry(vertices_ptr, len(vertices), indices_ptr, len(indices), matrices_ptr, len(matrices), map_data)
 
     print("python received: ", rust_result.geometry.vertex_count, "vertices",
           rust_result.geometry.indices_count, "indices")
@@ -548,6 +559,15 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
     ctypes_close_library(rust_lib)
 
     return output_vertices, output_indices, output_map
+
+
+def get_matrices(bpy_object):
+    """ Return the world orientation as an array of 16 floats"""
+    bm = bpy_object.matrix_world
+    return [bm[0][0], bm[0][1], bm[0][2], bm[0][3],
+            bm[1][0], bm[1][1], bm[1][2], bm[1][3],
+            bm[2][0], bm[2][1], bm[2][2], bm[2][3],
+            bm[3][0], bm[3][1], bm[3][2], bm[3][3]]
 
 
 def call_rust_direct(config, active_obj, use_line_chunks=False):
@@ -584,13 +604,20 @@ def call_rust_direct(config, active_obj, use_line_chunks=False):
             raise HallrException("No polygons found, maybe the mesh is not fully triangulated?")
     indices_ptr = (ctypes.c_size_t * len(indices))(*indices)
 
+    # Handle the world orientation
+    matrices = get_matrices(active_obj)
+    matrices_ptr = (ctypes.c_float * len(matrices))(*matrices)
+
+    # Handle the StringMap
     keys_list = list(config.keys())
     values_list = list(config.values())
     keys_array = (ctypes.c_char_p * len(keys_list))(*[k.encode('utf-8') for k in keys_list])
     values_array = (ctypes.c_char_p * len(values_list))(*[v.encode('utf-8') for v in values_list])
     map_data = StringMap(keys_array, values_array, len(keys_list))
+
     # This calls the rust library
-    rust_result = rust_lib.process_geometry(vertices_ptr, len(vertices), indices_ptr, len(indices), map_data)
+    rust_result = rust_lib.process_geometry(vertices_ptr, len(vertices), indices_ptr, len(indices), matrices_ptr,
+                                            len(matrices), map_data)
 
     output_vertices = [(vec.x, vec.y, vec.z) for vec in
                        (rust_result.geometry.vertices[i] for i in range(rust_result.geometry.vertex_count))]

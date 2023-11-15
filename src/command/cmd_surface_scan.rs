@@ -134,7 +134,7 @@ where
 pub(crate) fn process_command<T: GenericVector3>(
     config: ConfigType,
     models: Vec<Model<'_>>,
-) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
+) -> Result<super::CommandResult, HallrError>
 where
     T::Vector2: PointTrait<PScalar = T::Scalar>,
     T: ConvertTo<FFIVector3>,
@@ -149,7 +149,10 @@ where
         ))?
     }
     let model = &models[0];
+    let world_matrix = model.world_orientation.to_vec();
     let bounding_shape = &models[1];
+    let _bounding_shape_world_matrix = bounding_shape.world_orientation.to_vec();
+    // todo: actually use the matrices
 
     let mesh_analyzer = MeshAnalyzerBuilder::<T, FFIVector3>::default()
         .load_from_ref(model.vertices, model.indices)?
@@ -169,7 +172,7 @@ where
         )))?,
     };
 
-    match config.get_mandatory_option("pattern")? {
+    let rv = match config.get_mandatory_option("pattern")? {
         "MEANDER" => do_meander_scan::<T>(
             config,
             bounding_vertices,
@@ -193,5 +196,6 @@ where
             "{} is not a valid option for the \"probe\" parameter",
             pattern
         ))),
-    }
+    }?;
+    Ok((rv.0, rv.1, world_matrix, rv.2))
 }

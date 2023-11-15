@@ -181,14 +181,21 @@ pub(crate) fn divide_into_shapes(indices: &[usize]) -> Vec<Vec<usize>> {
     let mut visited = AHashSet::<usize>::with_capacity(indices.len());
 
     /*println!(
-            "adjacency_map:{:?}",
-            adjacency_map
-                .iter()
-                .sorted_unstable_by(|a, b| a.0.cmp(b.0))
-                .collect::<Vec<_>>()
-        );
-        println!("max_index:{:?}", max_index);
-    */
+        "adjacency_map:{:?}",
+        adjacency_map
+            .iter()
+            .sorted_unstable_by(|a, b| a.0.cmp(b.0))
+            .collect::<Vec<_>>()
+    );
+    println!("max_index:{:?}", max_index);
+    println!(
+        "candidate_nodes:{:?}",
+        candidate_nodes
+            .iter()
+            .sorted_unstable_by(|a, b| a.0.cmp(b.0))
+            .collect::<Vec<_>>()
+    );*/
+
     let mut current: usize = 0;
 
     // first stage: pop from the candidate list
@@ -196,17 +203,20 @@ pub(crate) fn divide_into_shapes(indices: &[usize]) -> Vec<Vec<usize>> {
         let mut next_vertex = Option::<usize>::None;
         while !candidate_nodes.is_empty() && next_vertex.is_none() {
             if let Some(mut current_entry) = candidate_nodes.first_entry() {
-                {
-                    current = *current_entry.key();
-                    let array = current_entry.get_mut();
-                    while !array.is_empty() {
-                        let n_vertex = array.pop().unwrap();
-                        if termination_nodes.contains(&n_vertex) || visited.contains(&n_vertex) {
-                            continue;
-                        } else {
-                            next_vertex = Some(n_vertex);
-                            break;
+                current = *current_entry.key();
+                let array = current_entry.get_mut();
+                while !array.is_empty() {
+                    let n_vertex = array.pop().unwrap();
+                    if termination_nodes.contains(&n_vertex) {
+                        if current < n_vertex {
+                            // only add termination node -> termination node connection once
+                            group_container.push(vec![current, n_vertex]);
                         }
+                    } else if visited.contains(&n_vertex) {
+                        continue;
+                    } else {
+                        next_vertex = Some(n_vertex);
+                        break;
                     }
                 }
                 if current_entry.get().is_empty() {
@@ -225,34 +235,34 @@ pub(crate) fn divide_into_shapes(indices: &[usize]) -> Vec<Vec<usize>> {
             ));
         }
     }
-
-    /*println!(
-            "stage two: visited:{} termination_nodes:{} total:{} max_index:{}",
-            visited.len(),
-            termination_nodes.len(),
-            visited.len() + termination_nodes.len(),
-            max_index
-        );
-        for group in &group_container {
-            println!("group:{:?}", group);
-        }
-        println!(
-            "visited:{:?}, len:{}",
-            visited
-                .iter()
-                .sorted_unstable_by(|a, b| a.cmp(b))
-                .collect::<Vec<_>>(),
-            visited.len()
-        );
-        println!(
-            "termination_nodes:{:?}, len:{}",
-            termination_nodes
-                .iter()
-                .sorted_unstable_by(|a, b| a.cmp(b))
-                .collect::<Vec<_>>(),
-            termination_nodes.len()
-        );
-        assert!(candidate_nodes.is_empty());
+    /*
+    println!(
+        "stage two: visited:{} termination_nodes:{} total:{} max_index:{}",
+        visited.len(),
+        termination_nodes.len(),
+        visited.len() + termination_nodes.len(),
+        max_index
+    );
+    for group in &group_container {
+        println!("group:{:?}", group);
+    }
+    println!(
+        "visited:{:?}, len:{}",
+        visited
+            .iter()
+            .sorted_unstable_by(|a, b| a.cmp(b))
+            .collect::<Vec<_>>(),
+        visited.len()
+    );
+    println!(
+        "termination_nodes:{:?}, len:{}",
+        termination_nodes
+            .iter()
+            .sorted_unstable_by(|a, b| a.cmp(b))
+            .collect::<Vec<_>>(),
+        termination_nodes.len()
+    );
+    assert!(candidate_nodes.is_empty());
     */
     // second stage, only loops remaining
     if visited.len() + termination_nodes.len() < max_index + 1 {
@@ -306,7 +316,7 @@ pub(crate) fn divide_into_shapes(indices: &[usize]) -> Vec<Vec<usize>> {
 pub(crate) fn process_command<T: GenericVector3>(
     config: ConfigType,
     models: Vec<Model<'_>>,
-) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
+) -> Result<super::CommandResult, HallrError>
 where
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
@@ -324,11 +334,12 @@ where
     let simpify_3d = config.get_parsed_option("simplify_3d")?.unwrap_or(false);
     let mut output_vertices = Vec::<FFIVector3>::default();
     let mut output_indices = Vec::<usize>::default();
-
+    let output_matrix;
     if !models.is_empty() {
         let model = &models[0];
         output_vertices.reserve(model.vertices.len());
         output_indices.reserve(model.indices.len());
+        output_matrix = model.world_orientation.to_vec();
 
         let vertices = parse_input(&models[0])?;
         // todo: use another divide_into_shapes() method that uses the correct type 2d/3d
@@ -361,6 +372,8 @@ where
                 output_vertices.push(v.to_3d(T::Scalar::ZERO).to());
             }
         }
+    } else {
+        output_matrix = vec![];
     }
     let mut config = ConfigType::new();
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
@@ -371,5 +384,5 @@ where
         output_vertices.len(),
         output_indices.len()
     );
-    Ok((output_vertices, output_indices, config))
+    Ok((output_vertices, output_indices, output_matrix, config))
 }

@@ -16,7 +16,7 @@ mod tests;
 fn aabb_delaunay_triangulation_2d<T: GenericVector3>(
     _config: ConfigType,
     models: Vec<Model<'_>>,
-) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
+) -> Result<super::CommandResult, HallrError>
 where
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
@@ -45,15 +45,20 @@ where
         .collect();
 
     let results = triangulate_vertices::<T, FFIVector3>(aabb, &hull, model.vertices)?;
-    let mut return_config = ConfigType::new();
-    let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
-    Ok((results.0, results.1, return_config))
+    let mut config = ConfigType::new();
+    let _ = config.insert("mesh.format".to_string(), "triangulated".to_string());
+    Ok((
+        results.0,
+        results.1,
+        model.world_orientation.to_vec(),
+        config,
+    ))
 }
 
 fn convex_hull_delaunay_triangulation_2d<T: GenericVector3>(
     _config: ConfigType,
     models: Vec<Model<'_>>,
-) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
+) -> Result<super::CommandResult, HallrError>
 where
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
@@ -82,13 +87,18 @@ where
     let results = triangulate_vertices::<T, FFIVector3>(aabb, &convex_hull, model.vertices)?;
     let mut return_config = ConfigType::new();
     let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
-    Ok((results.0, results.1, return_config))
+    Ok((
+        results.0,
+        results.1,
+        model.world_orientation.to_vec(),
+        return_config,
+    ))
 }
 
 pub(crate) fn process_command<T: GenericVector3>(
     config: ConfigType,
     models: Vec<Model<'_>>,
-) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
+) -> Result<super::CommandResult, HallrError>
 where
     T::Vector2: PointTrait<PScalar = T::Scalar>,
     T: ConvertTo<FFIVector3>,

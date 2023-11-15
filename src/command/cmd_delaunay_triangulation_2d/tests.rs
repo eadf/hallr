@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use crate::{
-    command::{ConfigType, Model, OwnedModel},
+    command::{ConfigType, OwnedModel},
     HallrError,
 };
 use vector_traits::glam::Vec3;
@@ -21,6 +21,7 @@ fn test_2d_delaunay_triangulation_1() -> Result<(), HallrError> {
     let _ = config.insert("first_vertex_model_1".to_string(), "13".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (0.05647427, 0.25491828, 0.0).into(),
             (0.124220066, 0.28291255, 0.0).into(),
@@ -40,6 +41,7 @@ fn test_2d_delaunay_triangulation_1() -> Result<(), HallrError> {
     };
 
     let owned_model_1 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.8112676, -0.21234381, 0.0).into(),
             (-1.0113943, -0.9753443, 0.0).into(),
@@ -53,15 +55,7 @@ fn test_2d_delaunay_triangulation_1() -> Result<(), HallrError> {
         indices: vec![0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 0],
     };
 
-    let model_0 = Model {
-        indices: &owned_model_0.indices,
-        vertices: &owned_model_0.vertices,
-    };
-    let model_1 = Model {
-        indices: &owned_model_1.indices,
-        vertices: &owned_model_1.vertices,
-    };
-    let models = vec![model_0, model_1];
+    let models = vec![owned_model_0.as_model(), owned_model_1.as_model()];
     let result = super::process_command::<Vec3>(config, models)?;
     assert_eq!(16, result.0.len()); // vertices
     assert_eq!(78, result.1.len()); // indices
@@ -81,6 +75,7 @@ fn test_2d_delaunay_triangulation_2() -> Result<(), HallrError> {
     let _ = config.insert("bounds".to_string(), "CONVEX_HULL".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (0.05647427, 0.25491828, 0.0).into(),
             (0.124220066, 0.28291255, 0.0).into(),
@@ -100,6 +95,7 @@ fn test_2d_delaunay_triangulation_2() -> Result<(), HallrError> {
     };
 
     let owned_model_1 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.8112676, -0.21234381, 0.0).into(),
             (-1.0113943, -0.9753443, 0.0).into(),
@@ -113,15 +109,7 @@ fn test_2d_delaunay_triangulation_2() -> Result<(), HallrError> {
         indices: vec![0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 0],
     };
 
-    let model_0 = Model {
-        indices: &owned_model_0.indices,
-        vertices: &owned_model_0.vertices,
-    };
-    let model_1 = Model {
-        indices: &owned_model_1.indices,
-        vertices: &owned_model_1.vertices,
-    };
-    let models = vec![model_0, model_1];
+    let models = vec![owned_model_0.as_model(), owned_model_1.as_model()];
     let result = super::process_command::<Vec3>(config, models)?;
     assert_eq!(19, result.0.len()); // vertices
     assert_eq!(87, result.1.len()); // indices

@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use crate::{
-    command::{ConfigType, Model, OwnedModel},
+    command::{ConfigType, OwnedModel},
     HallrError,
 };
 use vector_traits::glam::Vec3;
@@ -17,6 +17,7 @@ fn test_simplify_rdp_1() -> Result<(), HallrError> {
     let _ = config.insert("simplify_3d".to_string(), "false".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (1.6574931, 1.296678, 0.0).into(),
             (1.6901442, 1.3938915, 0.0).into(),
@@ -59,11 +60,7 @@ fn test_simplify_rdp_1() -> Result<(), HallrError> {
         ],
     };
 
-    let model_0 = Model {
-        indices: &owned_model_0.indices,
-        vertices: &owned_model_0.vertices,
-    };
-    let models = vec![model_0];
+    let models = vec![owned_model_0.as_model()];
     let result = super::process_command::<Vec3>(config, models)?;
     assert_eq!(8, result.0.len()); // vertices
     assert_eq!(16, result.1.len()); // indices
@@ -79,6 +76,7 @@ fn test_simplify_rdp_2() -> Result<(), HallrError> {
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.8112676, -0.21234381, 0.0).into(),
             (-1.0113943, -0.9753443, 0.0).into(),
@@ -97,11 +95,7 @@ fn test_simplify_rdp_2() -> Result<(), HallrError> {
         ],
     };
 
-    let model_0 = Model {
-        indices: &owned_model_0.indices,
-        vertices: &owned_model_0.vertices,
-    };
-    let models = vec![model_0];
+    let models = vec![owned_model_0.as_model()];
     let result = super::process_command::<Vec3>(config, models)?;
     assert_eq!(10, result.0.len()); // vertices
     assert_eq!(22, result.1.len()); // indices
@@ -117,6 +111,7 @@ fn test_simplify_rdp_3() -> Result<(), HallrError> {
     let _ = config.insert("epsilon".to_string(), "0.5".to_string());
 
     let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (0.70696604, 0.655005, 0.04003489).into(),
             (1.4350312, 1.726058, 0.0400348).into(),
@@ -134,14 +129,38 @@ fn test_simplify_rdp_3() -> Result<(), HallrError> {
         ],
     };
 
-    let model_0 = Model {
-        indices: &owned_model_0.indices,
-        vertices: &owned_model_0.vertices,
-    };
-    let models = vec![model_0];
+    let models = vec![owned_model_0.as_model()];
     let result = super::process_command::<Vec3>(config, models)?;
     assert_eq!(9, result.0.len()); // vertices
     assert_eq!(20, result.1.len()); // indices
+    Ok(())
+}
+
+#[test]
+fn test_simplify_rdp_4() -> Result<(), HallrError> {
+    let mut config = ConfigType::default();
+    let _ = config.insert("simplify_3d".to_string(), "false".to_string());
+    let _ = config.insert("epsilon".to_string(), "0.0010000000474974513".to_string());
+    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert("command".to_string(), "simplify_rdp".to_string());
+
+    let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
+        vertices: vec![
+            (-0.99999994, -1.0, 0.038504124).into(),
+            (0.014304634, 0.021932945, 0.038504124).into(),
+            (-0.48725998, 0.53284, 0.038504124).into(),
+            (0.11475183, 0.05492184, 0.038504124).into(),
+            (1.0, 1.0, 0.038504124).into(),
+            (0.65058, -0.43409, 0.038504124).into(),
+        ],
+        indices: vec![0, 1, 3, 5, 1, 3, 3, 4, 1, 2],
+    };
+
+    let models = vec![owned_model_0.as_model()];
+    let result = super::process_command::<Vec3>(config, models)?;
+    assert_eq!(6, result.0.len()); // vertices
+    assert_eq!(10, result.1.len()); // indices
     Ok(())
 }
 
@@ -216,5 +235,17 @@ fn test_divide_into_shapes_6() -> Result<(), HallrError> {
     assert_eq!(result[0], vec![1, 3, 0, 1]);
     assert_eq!(result[1], vec![1, 4, 2, 1]);
     assert_eq!(result[2], vec![11, 12, 13]);
+    Ok(())
+}
+
+#[test]
+fn test_divide_into_shapes_7() -> Result<(), HallrError> {
+    let indices = vec![0, 1, 3, 5, 1, 3, 3, 4, 1, 2];
+    let result = super::divide_into_shapes(&indices);
+    assert_eq!(result[0], vec![0, 1]);
+    assert_eq!(result[1], vec![1, 2]);
+    assert_eq!(result[2], vec![1, 3]);
+    assert_eq!(result[3], vec![3, 4]);
+    assert_eq!(result[4], vec![3, 5]);
     Ok(())
 }

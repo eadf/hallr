@@ -34,6 +34,38 @@ def angle_between_edges(p0, p1, p2):
     return angle
 
 
+class Hallr_2DOutline(bpy.types.Operator):
+    """Generates the 2d outline from 2D mesh objects"""
+
+    bl_idname = "mesh.hallr_2d_outline"
+    bl_label = "Hallr 2D Outline"
+    bl_description = ("Outline 2d geometry into a wire frame, the geometry must be flat and on a plane intersecting "
+                      "origin")
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def execute(self, context):
+        obj = context.active_object
+
+        if obj.type != 'MESH':
+            self.report({'ERROR'}, "Active object is not a mesh!")
+            return {'CANCELLED'}
+
+        # Ensure the object is in object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        config = {"command": "2d_outline"}
+
+        # Call the Rust function
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=False)
+        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+
+        return {'FINISHED'}
+
+
 class Hallr_KnifeIntersect(bpy.types.Operator):
     """A knife intersect operator that works in the XY plane, remember to apply any transformations"""
 
@@ -112,6 +144,53 @@ class Hallr_ConvexHull2D(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
+
+
+class Hallr_SimplifyRdp(bpy.types.Operator):
+    """2D Line Simplification using the RDP Algorithm, works in the XY plane"""
+
+    bl_idname = "mesh.hallr_simplify_rdp"
+    bl_label = "Hallr 2D Simplify RDP"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    epsilon_props: bpy.props.FloatProperty(name="Epsilon", default=0.1, min=0, description="Amount of simplification")
+    simplify_3d_props: bpy.props.BoolProperty(
+        name="Simplify 3d",
+        description="When selected simplification will be done in 3d",
+        default=True
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def execute(self, context):
+        obj = context.active_object
+
+        if obj.type != 'MESH':
+            self.report({'ERROR'}, "Active object is not a mesh!")
+            return {'CANCELLED'}
+
+        # Ensure the object is in object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        config = {"command": "simplify_rdp", "epsilon": str(self.epsilon_props),
+                  "simplify_3d": str(self.simplify_3d_props).lower()}
+
+        # Call the Rust function
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
+        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "epsilon_props")
+        layout.prop(self, "simplify_3d_props")
 
 
 class Hallr_SelectEndVertices(bpy.types.Operator):
@@ -345,11 +424,17 @@ class Hallr_Voronoi_Mesh(bpy.types.Operator):
         name="Discretization distance",
         description="Discretization distance as a percentage of the total AABB length. This value is used when sampling"
                     "parabolic arc edges. Smaller value gives a finer step distance.",
-        default=0.005,
+        default=0.1,
         min=0.0001,
         max=4.9999,
         precision=6,
         subtype='PERCENTAGE'
+    )
+
+    negative_radius_props: bpy.props.BoolProperty(
+        name="Negative radius",
+        description="Represent voronoi edge distance to input geometry as a negative Z value",
+        default=True
     )
 
     @classmethod
@@ -369,6 +454,7 @@ class Hallr_Voronoi_Mesh(bpy.types.Operator):
 
         config = {"command": "voronoi_mesh",
                   "DISTANCE": str(self.distance_props),
+                  "NEGATIVE_RADIUS": str(self.negative_radius_props).lower(),
                   }
         # Call the Rust function
         vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
@@ -379,6 +465,7 @@ class Hallr_Voronoi_Mesh(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "distance_props")
+        layout.prop(self, "negative_radius_props")
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -447,13 +534,16 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         layout.operator("mesh.hallr_meshtools_convex_hull_2d")
+        layout.operator("mesh.hallr_2d_outline")
         layout.operator("mesh.hallr_meshtools_select_end_vertices")
         layout.operator("mesh.hallr_meshtools_select_collinear_edges")
+        layout.operator("mesh.hallr_convex_hull_2d")
         layout.operator("mesh.hallr_meshtools_select_vertices_until_intersection")
         layout.operator("mesh.hallr_meshtools_select_intersection_vertices")
         layout.operator("mesh.hallr_meshtools_knife_intersect_2d")
         layout.operator("mesh.hallr_meshtools_voronoi_mesh")
         layout.operator("mesh.hallr_meshtools_sdf_mesh_2_5")
+        layout.operator("mesh.hallr_simplify_rdp")
 
 
 # draw function for integration in menus
@@ -472,7 +562,9 @@ classes = (
     Hallr_ConvexHull2D,
     Hallr_KnifeIntersect,
     Hallr_Voronoi_Mesh,
-    Hallr_SdfMesh25D
+    Hallr_SdfMesh25D,
+    Hallr_2DOutline,
+    Hallr_SimplifyRdp
 )
 
 

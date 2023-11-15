@@ -701,7 +701,7 @@ pub(crate) fn compute_voronoi_mesh(
 pub(crate) fn process_command(
     config: ConfigType,
     models: Vec<Model<'_>>,
-) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError> {
+) -> Result<super::CommandResult, HallrError> {
     type Scalar = f32;
 
     if models.is_empty() {
@@ -720,6 +720,10 @@ pub(crate) fn process_command(
         "MAX_VORONOI_DIMENSION",
         Some(super::DEFAULT_MAX_VORONOI_DIMENSION.as_()),
     )?;
+
+    let cmd_arg_negative_radius = config
+        .get_parsed_option::<bool>("NEGATIVE_RADIUS")?
+        .unwrap_or(true);
 
     if !(super::DEFAULT_MAX_VORONOI_DIMENSION as i64..100_000_000)
         .contains(&cmd_arg_max_voronoi_dimension.as_())
@@ -750,22 +754,30 @@ pub(crate) fn process_command(
         cmd_arg_max_voronoi_dimension * cmd_arg_discretization_distance / 100.0;
     // we already tested a_command.models.len()
     let input_model = &models[0];
+    if !input_model.has_identity_orientation() {
+        return Err(HallrError::InvalidInputData(
+            "The voronoi mesh operation currently requires identify world orientation".to_string(),
+        ));
+    }
 
     // we already tested that there is only one model
-
+    println!();
+    println!("cmd_voronoi_mesh got command:");
     //println!("model.name:{:?}, ", input_model.name);
-    println!("model.vertices:{:?}, ", input_model.vertices.len());
-    //println!("model.faces:{:?}, ", input_model.faces.len());
-    //println!(
-    //    "model.world_orientation:{:?}, ",
-    //    input_model.world_orientation.as_ref().map_or(0, |_| 16)
-    //);
+    println!("model.vertices:{:?}", input_model.vertices.len());
+    println!("model.indices:{:?}", input_model.indices.len());
+    println!(
+        "model.world_orientation:{:?}:{}",
+        input_model.world_orientation,
+        input_model.has_identity_orientation()
+    );
     println!("MAX_VORONOI_DIMENSION:{:?}", cmd_arg_max_voronoi_dimension);
     println!(
         "VORONOI_DISCRETE_DISTANCE:{:?}%",
         cmd_arg_discretization_distance
     );
     println!("max_distance:{:?}", max_distance);
+    println!("NEGATIVE_RADIUS:{:?}", cmd_arg_negative_radius);
     println!();
 
     // do the actual operation
@@ -775,10 +787,18 @@ pub(crate) fn process_command(
         cmd_arg_discretization_distance,
     )?;
     let output_model = OwnedModel {
+        world_orientation: Model::copy_world_orientation(input_model)?,
         //name: input_pb_model.name.clone(),
-        //world_orientation: input_pb_model.world_orientation.clone(),
         indices,
-        vertices: vertices.into_iter().map(|v: Vec3A| v.to()).collect(),
+        vertices: if cmd_arg_negative_radius {
+            // radius is interpreted as a negative Z value by default
+            vertices.into_iter().map(|v: Vec3A| v.to()).collect()
+        } else {
+            vertices
+                .into_iter()
+                .map(|v: Vec3A| Vec3A::new(v.x, v.y, v.z.abs()).to())
+                .collect()
+        },
     };
 
     let mut return_config = ConfigType::new();
@@ -788,5 +808,10 @@ pub(crate) fn process_command(
         output_model.vertices.len(),
         output_model.indices.len()
     );
-    Ok((output_model.vertices, output_model.indices, return_config))
+    Ok((
+        output_model.vertices,
+        output_model.indices,
+        output_model.world_orientation.to_vec(),
+        return_config,
+    ))
 }

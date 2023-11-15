@@ -120,8 +120,7 @@ checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 [[package]]
 name = "centerline"
 version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2e9c6095c427db178776ee8f34c2334ec26188d7d16d8df2cbf80072432c6fc"
+source = "git+https://github.com/eadf/centerline.rs.git#6aaaf4f30c9adae389dd344a8c7817814f41925e"
 dependencies = [
  "ahash",
  "bitflags",
@@ -298,6 +297,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "fast-surface-nets"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d332c6935fee77eb269b29eb27c92dbfe4b4043592c399fb3f6a4e5a1aa03ad3"
+dependencies = [
+ "glam 0.20.5",
+ "ndshape",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -307,6 +316,18 @@ dependencies = [
  "libc",
  "wasi",
 ]
+
+[[package]]
+name = "glam"
+version = "0.20.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f43e957e744be03f5801a55472f593d43fabdebf25a4585db250f04d86b1675f"
+
+[[package]]
+name = "glam"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e4afd9ad95555081e109fe1d21f2a30c691b5f0919c67dfa690a2e1eb6bd51c"
 
 [[package]]
 name = "glam"
@@ -329,8 +350,10 @@ dependencies = [
  "centerline",
  "criterion",
  "earcutr",
+ "fast-surface-nets",
  "hronn",
- "itertools 0.11.0",
+ "ilattice",
+ "itertools 0.12.0",
  "krakel",
  "linestring",
  "rand",
@@ -360,10 +383,9 @@ checksum = "d77f7ec81a6d05a3abb01ab6eb7590f6083d08449fe5a1c8b1e620283546ccb7"
 [[package]]
 name = "hronn"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a776e071b6a8ebb587808144ba5380698370f486965e81298d13c258e0ef6ff"
+source = "git+https://github.com/eadf/hronn.git#2e61f15684caea3d22525117076649f267cee68d"
 dependencies = [
- "itertools 0.11.0",
+ "itertools 0.12.0",
  "krakel",
  "linestring",
  "rayon",
@@ -372,6 +394,15 @@ dependencies = [
  "thiserror",
  "vector-traits",
  "vob",
+]
+
+[[package]]
+name = "ilattice"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e8d9f732ea4ec84c5abdc73b70e0b55fa8c2e96d74e7193a4a138ba3ca33254"
+dependencies = [
+ "glam 0.23.0",
 ]
 
 [[package]]
@@ -404,6 +435,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25db6b064527c5d482d0423354fcd07a89a2dfe07b67892e62411946db7f07b0"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -421,13 +461,12 @@ dependencies = [
 [[package]]
 name = "krakel"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35f0147548fee8a38b98abe62c8a9a62f4427b80357fdeb36ae437cefacf889f"
+source = "git+https://github.com/eadf/krakel.git#4082274e2962c4287afbd21ae143f3fc6da39b3b"
 dependencies = [
  "approx",
- "glam",
  "num-traits",
  "thiserror",
+ "vector-traits",
 ]
 
 [[package]]
@@ -445,8 +484,7 @@ checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 [[package]]
 name = "linestring"
 version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3d0d29beafc3b04a5021017b959431a1eb4043f5bd05d19c0afe1e8bc33b9bc"
+source = "git+https://github.com/eadf/linestring.rs.git#8ee44d61382e64905eeee18e95248e390d6d0224"
 dependencies = [
  "ahash",
  "itertools 0.11.0",
@@ -454,6 +492,7 @@ dependencies = [
  "smallvec",
  "thiserror",
  "vector-traits",
+ "vob",
 ]
 
 [[package]]
@@ -481,6 +520,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a634b1c61a95585bd15607c6ab0c4e5b226e695ff2800ba0cdccddf208c406c"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "ndshape"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "975bce586ad637e27f6dc26ee907c07050686a588695bfd64b7873a9d48a700c"
+dependencies = [
+ "static_assertions",
 ]
 
 [[package]]
@@ -749,6 +797,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
 name = "syn"
 version = "2.0.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -798,11 +852,10 @@ checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 [[package]]
 name = "vector-traits"
 version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4204f57b73ac8cee6d56fa9161fb135e9cdfa1b63f6f8297254247d9c166b0f3"
+source = "git+https://github.com/eadf/vector-traits.git#2bfb6c2d068e6bb3fc5c424e32eda6d4412eeb4b"
 dependencies = [
  "approx",
- "glam",
+ "glam 0.24.2",
  "num-traits",
 ]
 

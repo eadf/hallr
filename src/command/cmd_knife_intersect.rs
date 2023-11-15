@@ -39,6 +39,9 @@ where
             aabbe_d.x(), aabbe_d.y(), aabbe_d.z(),aabbe_c.x(), aabbe_c.y(), aabbe_c.z()
         ))
     })?;
+    if plane != Plane::XY {
+        return Err(HallrError::InvalidInputData(format!("At the moment the knife intersect operation only supports input data in the XY plane. {:?}", plane)));
+    }
     println!(
         "knife_intersect: data was in plane:{:?} aabb:{:?}",
         plane, aabb
@@ -103,6 +106,7 @@ where
     let estimated_edges = input_edges.len() * 2 + edge_split.len();
 
     let mut output_model = OwnedModel {
+        world_orientation: input_model.copy_world_orientation()?,
         // process all the vertices at once
         vertices: new_vertices
             .into_iter()
@@ -170,7 +174,7 @@ where
 pub(crate) fn process_command<T: GenericVector3>(
     _config: ConfigType,
     models: Vec<Model<'_>>,
-) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
+) -> Result<super::CommandResult, HallrError>
 where
     T::Scalar: UlpsEq,
     T: ConvertTo<FFIVector3>,
@@ -182,14 +186,20 @@ where
             "No models detected".to_string(),
         ));
     }
+    let input_model = &models[0];
+    if !input_model.has_identity_orientation() {
+        return Err(HallrError::InvalidInputData(
+            "The voronoi mesh operation currently requires identify world orientation".to_string(),
+        ));
+    }
     println!(
         "knife_intersect receiving {} vertices, {} indices, {} edges",
-        models[0].vertices.len(),
-        models[0].indices.len(),
-        models[0].indices.chunks(2).count()
+        input_model.vertices.len(),
+        input_model.indices.len(),
+        input_model.indices.chunks(2).count()
     );
 
-    let rv_model = knife_intersect(&models[0])?;
+    let rv_model = knife_intersect(input_model)?;
 
     let mut config = ConfigType::new();
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
@@ -199,5 +209,10 @@ where
         rv_model.indices.len(),
         rv_model.indices.chunks(2).count()
     );
-    Ok((rv_model.vertices, rv_model.indices, config))
+    Ok((
+        rv_model.vertices,
+        rv_model.indices,
+        rv_model.world_orientation.to_vec(),
+        config,
+    ))
 }

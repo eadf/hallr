@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use crate::{
-    command::{ConfigType, Model, OwnedModel},
+    command::{ConfigType, OwnedModel},
     HallrError,
 };
 use vector_traits::glam::Vec3;
@@ -15,6 +15,7 @@ fn knife_intersect_0() -> Result<(), HallrError> {
     let _ = config.insert("command".to_string(), "knife_intersect".to_string());
 
     let owned_model = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (0.0, 0.0, 0.0).into(),
             (0.0, 1.0, 0.0).into(),
@@ -24,11 +25,7 @@ fn knife_intersect_0() -> Result<(), HallrError> {
         indices: vec![2, 3, 0, 1],
     };
 
-    let model = Model {
-        vertices: &owned_model.vertices,
-        indices: &owned_model.indices,
-    };
-    let result = super::process_command::<Vec3>(config, vec![model])?;
+    let result = super::process_command::<Vec3>(config, vec![owned_model.as_model()])?;
     assert_eq!(8, result.1.len());
     assert_eq!(5, result.0.len());
 
@@ -42,6 +39,7 @@ fn knife_intersect_1() -> Result<(), HallrError> {
     let _ = config.insert("command".to_string(), "knife_intersect".to_string());
 
     let owned_model = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (0.0, 0.0, 0.0).into(),
             (0.0, 1.0, 0.0).into(),
@@ -52,11 +50,7 @@ fn knife_intersect_1() -> Result<(), HallrError> {
         indices: vec![2, 3, 0, 1, 3, 4],
     };
 
-    let model = Model {
-        vertices: &owned_model.vertices,
-        indices: &owned_model.indices,
-    };
-    let result = super::process_command::<Vec3>(config, vec![model])?;
+    let result = super::process_command::<Vec3>(config, vec![owned_model.as_model()])?;
     assert_eq!(7, result.1.chunks(2).count());
     assert_eq!(14, result.1.len());
     assert_eq!(8, result.0.len());
@@ -70,6 +64,7 @@ fn knife_intersect_2() -> Result<(), HallrError> {
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
 
     let owned_model = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (2.2804604, -0.43074003, 0.0).into(),
             (2.2597418, -0.37131825, 0.0).into(),
@@ -82,11 +77,13 @@ fn knife_intersect_2() -> Result<(), HallrError> {
         indices: vec![6, 4, 5, 6, 2, 3, 1, 2, 4, 5, 0, 1, 3, 0],
     };
 
-    let model = Model {
-        vertices: &owned_model.vertices,
-        indices: &owned_model.indices,
-    };
-    let result = super::super::process_command(model.vertices, model.indices, config)?;
+    let model = owned_model.as_model();
+    let result = super::super::process_command(
+        model.vertices,
+        model.indices,
+        model.world_orientation,
+        config,
+    )?;
     assert_eq!(30, result.1.len());
     assert_eq!(14, result.0.len());
     Ok(())
@@ -99,6 +96,7 @@ fn knife_intersect_3() -> Result<(), HallrError> {
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
 
     let owned_model = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (2.2656271, -0.4295425, 0.0).into(),
             (2.260498, -0.41503745, 0.0).into(),
@@ -129,11 +127,7 @@ fn knife_intersect_3() -> Result<(), HallrError> {
         ],
     };
 
-    let model = Model {
-        vertices: &owned_model.vertices,
-        indices: &owned_model.indices,
-    };
-    let result = super::process_command::<Vec3>(config, vec![model])?;
+    let result = super::process_command::<Vec3>(config, vec![owned_model.as_model()])?;
     assert_eq!(52, result.1.len());
     assert_eq!(26, result.0.len());
     Ok(())

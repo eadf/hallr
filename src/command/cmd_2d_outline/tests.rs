@@ -15,6 +15,7 @@ fn test_2d_outline_1() -> Result<(), HallrError> {
     let _ = config.insert("command".to_string(), "2d_outline".to_string());
 
     let owned_model = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.3121257, -0.5275663, 0.0).into(),
             (0.5275663, -1.3121257, 0.0).into(),
@@ -25,6 +26,7 @@ fn test_2d_outline_1() -> Result<(), HallrError> {
     };
 
     let model = Model {
+        world_orientation: &owned_model.world_orientation,
         vertices: &owned_model.vertices,
         indices: &owned_model.indices,
     };
@@ -41,6 +43,7 @@ fn test_2d_outline_2() -> Result<(), HallrError> {
     let _ = config.insert("command".to_string(), "2d_outline".to_string());
 
     let owned_model = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
         vertices: vec![
             (-1.0113943, -0.9753443, 0.0).into(),
             (1.0, -1.0, 0.0).into(),
@@ -55,6 +58,7 @@ fn test_2d_outline_2() -> Result<(), HallrError> {
     };
 
     let model = Model {
+        world_orientation: &owned_model.world_orientation,
         vertices: &owned_model.vertices,
         indices: &owned_model.indices,
     };
