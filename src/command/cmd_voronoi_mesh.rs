@@ -600,7 +600,7 @@ where
             }
         })
         .collect();
-    let mut used_vertices = vob::Vob::<u32>::fill(vor_vertices.len());
+    let mut used_vertices = vob::Vob::<u32>::fill_with_false(vor_vertices.len());
 
     for chunk in input_model.indices.chunks(2) {
         let v0 = chunk[0];
@@ -631,7 +631,7 @@ fn find_internal_vertices<T: GenericVector3>(
 where
     T::Scalar: OutputType,
 {
-    let mut internal_vertices = vob::Vob::<u32>::fill(diagram.vertices().len());
+    let mut internal_vertices = vob::Vob::<u32>::fill_with_false(diagram.vertices().len());
     for (_, e) in diagram
         .edges()
         .iter()

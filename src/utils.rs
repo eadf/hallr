@@ -15,14 +15,14 @@ use std::cmp::Reverse;
 use vector_traits::{num_traits::float::FloatCore, GenericScalar, GenericVector2, GenericVector3};
 
 pub(crate) trait GrowingVob {
-    fn fill(initial_size: usize) -> vob::Vob<u32>;
+    fn fill_with_false(initial_size: usize) -> vob::Vob<u32>;
     fn set_grow(&mut self, bit: usize, state: bool) -> bool;
     /// get with default value: false
     fn get_f(&self, bit: usize) -> bool;
 }
 
 impl GrowingVob for vob::Vob<u32> {
-    fn fill(initial_size: usize) -> Self {
+    fn fill_with_false(initial_size: usize) -> Self {
         let mut v: vob::Vob<u32> = vob::Vob::<u32>::new_with_storage_type(0);
         v.resize(initial_size, false);
         v

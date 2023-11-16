@@ -15,7 +15,7 @@ pub(crate) fn reject_external_edges<T: GenericVector3>(
 where
     T::Scalar: OutputType,
 {
-    let mut rejected_edges = vob::Vob::<u32>::fill(diagram.edges().len());
+    let mut rejected_edges = vob::Vob::<u32>::fill_with_false(diagram.edges().len());
 
     for edge in diagram.edges().iter() {
         let edge = edge.get();

@@ -172,6 +172,7 @@ fn test_divide_into_shapes_1() -> Result<(), HallrError> {
         26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32, 32, 16, 15, 0,
     ];
     let result = super::divide_into_shapes(&indices);
+    assert_eq!(result.len(), 2);
     assert_eq!(
         result[0],
         vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0]
@@ -187,9 +188,10 @@ fn test_divide_into_shapes_1() -> Result<(), HallrError> {
 fn test_divide_into_shapes_2() -> Result<(), HallrError> {
     let indices = vec![1, 2, 2, 5, 0, 2, 5, 4, 4, 3, 0, 3, 1, 6, 6, 7, 7, 3];
     let result = super::divide_into_shapes(&indices);
-    assert_eq!(result[0], vec![2, 0, 3]);
-    assert_eq!(result[1], vec![2, 5, 4, 3]);
-    assert_eq!(result[2], vec![2, 1, 6, 7, 3]);
+    assert_eq!(result.len(), 3);
+    assert_eq!(result[0], vec![3, 7, 6, 1, 2]);
+    assert_eq!(result[1], vec![3, 0, 2]);
+    assert_eq!(result[2], vec![3, 4, 5, 2]);
     Ok(())
 }
 
@@ -199,10 +201,11 @@ fn test_divide_into_shapes_3() -> Result<(), HallrError> {
         1, 2, 2, 5, 0, 2, 5, 4, 4, 3, 0, 3, 1, 6, 6, 7, 7, 3, 10, 11, 11, 12,
     ];
     let result = super::divide_into_shapes(&indices);
-    assert_eq!(result[0], vec![2, 0, 3]);
-    assert_eq!(result[1], vec![2, 5, 4, 3]);
-    assert_eq!(result[2], vec![2, 1, 6, 7, 3]);
-    assert_eq!(result[3], vec![10, 11, 12]);
+    assert_eq!(result.len(), 4);
+    assert_eq!(result[0], vec![12, 11, 10]);
+    assert_eq!(result[1], vec![3, 7, 6, 1, 2]);
+    assert_eq!(result[2], vec![3, 0, 2]);
+    assert_eq!(result[3], vec![3, 4, 5, 2]);
     Ok(())
 }
 
@@ -212,9 +215,10 @@ fn test_divide_into_shapes_4() -> Result<(), HallrError> {
         1, 2, 2, 5, 0, 2, 5, 4, 4, 3, 0, 3, 1, 6, 6, 7, 7, 3, 10, 11, 11, 12, 12, 10,
     ];
     let result = super::divide_into_shapes(&indices);
-    assert_eq!(result[0], vec![2, 0, 3]);
-    assert_eq!(result[1], vec![2, 5, 4, 3]);
-    assert_eq!(result[2], vec![2, 1, 6, 7, 3]);
+    assert_eq!(result.len(), 4);
+    assert_eq!(result[0], vec![3, 7, 6, 1, 2]);
+    assert_eq!(result[1], vec![3, 0, 2]);
+    assert_eq!(result[2], vec![3, 4, 5, 2]);
     assert_eq!(result[3], vec![10, 11, 12, 10]);
     Ok(())
 }
@@ -223,6 +227,7 @@ fn test_divide_into_shapes_4() -> Result<(), HallrError> {
 fn test_divide_into_shapes_5() -> Result<(), HallrError> {
     let indices = vec![1, 2, 2, 4, 1, 0, 0, 3, 4, 1, 1, 3];
     let result = super::divide_into_shapes(&indices);
+    assert_eq!(result.len(), 2);
     assert_eq!(result[0], vec![1, 3, 0, 1]);
     assert_eq!(result[1], vec![1, 4, 2, 1]);
     Ok(())
@@ -232,9 +237,10 @@ fn test_divide_into_shapes_5() -> Result<(), HallrError> {
 fn test_divide_into_shapes_6() -> Result<(), HallrError> {
     let indices = vec![1, 2, 2, 4, 1, 0, 0, 3, 4, 1, 1, 3, 11, 12, 12, 13];
     let result = super::divide_into_shapes(&indices);
-    assert_eq!(result[0], vec![1, 3, 0, 1]);
-    assert_eq!(result[1], vec![1, 4, 2, 1]);
-    assert_eq!(result[2], vec![11, 12, 13]);
+    assert_eq!(result.len(), 3);
+    assert_eq!(result[0], vec![13, 12, 11]);
+    assert_eq!(result[1], vec![1, 3, 0, 1]);
+    assert_eq!(result[2], vec![1, 4, 2, 1]);
     Ok(())
 }
 
@@ -242,10 +248,35 @@ fn test_divide_into_shapes_6() -> Result<(), HallrError> {
 fn test_divide_into_shapes_7() -> Result<(), HallrError> {
     let indices = vec![0, 1, 3, 5, 1, 3, 3, 4, 1, 2];
     let result = super::divide_into_shapes(&indices);
-    assert_eq!(result[0], vec![0, 1]);
-    assert_eq!(result[1], vec![1, 2]);
-    assert_eq!(result[2], vec![1, 3]);
-    assert_eq!(result[3], vec![3, 4]);
-    assert_eq!(result[4], vec![3, 5]);
+    assert_eq!(result.len(), 5);
+    assert_eq!(result[0], vec![3, 4]);
+    assert_eq!(result[1], vec![3, 5]);
+    assert_eq!(result[2], vec![1, 2]);
+    assert_eq!(result[3], vec![1, 3]);
+    assert_eq!(result[4], vec![0, 1]);
+    Ok(())
+}
+
+#[test]
+fn test_divide_into_shapes_8() -> Result<(), HallrError> {
+    let indices = vec![0, 1, 2, 3, 1, 4, 4, 5, 6, 7];
+    let result = super::divide_into_shapes(&indices);
+    assert_eq!(result.len(), 3);
+    assert_eq!(result[0], vec![6, 7]);
+    assert_eq!(result[1], vec![5, 4, 1, 0]);
+    assert_eq!(result[2], vec![2, 3]);
+    Ok(())
+}
+
+#[test]
+fn test_divide_into_shapes_9() -> Result<(), HallrError> {
+    let indices = vec![3, 0, 0, 1, 1, 2, 2, 3, 2, 0, 1, 4, 0, 4];
+    let result = super::divide_into_shapes(&indices);
+    assert_eq!(result.len(), 5);
+    assert_eq!(result[0], vec![2, 3, 0]);
+    assert_eq!(result[1], vec![1, 4, 0]);
+    assert_eq!(result[2], vec![1, 2]);
+    assert_eq!(result[3], vec![0, 2]);
+    assert_eq!(result[4], vec![0, 1]);
     Ok(())
 }
