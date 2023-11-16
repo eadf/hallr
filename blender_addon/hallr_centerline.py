@@ -54,7 +54,7 @@ class OBJECT_OT_hallr_centerline(bpy.types.Operator):
     distance_props: bpy.props.FloatProperty(
         name="Distance",
         description="Discrete distance as a percentage of the AABB. This value is used when sampling parabolic arc "
-                    "edges. It is also used for simplification.",
+                    "edges. It is also used for RDP simplification.",
         default=0.005,
         min=0.001,
         max=4.9999,

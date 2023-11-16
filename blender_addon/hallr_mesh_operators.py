@@ -153,11 +153,20 @@ class Hallr_SimplifyRdp(bpy.types.Operator):
     bl_label = "Hallr 2D Simplify RDP"
     bl_options = {'REGISTER', 'UNDO'}
 
-    epsilon_props: bpy.props.FloatProperty(name="Epsilon", default=0.1, min=0, description="Amount of simplification")
     simplify_3d_props: bpy.props.BoolProperty(
         name="Simplify 3d",
-        description="When selected simplification will be done in 3d",
-        default=True
+        description="Simplification will be done in 3d if selected",
+        default=True)
+
+    simplify_distance_props: bpy.props.FloatProperty(
+        name="Distance",
+        description="Discrete distance as a percentage of the longest axis of the model. This value is used for RDP "
+                    "simplification.",
+        default=0.10,
+        min=0.001,
+        max=4.9999,
+        precision=6,
+        subtype='PERCENTAGE'
     )
 
     @classmethod
@@ -174,7 +183,7 @@ class Hallr_SimplifyRdp(bpy.types.Operator):
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "simplify_rdp", "epsilon": str(self.epsilon_props),
+        config = {"command": "simplify_rdp", "simplify_distance": str(self.simplify_distance_props),
                   "simplify_3d": str(self.simplify_3d_props).lower()}
 
         # Call the Rust function
@@ -189,7 +198,7 @@ class Hallr_SimplifyRdp(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "epsilon_props")
+        layout.prop(self, "simplify_distance_props")
         layout.prop(self, "simplify_3d_props")
 
 
