@@ -46,7 +46,7 @@ where
 {
     let mut aabb = Aabb3::<T>::default();
     for v in model.vertices.iter() {
-        aabb.update_point(v.to())
+        aabb.update_with_point(v.to())
     }
 
     let plane =

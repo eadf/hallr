@@ -12,7 +12,9 @@ use ahash::{AHashMap, AHashSet};
 use hronn::prelude::MaximumTracker;
 use smallvec::SmallVec;
 use std::cmp::Reverse;
-use vector_traits::{num_traits::float::FloatCore, GenericScalar, GenericVector2, GenericVector3};
+use vector_traits::{
+    num_traits::float::FloatCore, GenericScalar, GenericVector2, GenericVector3, HasXYZ,
+};
 
 pub(crate) trait GrowingVob {
     fn fill_with_false(initial_size: usize) -> vob::Vob<u32>;
@@ -42,6 +44,7 @@ impl GrowingVob for vob::Vob<u32> {
 
 #[allow(clippy::type_complexity)]
 #[derive(Default)]
+#[allow(dead_code)]
 pub(crate) struct VertexDeduplicator2D<T: GenericVector2> {
     set: AHashMap<
         (
@@ -53,6 +56,7 @@ pub(crate) struct VertexDeduplicator2D<T: GenericVector2> {
     pub vertices: Vec<T>,
 }
 
+#[allow(dead_code)]
 impl<T: GenericVector2> VertexDeduplicator2D<T> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
@@ -96,6 +100,7 @@ pub(crate) struct VertexDeduplicator3D<T: GenericVector3> {
     pub vertices: Vec<T>,
 }
 
+#[allow(dead_code)]
 impl<T: GenericVector3> VertexDeduplicator3D<T> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
@@ -124,6 +129,47 @@ impl<T: GenericVector3> VertexDeduplicator3D<T> {
                 self.vertices.push(vector);
                 new_index as u32
             });
+        Ok(*index)
+    }
+
+    /// inserts a vertex without de-dup checking
+    pub fn get_index_and_insert(&mut self, vector: T) -> u32 {
+        let index = self.vertices.len() as u32;
+        self.vertices.push(vector);
+        index
+    }
+
+    /// clear the hashset, effectively creating a new set of unique points
+    pub fn clear_dedup_cache(&mut self) {
+        self.set.clear()
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub(crate) struct IndexDeduplicator<T: HasXYZ> {
+    set: AHashMap<u32, u32>,
+    pub vertices: Vec<T>,
+}
+
+#[allow(dead_code)]
+impl<T: HasXYZ> IndexDeduplicator<T> {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            set: AHashMap::with_capacity(capacity),
+            vertices: Vec::with_capacity(capacity),
+        }
+    }
+
+    /// get a previously defined index, or insert the vertex and return the new index
+    pub fn get_index_or_insert<F>(&mut self, old_index: usize, vertex: F) -> Result<u32, HallrError>
+    where
+        F: Fn() -> T,
+    {
+        let index = self.set.entry(old_index as u32).or_insert_with(|| {
+            let new_index = self.vertices.len();
+            self.vertices.push(vertex());
+            new_index as u32
+        });
         Ok(*index)
     }
 

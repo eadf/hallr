@@ -3,14 +3,11 @@
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, Options};
-use crate::{
-    prelude::*,
-    utils::{VertexDeduplicator2D, VertexDeduplicator3D},
-};
+use crate::{prelude::*, utils::IndexDeduplicator};
 use hronn::prelude::ConvertTo;
 use linestring::{
     linestring_3d::{Aabb3, LineString3, Plane},
-    prelude::{divide_into_shapes, LineString2},
+    prelude::{divide_into_shapes, indexed_simplify_rdp_2d, indexed_simplify_rdp_3d},
 };
 use vector_traits::{
     num_traits::AsPrimitive, GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ,
@@ -36,7 +33,7 @@ where
             )));
         } else {
             let p: T = p.to();
-            aabb.update_point(p);
+            aabb.update_with_point(p);
             converted_vertices.push(p)
         }
     }
@@ -44,8 +41,6 @@ where
     Ok((converted_vertices, aabb))
 }
 
-// TODO:this re-creates the line strings just too many times
-// TODO:rewrite this entire function
 pub(crate) fn process_command<T: GenericVector3>(
     config: ConfigType,
     models: Vec<Model<'_>>,
@@ -71,7 +66,6 @@ where
     let output_matrix;
     if !models.is_empty() && !models[0].indices.is_empty() {
         let model = &models[0];
-        output_vertices.reserve(model.vertices.len());
         output_indices.reserve(model.indices.len());
         output_matrix = model.world_orientation.to_vec();
         let (vertices, aabb) = parse_input(&models[0])?;
@@ -81,34 +75,37 @@ where
 
         if simplify_in_3d {
             // in 3d mode
-            let mut vdd = VertexDeduplicator3D::<T>::with_capacity(model.indices.len());
+            let mut vdd = IndexDeduplicator::<FFIVector3>::with_capacity(model.indices.len());
+
             for line in divide_into_shapes(model.indices) {
-                let line_string = line.iter().map(|i| vertices[*i]).collect::<Vec<T>>();
-                let simplified = line_string.simplify_rdp(simplify_distance);
-                for line in simplified.window_iter() {
-                    output_indices.push(vdd.get_index_or_insert(line.start)? as usize);
-                    output_indices.push(vdd.get_index_or_insert(line.end)? as usize);
+                let simplified = indexed_simplify_rdp_3d(&vertices, &line, simplify_distance);
+
+                for line in simplified.windows(2) {
+                    output_indices
+                        .push(vdd.get_index_or_insert(line[0], || vertices[line[0]].to())? as usize);
+                    output_indices
+                        .push(vdd.get_index_or_insert(line[1], || vertices[line[1]].to())? as usize);
                 }
             }
-            for v in vdd.vertices {
-                output_vertices.push(v.to());
-            }
+            output_vertices = vdd.vertices;
         } else {
             // in 2d mode
-            let mut vdd = VertexDeduplicator2D::<T::Vector2>::with_capacity(model.indices.len());
+            let mut vdd = IndexDeduplicator::<FFIVector3>::with_capacity(model.indices.len());
+            let vertices_2d = vertices.copy_to_2d(Plane::XY);
+
             for line in divide_into_shapes(model.indices) {
-                let line_string = line.iter().map(|i| vertices[*i]).collect::<Vec<T>>();
-                let simplified = line_string
-                    .copy_to_2d(Plane::XY)
-                    .simplify_rdp(simplify_distance);
-                for line in simplified.window_iter() {
-                    output_indices.push(vdd.get_index_or_insert(line.start)? as usize);
-                    output_indices.push(vdd.get_index_or_insert(line.end)? as usize);
+                let simplified = indexed_simplify_rdp_2d(&vertices_2d, &line, simplify_distance);
+
+                for line in simplified.windows(2) {
+                    output_indices.push(vdd.get_index_or_insert(line[0], || {
+                        vertices_2d[line[0]].to_3d(T::Scalar::ZERO).to()
+                    })? as usize);
+                    output_indices.push(vdd.get_index_or_insert(line[1], || {
+                        vertices_2d[line[1]].to_3d(T::Scalar::ZERO).to()
+                    })? as usize);
                 }
             }
-            for v in vdd.vertices {
-                output_vertices.push(v.to_3d(T::Scalar::ZERO).to());
-            }
+            output_vertices = vdd.vertices;
         }
     } else {
         output_matrix = vec![];

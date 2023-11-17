@@ -484,10 +484,10 @@ checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 [[package]]
 name = "linestring"
 version = "0.11.0"
-source = "git+https://github.com/eadf/linestring.rs.git#6b62bf72517e1709bcc04fe66eb1469819d98459"
+source = "git+https://github.com/eadf/linestring.rs.git#a6a48fe0efc3de94583f93fc44f0731d390195a9"
 dependencies = [
  "ahash",
- "itertools 0.11.0",
+ "itertools 0.12.0",
  "rayon",
  "smallvec",
  "thiserror",
@@ -851,8 +851,8 @@ checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 
 [[package]]
 name = "vector-traits"
-version = "0.3.1"
-source = "git+https://github.com/eadf/vector-traits.git#2bfb6c2d068e6bb3fc5c424e32eda6d4412eeb4b"
+version = "0.3.2"
+source = "git+https://github.com/eadf/vector-traits.git#2dbc140da7fba80c5877d028bd1d9973258fa2e2"
 dependencies = [
  "approx",
  "glam 0.24.2",

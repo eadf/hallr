@@ -28,7 +28,7 @@ where
 {
     let mut aabb = Aabb3::<T>::default();
     for v in input_model.vertices.iter() {
-        aabb.update_point(v.to())
+        aabb.update_with_point(v.to())
     }
 
     let plane = Plane::get_plane_relaxed::<T>(aabb, f32::default_epsilon().as_(), f32::default_max_ulps()).ok_or_else(|| {

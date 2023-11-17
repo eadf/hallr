@@ -44,7 +44,7 @@ where
 
     let mut aabb = linestring_3d::Aabb3::<T>::default();
     for v in model.vertices.iter() {
-        aabb.update_point(v.to())
+        aabb.update_with_point(v.to())
     }
     let plane =
         linestring_3d::Plane::get_plane_relaxed(aabb, T::Scalar::default_epsilon(), T::Scalar::default_max_ulps()).ok_or_else(|| {
