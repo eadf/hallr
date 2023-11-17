@@ -13,7 +13,7 @@ fn test_simplify_rdp_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
     let _ = config.insert("command".to_string(), "simplify_rdp".to_string());
-    let _ = config.insert("epsilon".to_string(), "0.20000000298023224".to_string());
+    let _ = config.insert("simplify_distance".to_string(), "6.0".to_string());
     let _ = config.insert("simplify_3d".to_string(), "false".to_string());
 
     let owned_model_0 = OwnedModel {
@@ -62,15 +62,15 @@ fn test_simplify_rdp_1() -> Result<(), HallrError> {
 
     let models = vec![owned_model_0.as_model()];
     let result = super::process_command::<Vec3>(config, models)?;
-    assert_eq!(8, result.0.len()); // vertices
-    assert_eq!(16, result.1.len()); // indices
+    assert_eq!(result.0.len(), 16); // vertices
+    assert_eq!(result.1.len(), 32); // indices
     Ok(())
 }
 
 #[test]
 fn test_simplify_rdp_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("epsilon".to_string(), "0.5".to_string());
+    let _ = config.insert("simplify_distance".to_string(), "0.1".to_string());
     let _ = config.insert("simplify_3d".to_string(), "false".to_string());
     let _ = config.insert("command".to_string(), "simplify_rdp".to_string());
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
@@ -97,8 +97,8 @@ fn test_simplify_rdp_2() -> Result<(), HallrError> {
 
     let models = vec![owned_model_0.as_model()];
     let result = super::process_command::<Vec3>(config, models)?;
-    assert_eq!(10, result.0.len()); // vertices
-    assert_eq!(22, result.1.len()); // indices
+    assert_eq!(11, result.0.len()); // vertices
+    assert_eq!(24, result.1.len()); // indices
     Ok(())
 }
 
@@ -108,7 +108,7 @@ fn test_simplify_rdp_3() -> Result<(), HallrError> {
     let _ = config.insert("simplify_3d".to_string(), "true".to_string());
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
     let _ = config.insert("command".to_string(), "simplify_rdp".to_string());
-    let _ = config.insert("epsilon".to_string(), "0.5".to_string());
+    let _ = config.insert("simplify_distance".to_string(), "0.2".to_string());
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -131,8 +131,8 @@ fn test_simplify_rdp_3() -> Result<(), HallrError> {
 
     let models = vec![owned_model_0.as_model()];
     let result = super::process_command::<Vec3>(config, models)?;
-    assert_eq!(9, result.0.len()); // vertices
-    assert_eq!(20, result.1.len()); // indices
+    assert_eq!(result.0.len(), 10); // vertices
+    assert_eq!(result.1.len(), 22); // indices
     Ok(())
 }
 
@@ -140,7 +140,10 @@ fn test_simplify_rdp_3() -> Result<(), HallrError> {
 fn test_simplify_rdp_4() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("simplify_3d".to_string(), "false".to_string());
-    let _ = config.insert("epsilon".to_string(), "0.0010000000474974513".to_string());
+    let _ = config.insert(
+        "simplify_distance".to_string(),
+        "0.0010000000474974513".to_string(),
+    );
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
     let _ = config.insert("command".to_string(), "simplify_rdp".to_string());
 

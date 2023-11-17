@@ -9,10 +9,9 @@ use crate::{
 };
 use hronn::prelude::ConvertTo;
 use linestring::{
-    linestring_3d::{LineString3, Plane},
-    prelude::{LineString2,divide_into_shapes}
+    linestring_3d::{Aabb3, LineString3, Plane},
+    prelude::{divide_into_shapes, LineString2},
 };
-use linestring::linestring_3d::Aabb3;
 use vector_traits::{
     num_traits::AsPrimitive, GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ,
 };
@@ -36,7 +35,7 @@ where
                 p.z()
             )));
         } else {
-            let p:T = p.to();
+            let p: T = p.to();
             aabb.update_point(p);
             converted_vertices.push(p)
         }
@@ -56,7 +55,8 @@ where
     FFIVector3: ConvertTo<T>,
     f32: AsPrimitive<T::Scalar>,
 {
-    let cmd_simplify_distance: T::Scalar = config.get_mandatory_parsed_option("simplify_distance", None)?;
+    let cmd_simplify_distance: T::Scalar =
+        config.get_mandatory_parsed_option("simplify_distance", None)?;
     //println!("rust: vertices.len():{}", vertices.len());
     //println!("rust: indices.len():{}", indices.len());
     //println!("rust: indices:{:?}", indices);
@@ -75,7 +75,9 @@ where
         output_indices.reserve(model.indices.len());
         output_matrix = model.world_orientation.to_vec();
         let (vertices, aabb) = parse_input(&models[0])?;
-        let simplify_distance =(aabb.get_high().unwrap() - aabb.get_low().unwrap()).magnitude()* cmd_simplify_distance / 100.0.into();
+        let simplify_distance = (aabb.get_high().unwrap() - aabb.get_low().unwrap()).magnitude()
+            * cmd_simplify_distance
+            / 100.0.into();
 
         if simplify_in_3d {
             // in 3d mode
@@ -96,7 +98,9 @@ where
             let mut vdd = VertexDeduplicator2D::<T::Vector2>::with_capacity(model.indices.len());
             for line in divide_into_shapes(model.indices) {
                 let line_string = line.iter().map(|i| vertices[*i]).collect::<Vec<T>>();
-                let simplified = line_string.copy_to_2d(Plane::XY).simplify_rdp(simplify_distance);
+                let simplified = line_string
+                    .copy_to_2d(Plane::XY)
+                    .simplify_rdp(simplify_distance);
                 for line in simplified.window_iter() {
                     output_indices.push(vdd.get_index_or_insert(line.start)? as usize);
                     output_indices.push(vdd.get_index_or_insert(line.end)? as usize);
