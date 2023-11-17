@@ -508,6 +508,9 @@ where
     //println!("result edges:{:?}", obj.lines.first());
     let mut return_config = ConfigType::new();
     let _ = return_config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    if cmd_arg_weld {
+        let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
+    }
     println!(
         "centerline operation returning {} vertices, {} indices",
         model.vertices.len(),

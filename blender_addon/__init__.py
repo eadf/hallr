@@ -26,7 +26,6 @@ if DEV_MODE:
 from . import hallr_collision
 from . import hallr_ffi_utils
 from . import hallr_2d_delaunay_triangulation
-from . import hallr_centerline
 from . import hallr_mesh_operators
 
 # define modules for registration
@@ -34,7 +33,6 @@ modules = (
     hallr_mesh_operators,  # always register hallr_mesh_operators first
     hallr_collision,
     hallr_2d_delaunay_triangulation,
-    hallr_centerline,
 )
 
 
