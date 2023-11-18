@@ -12,7 +12,6 @@ use std::{
     slice,
     time::Instant,
 };
-use vector_traits::glam::Vec2;
 
 /// A simple 3D vector struct for FFI (Foreign Function Interface) usage.
 ///
@@ -41,13 +40,6 @@ pub struct FFIVector3 {
 impl FFIVector3 {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z }
-    }
-
-    pub fn xy(self) -> Vec2 {
-        Vec2 {
-            x: self.x,
-            y: self.y,
-        }
     }
 }
 
@@ -216,7 +208,7 @@ pub unsafe extern "C" fn process_geometry(
     println!("Rust:Received config of size:{:?}", count);
     assert!(
         (*config).count < 1000,
-        "Rust: process_geometry(): Number of configuration parameters was too large: {}",
+        "Rust: process_geometry(): Number of configuration parameters was too large: {} (limit is 999)",
         (*config).count
     );
     // Use (*config).keys and (*config).values to access the arrays.
@@ -285,8 +277,8 @@ pub unsafe extern "C" fn process_geometry(
         map: rv_s,
     };
 
-    // Prevent the vectors from being deallocated. Their memory is now owned by the caller until it
-    // calls free_process_results on it.
+    // Prevent the vectors from being deallocated. Their memory is now allocated until caller
+    // calls free_process_results() on the vectors.
     std::mem::forget(output_vertices);
     std::mem::forget(output_indices);
     std::mem::forget(output_matrix);
@@ -316,13 +308,13 @@ pub unsafe extern "C" fn free_process_results(result: *mut ProcessResult) {
         !result.is_null(),
         "Rust: free_process_results(): result ptr was null"
     );
-    println!(
+    /*println!(
         "Rust releasing memory: vertices:{}, indices:{}, matrices:{}, map items:{}",
         (*result).geometry.vertex_count,
         (*result).geometry.indices_count,
         (*result).geometry.matrices_count,
         (*result).map.count
-    );
+    );*/
     (*result).geometry.free();
     (*result).map.free();
 }

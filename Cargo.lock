@@ -119,8 +119,9 @@ checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 
 [[package]]
 name = "centerline"
-version = "0.9.0"
-source = "git+https://github.com/eadf/centerline.rs.git#6aaaf4f30c9adae389dd344a8c7817814f41925e"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2d8e82f4aaa81c7a73979b5b807518303226e414a70931efc18b7efdf0a2db5"
 dependencies = [
  "ahash",
  "bitflags",
@@ -382,8 +383,9 @@ checksum = "d77f7ec81a6d05a3abb01ab6eb7590f6083d08449fe5a1c8b1e620283546ccb7"
 
 [[package]]
 name = "hronn"
-version = "0.2.0"
-source = "git+https://github.com/eadf/hronn.git#2e61f15684caea3d22525117076649f267cee68d"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0161a412cee8e7675123e70ab711b7cca706425ce5016ab0632a879e721fc00f"
 dependencies = [
  "itertools 0.12.0",
  "krakel",
@@ -460,8 +462,9 @@ dependencies = [
 
 [[package]]
 name = "krakel"
-version = "0.2.0"
-source = "git+https://github.com/eadf/krakel.git#4082274e2962c4287afbd21ae143f3fc6da39b3b"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4865f8d909d367f25b15d48d5ed4a59c5ba3bcbce233c3edeb3c83239da1f001"
 dependencies = [
  "approx",
  "num-traits",
@@ -483,8 +486,9 @@ checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 
 [[package]]
 name = "linestring"
-version = "0.11.0"
-source = "git+https://github.com/eadf/linestring.rs.git#a6a48fe0efc3de94583f93fc44f0731d390195a9"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54ce831f3567c29f48a83393d6013b02993e9d77f48b449bd598413e1ee22a0e"
 dependencies = [
  "ahash",
  "itertools 0.12.0",
@@ -852,7 +856,8 @@ checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 [[package]]
 name = "vector-traits"
 version = "0.3.2"
-source = "git+https://github.com/eadf/vector-traits.git#2dbc140da7fba80c5877d028bd1d9973258fa2e2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7300c8d2aac6ccf482a6cf6d6a3545a1b0949eacacefe95dc92e6b0d0dd57d86"
 dependencies = [
  "approx",
  "glam 0.24.2",
