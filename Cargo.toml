@@ -1,5 +1,5 @@
 [package]
-version = "0.1.2"
+version = "0.1.3"
 name = "hallr"
 edition = "2021"
 readme = "README.md"

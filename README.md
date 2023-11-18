@@ -7,7 +7,7 @@
 Experimental Blender addon written in Rust. Work in progress, expect wildly fluctuating API:s.
 
 ## Usage
-Read the [wiki](https://github.com/eadf/hallr/wiki) for the operation instructions. 
+Read the [wiki](https://github.com/eadf/hallr/wiki) for some blender instructions. 
 
 You should be able to find CI generated zip files under the [Actions->workflows](https://github.com/eadf/hallr/actions) tab.
 These ZIP files contain the Hallr addon that Blender can install. 
