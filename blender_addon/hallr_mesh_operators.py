@@ -30,10 +30,7 @@ def angle_between_edges(p0, p1, p2):
 
     v2norm = [v2.x / v2mag, v2.y / v2mag, v2.z / v2mag]
     res = v1norm[0] * v2norm[0] + v1norm[1] * v2norm[1] + v1norm[2] * v2norm[2]
-    # if res > 1.0 or res < -1.0:
-    #    print("p0:", p0, ",p1:", p1, ",p2:", p2, ",res:",res)
-    res = max(-1.0, min(res, 1.0))
-    angle = math.degrees(math.acos(res))
+    angle = math.degrees(math.acos(max(-1.0, min(res, 1.0))))
     return angle
 
 

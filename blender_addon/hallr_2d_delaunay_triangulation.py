@@ -11,74 +11,103 @@ from . import hallr_ffi_utils
 bounding_props_items = [
     ("AABB", "Aabb", "Axis aligned bounding box"),
     ("CONVEX_HULL", "ConvexHull", "Convex hull bounds")
-    # ("LINE", "LineHull", "Line hull bounds")
 ]
 
 
-class OBJECT_OT_hallr_2d_delaunay_triangulation(bpy.types.Operator):
+class HALLR_PT_DelaunayTriangulation2D(bpy.types.Panel):
     """2½D Delaunay Triangulation, will use the XY plane to stitch together point clouds"""
+    bl_label = "Delaunay triangulation 2D"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Hallr tools"
 
-    bl_idname = "object.hallr_2d_delaunay_triangulation"
-    bl_label = "Hallr 2½D Delaunay Triangulation"
-    bl_options = {'REGISTER', 'UNDO'}
+    def draw(self, context):
+        layout = self.layout
 
-    bounds_props: bpy.props.EnumProperty(
-        name="Bounding box",
-        description="Choose a bounding box",
-        items=bounding_props_items,
-        default="AABB"
-    )
+        # Create a row where the buttons are aligned to each other.
+        # layout.label(text=" Aligned Row:")
 
-    @classmethod
-    def poll(cls, context):
-        return context.active_object is not None
+        row = layout.row(align=True)
+        # Bounding shape selection
+        # row.label(text="Bounding Shape:")
+        row.operator("object.hallr_dt2_select_bounding_shape", text="Select Bounding Shape")
+        if context.scene.hallr_dt2_delaunay_settings.bounding_shape:
+            row.label(text=context.scene.hallr_dt2_delaunay_settings.bounding_shape.name, icon='CHECKMARK')
+
+        if context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None:
+            row = layout.row(align=True)
+            row.prop(context.scene.hallr_dt2_delaunay_settings, "bounds_props")
+
+        row = layout.row(align=True)
+        # 3D mesh/point cloud for height offsets
+        row.operator("object.hallr_dt2_select_point_cloud", text="Select Point cloud")
+        if context.scene.hallr_dt2_delaunay_settings.point_cloud:
+            row.label(text=context.scene.hallr_dt2_delaunay_settings.point_cloud.name, icon='CHECKMARK')
+
+        # Generate toolpath button
+        if (context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None and
+                context.scene.hallr_dt2_delaunay_settings.point_cloud is not None):
+            layout.operator("object.hallr_d2t_generate_mesh", text="Generate Mesh")
+
+
+class OBJECT_OT_SelectBoundingShape(bpy.types.Operator):
+    bl_idname = "object.hallr_dt2_select_bounding_shape"
+    bl_label = "Select Bounding Shape"
 
     def execute(self, context):
-        try:
-            # 1. Get the selected objects and verify counts:
-            selected_objects = bpy.context.selected_objects
-            if len(selected_objects) != 2:
-                self.report({'ERROR'}, "Please select exactly two objects: the mesh and the bounding shape.")
-                return {'CANCELLED'}
+        # Check the bounding shape
+        bounding_shape = bpy.context.active_object
+        if bounding_shape.type != 'MESH':
+            self.report({'ERROR'}, "The bounding shape should be of type 'MESH'.")
+            context.scene.hallr_dt2_delaunay_settings.bounding_shape = None
+            return {'CANCELLED'}
+        # Ensure the bounding shape doesn't have any faces:
+        if len(bounding_shape.data.polygons) > 0:
+            self.report({'ERROR'}, "The bounding shape should not have faces. It should be a line object.")
+            context.scene.hallr_dt2_delaunay_settings.bounding_shape = None
+            return {'CANCELLED'}
+        if not hallr_ffi_utils.is_loop(bounding_shape.data):
+            self.report({'ERROR'}, "The bounding shape should be a continuous loop.")
+            context.scene.hallr_dt2_delaunay_settings.bounding_shape = None
+            return {'CANCELLED'}
+        context.scene.hallr_dt2_delaunay_settings.bounding_shape = bounding_shape
+        return {'FINISHED'}
 
-            active_obj = bpy.context.active_object
-            if not active_obj:
-                self.report({'ERROR'}, "Nothing selected")
-                return {'CANCELLED'}
-            if active_obj.type != 'MESH':
-                self.report({'ERROR'}, "The selected object is not a mesh")
-                return {'CANCELLED'}
 
-            # Identify the bounding shape:
-            bounding_shape = next((obj for obj in selected_objects if obj != active_obj), None)
-            if not bounding_shape:
-                self.report({'ERROR'}, "Failed to find the bounding shape.")
-                return {'CANCELLED'}
+class OBJECT_OT_SelectPointCloud(bpy.types.Operator):
+    bl_idname = "object.hallr_dt2_select_point_cloud"
+    bl_label = "Select Height Mesh"
 
-            # 2. Verify the bounding shape type:
-            if bounding_shape.type != 'MESH':
-                self.report({'ERROR'}, "The bounding shape should be of type 'MESH'.")
-                return {'CANCELLED'}
+    def execute(self, context):
+        if bpy.context.active_object.type != 'MESH':
+            self.report({'ERROR'}, "The bounding shape should be of type 'MESH'.")
+            context.scene.hallr_dt2_delaunay_settings.point_cloud = None
+            return {'CANCELLED'}
+        context.scene.hallr_dt2_delaunay_settings.point_cloud = bpy.context.active_object
+        return {'FINISHED'}
 
-            bpy.context.view_layer.update()
 
-            config = {"bounds": str(self.bounds_props),
+class OBJECT_OT_GenerateMesh(bpy.types.Operator):
+    bl_idname = "object.hallr_d2t_generate_mesh"
+    bl_label = "Generate Toolpath"
+
+    def execute(self, context):
+        # Check if all objects are selected
+        bounding_shape = context.scene.hallr_dt2_delaunay_settings.bounding_shape
+        point_cloud = context.scene.hallr_dt2_delaunay_settings.point_cloud
+        bounds_props = context.scene.hallr_dt2_delaunay_settings.bounds_props
+        if (bounding_shape is not None and
+                point_cloud is not None):
+            # Print the names of the selected objects
+            print("Bounding Shape:", bounding_shape.name)
+            print("Height Mesh:", point_cloud.name)
+            print("bounding type:", bounds_props)
+
+            config = {"bounds": str(bounds_props),
                       "mesh.format": "point_cloud",
                       "command": "2d_delaunay_triangulation"}
-
-            if config["bounds"] == "LINE":
-                # Ensure the bounding shape doesn't have any faces:
-                if len(bounding_shape.data.polygons) > 0:
-                    self.report({'ERROR'}, "The bounding shape should not have faces. It should be a line object.")
-                    return {'CANCELLED'}
-
-                # Check the bounding shape
-                if not hallr_ffi_utils.is_loop(bounding_shape.data):
-                    self.report({'ERROR'}, "The bounding shape should be a continuous loop.")
-                    return {'CANCELLED'}
-
             # Call the Rust function
-            vertices, indices, config = hallr_ffi_utils.call_rust(config, active_obj, bounding_shape)
+            vertices, indices, config = hallr_ffi_utils.call_rust(config, point_cloud, bounding_shape)
 
             print(f"Received {config} as the result from Rust!")
             if config.get("ERROR"):
@@ -94,44 +123,49 @@ class OBJECT_OT_hallr_2d_delaunay_triangulation(bpy.types.Operator):
                 self.report({'ERROR'}, "Unknown mesh format:" + config.get("mesh.format", "None"))
                 return {'CANCELLED'}
 
-        except Exception as e:
-            self.report({'ERROR'}, str(e))
-            return {'CANCELLED'}
-
         return {'FINISHED'}
 
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
-
-    def draw(self, context):
-        layout = self.layout
-        layout.label(text="Use the second object to define an axis aligned")
-        layout.label(text="bounding box or a bounding convex hull.")
-        layout.prop(self, "bounds_props")
+    def check(self, context):
+        return (context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None and
+                context.scene.hallr_dt2_delaunay_settings.point_cloud is not None
+                )
 
 
-def VIEW3D_MT_2d_delaunay_triangulation_menu_item(self, context):
-    self.layout.operator(OBJECT_OT_hallr_2d_delaunay_triangulation.bl_idname)
+# Property group to store selected objects
+class DelaunaySettings(bpy.types.PropertyGroup):
+    bounding_shape: bpy.props.PointerProperty(type=bpy.types.Object)
+    bounds_props: bpy.props.EnumProperty(
+        name="Bounding box",
+        description="Choose a bounding box",
+        items=bounding_props_items,
+        default="AABB"
+    )
+    point_cloud: bpy.props.PointerProperty(type=bpy.types.Object)
+
+
+# Register classes and property group
+classes = (
+    DelaunaySettings,
+    HALLR_PT_DelaunayTriangulation2D,
+    OBJECT_OT_SelectBoundingShape,
+    OBJECT_OT_SelectPointCloud,
+    OBJECT_OT_GenerateMesh,
+)
 
 
 def register():
-    bpy.utils.register_class(OBJECT_OT_hallr_2d_delaunay_triangulation)
-    bpy.types.VIEW3D_MT_object_convert.append(VIEW3D_MT_2d_delaunay_triangulation_menu_item)
+    for cls in classes:
+        bpy.utils.register_class(cls)
+    bpy.types.Scene.hallr_dt2_delaunay_settings = bpy.props.PointerProperty(type=DelaunaySettings)
 
 
 def unregister():
+    for cls in reversed(classes):
+        try:
+            bpy.utils.unregister_class(cls)
+        except (RuntimeError, NameError):
+            pass
     try:
-        bpy.utils.unregister_class(OBJECT_OT_hallr_2d_delaunay_triangulation)
-    except (RuntimeError, NameError):
+        del bpy.types.Scene.hallr_dt2_delaunay_settings
+    except AttributeError:
         pass
-
-    bpy.types.VIEW3D_MT_object_convert.remove(VIEW3D_MT_2d_delaunay_triangulation_menu_item)
-    for f in bpy.types.VIEW3D_MT_mesh_add._dyn_ui_initialize():
-        if f.__name__ == VIEW3D_MT_2d_delaunay_triangulation_menu_item.__name__:
-            bpy.types.VIEW3D_MT_object_convert.remove(f)
-
-
-if __name__ == "__main__":
-    unregister()
-    register()

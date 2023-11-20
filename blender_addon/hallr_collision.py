@@ -209,13 +209,13 @@ class OBJECT_OT_hallr_collision(bpy.types.Operator):
         layout.prop(self, "minimum_z_props")
 
 
-def VIEW3D_MT_collision_menu_item(self, context):
+def hallr_collision_menu_item(self, context):
     self.layout.operator(OBJECT_OT_hallr_collision.bl_idname)
 
 
 def register():
     bpy.utils.register_class(OBJECT_OT_hallr_collision)
-    bpy.types.VIEW3D_MT_object_convert.append(VIEW3D_MT_collision_menu_item)
+    bpy.types.VIEW3D_MT_object_convert.append(hallr_collision_menu_item)
 
 
 def unregister():
@@ -224,9 +224,9 @@ def unregister():
     except (RuntimeError, NameError):
         pass
 
-    bpy.types.VIEW3D_MT_object_convert.remove(VIEW3D_MT_collision_menu_item)
+    bpy.types.VIEW3D_MT_object_convert.remove(hallr_collision_menu_item)
     for f in bpy.types.VIEW3D_MT_object_convert._dyn_ui_initialize():
-        if f.__name__ == VIEW3D_MT_collision_menu_item.__name__:
+        if f.__name__ == hallr_collision_menu_item.__name__:
             bpy.types.VIEW3D_MT_object_convert.remove(f)
 
 
