@@ -70,7 +70,7 @@ fn test_{}_1() -> Result<(),HallrError> {{"###,
         println!();
         print!("let models = vec![");
         for i in 0..models.len() {
-            print!("owned_model_{}..as_model(), ", i);
+            print!("owned_model_{}.as_model(), ", i);
         }
         println!("];");
         println!("let result = super::process_command::<Vec3>(config, models)?;");

@@ -24,9 +24,6 @@ class HALLR_PT_DelaunayTriangulation2D(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        # Create a row where the buttons are aligned to each other.
-        # layout.label(text=" Aligned Row:")
-
         row = layout.row(align=True)
         # Bounding shape selection
         # row.label(text="Bounding Shape:")
@@ -80,7 +77,7 @@ class OBJECT_OT_SelectPointCloud(bpy.types.Operator):
 
     def execute(self, context):
         if bpy.context.active_object.type != 'MESH':
-            self.report({'ERROR'}, "The bounding shape should be of type 'MESH'.")
+            self.report({'ERROR'}, "The point cloud should be of type 'MESH'.")
             context.scene.hallr_dt2_delaunay_settings.point_cloud = None
             return {'CANCELLED'}
         context.scene.hallr_dt2_delaunay_settings.point_cloud = bpy.context.active_object

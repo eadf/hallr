@@ -196,3 +196,61 @@ fn test_surface_scan_4() -> Result<(), HallrError> {
     assert_eq!(171, result.1.len()); // indices
     Ok(())
 }
+
+#[test]
+fn test_surface_scan_5() -> Result<(), HallrError> {
+    let mut config = ConfigType::default();
+    let _ = config.insert(
+        "xy_sample_dist_multiplier".to_string(),
+        "0.4399999976158142".to_string(),
+    );
+    let _ = config.insert("probe_radius".to_string(), "0.5".to_string());
+    let _ = config.insert("reduce_adaptive".to_string(), "true".to_string());
+    let _ = config.insert("first_vertex_model_1".to_string(), "8".to_string());
+    let _ = config.insert("first_index_model_1".to_string(), "24".to_string());
+    let _ = config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let _ = config.insert("probe".to_string(), "BALL_NOSE".to_string());
+    let _ = config.insert("minimum_z".to_string(), "0.0".to_string());
+    let _ = config.insert("bounds".to_string(), "CONVEX_HULL".to_string());
+    let _ = config.insert("pattern".to_string(), "TRIANGULATION".to_string());
+    let _ = config.insert("step".to_string(), "0.5".to_string());
+    let _ = config.insert(
+        "z_jump_threshold_multiplier".to_string(),
+        "0.4399999976158142".to_string(),
+    );
+    let _ = config.insert("command".to_string(), "surface_scan".to_string());
+
+    let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
+        vertices: vec![
+            (1.0, 1.0, 1.0).into(),
+            (1.0, 1.0, -1.0).into(),
+            (1.0, -1.0, 1.0).into(),
+            (1.0, -1.0, -1.0).into(),
+            (-1.0, 1.0, 1.0).into(),
+            (-1.0, 1.0, -1.0).into(),
+            (-1.0, -1.0, 1.0).into(),
+            (-1.0, -1.0, -1.0).into(),
+        ],
+        indices: vec![
+            0, 4, 6, 2, 3, 2, 6, 7, 7, 6, 4, 5, 5, 1, 3, 7, 1, 0, 2, 3, 5, 4, 0, 1,
+        ],
+    };
+
+    let owned_model_1 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
+        vertices: vec![
+            (-0.56271136, -2.59162, 0.0).into(),
+            (2.59162, -0.56271136, 0.0).into(),
+            (-2.59162, 0.56271136, 0.0).into(),
+            (0.56271136, 2.59162, 0.0).into(),
+        ],
+        indices: vec![2, 0, 0, 1, 1, 3, 3, 2],
+    };
+
+    let models = vec![owned_model_0.as_model(), owned_model_1.as_model()];
+    let result = super::process_command::<Vec3>(config, models);
+    assert!(result.is_err(), "Expected an error, but got Ok");
+
+    Ok(())
+}
