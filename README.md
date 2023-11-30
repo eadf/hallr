@@ -9,8 +9,8 @@ Experimental Blender addon written in Rust. Work in progress, expect wildly fluc
 ## Usage
 Read the [wiki](https://github.com/eadf/hallr/wiki) for some blender instructions. 
 
-You should be able to find CI generated zip files under the [Actions->workflows](https://github.com/eadf/hallr/actions) tab.
-These ZIP files contain the Hallr addon that Blender can install. 
+You should be able to find CI generated zip files under the [Actions->workflows](https://github.com/eadf/hallr/actions) tab for the releases.
+These ZIP files artifacts contains the Hallr addon that Blender can install. 
 There are ([financial](https://github.blog/2023-10-02-introducing-the-new-apple-silicon-powered-m1-macos-larger-runner-for-github-actions/#new-macos-runner-pricing)) issues with building for macOS Arm with the GitHub workflows. 
 If you are on an Arm Mac you can locally rebuild your zip file like this (must be in the project root dir):
 ```bash
