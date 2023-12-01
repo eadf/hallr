@@ -120,8 +120,7 @@ checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 [[package]]
 name = "centerline"
 version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2d8e82f4aaa81c7a73979b5b807518303226e414a70931efc18b7efdf0a2db5"
+source = "git+https://github.com/eadf/centerline.rs.git#5fbf4b66c6f69357f03f81af9d3aa658e78fed0e"
 dependencies = [
  "ahash",
  "bitflags",
@@ -384,7 +383,7 @@ checksum = "d77f7ec81a6d05a3abb01ab6eb7590f6083d08449fe5a1c8b1e620283546ccb7"
 [[package]]
 name = "hronn"
 version = "0.3.0"
-source = "git+https://github.com/eadf/hronn.git#19940e76927cc50c5ad8706c59aaec3f8cb48f1f"
+source = "git+https://github.com/eadf/hronn.git#3cb6159fbad8d345db40d9d8f0a789b19802686a"
 dependencies = [
  "itertools 0.12.0",
  "krakel",
@@ -486,8 +485,7 @@ checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 [[package]]
 name = "linestring"
 version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ccdd59beda8761f00a23020d45b22ba8a3faf7432da898bea1dce219dded979"
+source = "git+https://github.com/eadf/linestring.rs.git#e005e8cfcabad0d235f509b37289d881962d5ca0"
 dependencies = [
  "ahash",
  "itertools 0.12.0",

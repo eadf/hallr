@@ -122,7 +122,7 @@ class OBJECT_OT_GenerateMesh(bpy.types.Operator):
     """ Execute the toolpath generation"""
     bl_idname = "object.hallr_mt_generate_mesh"
     bl_label = "Generate Toolpath (why are these read-only?)"
-    bl_options = {'REGISTER', 'UNDO'}
+    # bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         # Check if all objects are selected

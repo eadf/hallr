@@ -94,7 +94,7 @@ where
 fn build_output_model<T: GenericVector3>(
     _a_command: &ConfigType,
     shapes: Vec<(
-        linestring::linestring_2d::LineStringSet2<T::Vector2>,
+        centerline::LineStringSet2<T::Vector2>,
         centerline::Centerline<i64, T>,
     )>,
     cmd_arg_weld: bool,
@@ -400,7 +400,7 @@ where
     }*/
 
     // transform each linestring to 2d
-    let mut lines_as_2d: Vec<linestring::linestring_2d::LineStringSet2<T::Vector2>> = lines
+    let mut lines_as_2d: Vec<centerline::LineStringSet2<T::Vector2>> = lines
         .par_iter()
         .map(|x| {
             let mut xc = x.clone();
@@ -422,7 +422,7 @@ where
     //}
 
     // calculate the hull of each shape
-    let lines_as_2d: Vec<linestring::linestring_2d::LineStringSet2<T::Vector2>> = lines_as_2d
+    let lines_as_2d: Vec<centerline::LineStringSet2<T::Vector2>> = lines_as_2d
         .into_par_iter()
         .map(|mut x| {
             let _ = x.calculate_convex_hull();
@@ -489,7 +489,7 @@ where
         })
         .collect::<Result<
             Vec<(
-                linestring::linestring_2d::LineStringSet2<T::Vector2>,
+                centerline::LineStringSet2<T::Vector2>,
                 centerline::Centerline<i64, T>,
             )>,
             HallrError,
