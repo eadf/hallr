@@ -87,3 +87,29 @@ fn test_voronoi_mesh_3() -> Result<(), HallrError> {
     assert_eq!(96, result.1.len()); // indices
     Ok(())
 }
+#[test]
+fn test_voronoi_mesh4() -> Result<(), HallrError> {
+    let mut config = ConfigType::default();
+    let _ = config.insert("command".to_string(), "voronoi_mesh".to_string());
+    let _ = config.insert("NEGATIVE_RADIUS".to_string(), "true".to_string());
+    let _ = config.insert("DISTANCE".to_string(), "1.0".to_string());
+    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+
+    let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
+        vertices: vec![
+            (1.203918, 1.203918, 0.0).into(),
+            (-1.805877, 0.74801874, 0.0).into(),
+            (0.0, -1.7025971, 0.0).into(),
+            (-0.36410117, 0.33949375, 0.0).into(),
+            (0.25582898, -0.17708552, 0.0).into(),
+        ],
+        indices: vec![0, 1, 2, 0, 1, 2],
+    };
+
+    let models = vec![owned_model_0.as_model()];
+    let result = super::process_command(config, models)?;
+    assert_eq!(20, result.0.len()); // vertices
+    assert_eq!(87, result.1.len()); // indices
+    Ok(())
+}

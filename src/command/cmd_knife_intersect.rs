@@ -189,7 +189,8 @@ where
     let input_model = &models[0];
     if !input_model.has_identity_orientation() {
         return Err(HallrError::InvalidInputData(
-            "The voronoi mesh operation currently requires identify world orientation".to_string(),
+            "The knife_intersect operation currently requires identity world orientation"
+                .to_string(),
         ));
     }
     println!(

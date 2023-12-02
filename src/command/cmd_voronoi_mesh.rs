@@ -5,11 +5,10 @@
 use crate::{
     command::{ConfigType, Model, Options, OwnedModel},
     ffi::FFIVector3,
-    utils::{voronoi_utils::triangulate_face, GrowingVob, VertexDeduplicator3D},
+    utils::{voronoi_utils, GrowingVob, VertexDeduplicator3D},
     HallrError,
 };
 use boostvoronoi as BV;
-use boostvoronoi::OutputType;
 use centerline::{HasMatrix4, Matrix4};
 use hronn::prelude::ConvertTo;
 use itertools::Itertools;
@@ -28,7 +27,6 @@ mod impls;
 #[cfg(test)]
 mod tests;
 
-/// Todo: clean this struct of any protobuf stuff
 //#[derive(Default)]
 struct DiagramHelperRw<T: GenericVector3> {
     /// a map between hash:able 2d coordinates and the known vertex index of pb_vertices
@@ -60,7 +58,7 @@ where
 /// This construct contains the read-only items
 struct DiagramHelperRo<T: GenericVector3 + HasMatrix4>
 where
-    T::Scalar: OutputType,
+    T::Scalar: BV::OutputType,
 {
     diagram: BV::Diagram<T::Scalar>,
     vertices: Vec<BV::Point<i64>>,
@@ -76,7 +74,7 @@ where
 impl<T: GenericVector3> DiagramHelperRo<T>
 where
     T: HasMatrix4 + ConvertTo<FFIVector3>,
-    T::Scalar: OutputType,
+    T::Scalar: BV::OutputType,
     i64: AsPrimitive<T::Scalar>,
     f32: AsPrimitive<T::Scalar>,
 {
@@ -223,9 +221,15 @@ where
         let cell = self.diagram.get_cell(cell_id)?.get();
         let twin_cell_id = self.diagram.get_edge(edge_twin_id)?.get().cell()?;
         let segment = if cell.contains_point() {
-            self.retrieve_segment(twin_cell_id)?
+            let twin_cell = self.diagram.get_cell(twin_cell_id)?.get();
+            if twin_cell.contains_point() {
+                let cell_point = self.retrieve_point(cell_id)?;
+                BV::Line::new(cell_point, cell_point)
+            } else {
+                *self.retrieve_segment(twin_cell_id)?
+            }
         } else {
-            self.retrieve_segment(cell_id)?
+            *self.retrieve_segment(cell_id)?
         };
 
         let (start_point, startpoint_is_internal) = if let Some(vertex0) = edge.vertex0() {
@@ -406,7 +410,7 @@ where
     }
 
     /// Iterate over each cell, generate mesh
-    fn iterate_cells(
+    fn generate_mesh_from_cells(
         &self,
         mut dhrw: DiagramHelperRw<T>,
         edge_map: ahash::AHashMap<usize, Vec<usize>>,
@@ -464,7 +468,7 @@ where
                             pb_face.append(&mut face);
                             //print!(" pb:{:?},", pb_face.vertices);
                             if pb_face.len() > 2 {
-                                triangulate_face(
+                                voronoi_utils::triangulate_face(
                                     &mut return_indices,
                                     &dhrw.vertex_map.vertices,
                                     &pb_face,
@@ -518,13 +522,25 @@ where
                     self.split_pb_face_by_segment(v0n, v1n, &new_face)?
                 {
                     if split_a.len() > 2 {
-                        triangulate_face(&mut return_indices, &dhrw.vertex_map.vertices, &split_a)?;
+                        voronoi_utils::triangulate_face(
+                            &mut return_indices,
+                            &dhrw.vertex_map.vertices,
+                            &split_a,
+                        )?;
                     }
                     if split_b.len() > 2 {
-                        triangulate_face(&mut return_indices, &dhrw.vertex_map.vertices, &split_b)?;
+                        voronoi_utils::triangulate_face(
+                            &mut return_indices,
+                            &dhrw.vertex_map.vertices,
+                            &split_b,
+                        )?;
                     }
                 } else if new_face.len() > 2 {
-                    triangulate_face(&mut return_indices, &dhrw.vertex_map.vertices, &new_face)?;
+                    voronoi_utils::triangulate_face(
+                        &mut return_indices,
+                        &dhrw.vertex_map.vertices,
+                        &new_face,
+                    )?;
                 }
             }
         }
@@ -584,7 +600,7 @@ where
 
     println!("voronoi: data was in plane:{:?} aabb:{:?}", plane, aabb);
 
-    //println!("input Lines:{:?}", input_pb_model.vertices);
+    //println!("input Lines:{:?}", input_model.vertices);
 
     let mut vor_lines = Vec::<BV::Line<i64>>::with_capacity(input_model.indices.len() / 2);
     let vor_vertices: Vec<BV::Point<i64>> = input_model
@@ -629,7 +645,7 @@ fn find_internal_vertices<T: GenericVector3>(
     rejected_edges: &vob::Vob<u32>,
 ) -> Result<vob::Vob<u32>, HallrError>
 where
-    T::Scalar: OutputType,
+    T::Scalar: BV::OutputType,
 {
     let mut internal_vertices = vob::Vob::<u32>::fill_with_false(diagram.vertices().len());
     for (_, e) in diagram
@@ -659,15 +675,15 @@ where
     Ok(internal_vertices)
 }
 
-/// Runs boost voronoi over the input and generates to output model.
+/// Runs boost cmd_voronoi_diagram over the input and generates to output model.
 /// Removes the external edges as we can't handle infinite length edges in blender.
 pub(crate) fn compute_voronoi_mesh(
-    input_pb_model: &Model<'_>,
+    input_model: &Model<'_>,
     cmd_arg_max_voronoi_dimension: f32,
     cmd_discretization_distance: f32,
 ) -> Result<(Vec<Vec3A>, Vec<usize>), HallrError> {
     let (vor_vertices, vor_lines, vor_aabb2, inverted_transform) =
-        parse_input::<Vec3A>(input_pb_model, cmd_arg_max_voronoi_dimension)?;
+        parse_input::<Vec3A>(input_model, cmd_arg_max_voronoi_dimension)?;
     let vor_diagram = {
         BV::Builder::<i64, f32>::default()
             .with_vertices(vor_vertices.iter())?
@@ -693,7 +709,7 @@ pub(crate) fn compute_voronoi_mesh(
     };
 
     let (dhrw, mod_edges) = diagram_helper.convert_edges(discretization_distance)?;
-    let (indices, vertices) = diagram_helper.iterate_cells(dhrw, mod_edges)?;
+    let (indices, vertices) = diagram_helper.generate_mesh_from_cells(dhrw, mod_edges)?;
     Ok((vertices, indices))
 }
 
@@ -788,7 +804,6 @@ pub(crate) fn process_command(
     )?;
     let output_model = OwnedModel {
         world_orientation: Model::copy_world_orientation(input_model)?,
-        //name: input_pb_model.name.clone(),
         indices,
         vertices: if cmd_arg_negative_radius {
             // radius is interpreted as a negative Z value by default

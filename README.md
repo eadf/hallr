@@ -4,7 +4,7 @@
 ![license](https://img.shields.io/crates/l/hallr)
 [![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/eadf)
 
-Experimental Blender addon written in Rust. Work in progress, expect wildly fluctuating API:s.
+Blender add-on written in Rust. Work in progress, expect wildly fluctuating functionality and API:s.
 
 ## Usage
 Read the [wiki](https://github.com/eadf/hallr/wiki) for some blender instructions. 
@@ -12,7 +12,7 @@ Read the [wiki](https://github.com/eadf/hallr/wiki) for some blender instruction
 You should be able to find CI generated zip files under the [Actions->workflows](https://github.com/eadf/hallr/actions) tab for the releases.
 These ZIP files artifacts contains the Hallr addon that Blender can install. 
 There are ([financial](https://github.blog/2023-10-02-introducing-the-new-apple-silicon-powered-m1-macos-larger-runner-for-github-actions/#new-macos-runner-pricing)) issues with building for macOS Arm with the GitHub workflows. 
-If you are on an Arm Mac you can locally rebuild your zip file like this (must be in the project root dir):
+If you are on an Arm Mac you can locally rebuild your blender add-on zip file like this (must be in the project root dir):
 ```bash
 python3 build_script.py
 ```
