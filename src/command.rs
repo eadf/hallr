@@ -12,6 +12,7 @@ mod cmd_knife_intersect;
 mod cmd_sdf_mesh_2_5;
 mod cmd_simplify_rdp;
 pub mod cmd_surface_scan;
+mod cmd_voronoi_diagram;
 mod cmd_voronoi_mesh;
 mod create_test;
 mod impls;
@@ -237,6 +238,7 @@ pub(crate) fn process_command(
         "2d_outline" => cmd_2d_outline::process_command::<T>(config, models)?,
         "knife_intersect" => cmd_knife_intersect::process_command::<T>(config, models)?,
         "voronoi_mesh" => cmd_voronoi_mesh::process_command(config, models)?,
+        "voronoi_diagram" => cmd_voronoi_diagram::process_command(config, models)?,
         "sdf_mesh_2_5" => cmd_sdf_mesh_2_5::process_command(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(
             "Invalid command:{}",

@@ -16,9 +16,8 @@ use vector_traits::{
     approx::{AbsDiffEq, UlpsEq},
     glam::Vec3A,
     num_traits::AsPrimitive,
-    GenericVector2, GenericVector3, HasXY,
+    GenericVector2, GenericVector3, HasXY, HasXYZ,
 };
-
 #[cfg(test)]
 mod tests;
 
@@ -57,14 +56,17 @@ where
     })?;
 
     if plane != Plane::XY {
-        return Err(HallrError::InvalidInputData(format!("At the moment the voronoi mesh operation only supports input data in the XY plane. {:?}", plane)));
+        return Err(HallrError::InvalidInputData(format!("At the moment the cmd_voronoi_diagram mesh operation only supports input data in the XY plane. {:?}", plane)));
     }
 
     let inverse_transform = transform.safe_inverse().ok_or(HallrError::InternalError(
         "Could not calculate inverse matrix".to_string(),
     ))?;
 
-    println!("voronoi: data was in plane:{:?} aabb:{:?}", plane, aabb);
+    println!(
+        "cmd_voronoi_diagram: data was in plane:{:?} aabb:{:?}",
+        plane, aabb
+    );
 
     //println!("input Lines:{:?}", input_model.vertices);
 
@@ -107,7 +109,7 @@ where
 
 /// Runs boost cmd_voronoi_diagram over the input and generates to output model.
 /// Removes the external edges as we can't handle infinite length edges in blender.
-pub(crate) fn compute_voronoi_mesh(
+pub(crate) fn compute_voronoi_diagram(
     input_model: &Model<'_>,
     cmd_arg_max_voronoi_dimension: f32,
     cmd_discretization_distance: f32,
@@ -140,7 +142,7 @@ pub(crate) fn compute_voronoi_mesh(
     };
 
     let (dhrw, mod_edges) = diagram_helper.convert_edges(discretization_distance)?;
-    let (indices, vertices) = diagram_helper.generate_mesh_from_cells(dhrw, mod_edges)?;
+    let (indices, vertices) = diagram_helper.generate_voronoi_edges_from_cells(dhrw, mod_edges)?;
     Ok((vertices, indices))
 }
 
@@ -167,10 +169,6 @@ pub(crate) fn process_command(
         "MAX_VORONOI_DIMENSION",
         Some(super::DEFAULT_MAX_VORONOI_DIMENSION.as_()),
     )?;
-
-    let cmd_arg_negative_radius = config
-        .get_parsed_option::<bool>("NEGATIVE_RADIUS")?
-        .unwrap_or(true);
 
     if !(super::DEFAULT_MAX_VORONOI_DIMENSION as i64..100_000_000)
         .contains(&cmd_arg_max_voronoi_dimension.as_())
@@ -203,7 +201,8 @@ pub(crate) fn process_command(
     let input_model = &models[0];
     if !input_model.has_identity_orientation() {
         return Err(HallrError::InvalidInputData(
-            "The voronoi mesh operation currently requires identify world orientation".to_string(),
+            "The cmd_voronoi_diagram mesh operation currently requires identify world orientation"
+                .to_string(),
         ));
     }
 
@@ -224,11 +223,10 @@ pub(crate) fn process_command(
         cmd_arg_discretization_distance
     );
     println!("max_distance:{:?}", max_distance);
-    println!("NEGATIVE_RADIUS:{:?}", cmd_arg_negative_radius);
     println!();
 
     // do the actual operation
-    let (vertices, indices) = compute_voronoi_mesh(
+    let (vertices, indices) = compute_voronoi_diagram(
         input_model,
         cmd_arg_max_voronoi_dimension,
         cmd_arg_discretization_distance,
@@ -236,21 +234,19 @@ pub(crate) fn process_command(
     let output_model = OwnedModel {
         world_orientation: Model::copy_world_orientation(input_model)?,
         indices,
-        vertices: if cmd_arg_negative_radius {
-            // radius is interpreted as a negative Z value by default
-            vertices.into_iter().map(|v: Vec3A| v.to()).collect()
-        } else {
-            vertices
-                .into_iter()
-                .map(|v: Vec3A| Vec3A::new(v.x, v.y, v.z.abs()).to())
-                .collect()
-        },
+        vertices: vertices
+            .into_iter()
+            .map(|mut v: Vec3A| {
+                v.set_z(0.0);
+                v.to()
+            })
+            .collect(),
     };
 
     let mut return_config = ConfigType::new();
-    let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let _ = return_config.insert("mesh.format".to_string(), "line_chunks".to_string());
     println!(
-        "voronoi mesh operation returning {} vertices, {} indices",
+        "cmd_voronoi_diagram mesh operation returning {} vertices, {} indices",
         output_model.vertices.len(),
         output_model.indices.len()
     );

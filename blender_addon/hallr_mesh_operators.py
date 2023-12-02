@@ -480,6 +480,57 @@ class Hallr_Voronoi_Mesh(bpy.types.Operator):
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
 
+# Voronoi operator
+class Hallr_Voronoi_Diagram(bpy.types.Operator):
+    bl_idname = "mesh.hallr_meshtools_voronoi_diagram"
+    bl_label = "Voronoi Diagram"
+    bl_description = ("Calculate voronoi diagram, the geometry must be flat and on a plane intersecting "
+                      "origin.")
+    bl_options = {'REGISTER', 'UNDO'}
+
+    distance_props: bpy.props.FloatProperty(
+        name="Discretization distance",
+        description="Discretization distance as a percentage of the total AABB length. This value is used when sampling"
+                    "parabolic arc edges. Smaller value gives a finer step distance.",
+        default=0.1,
+        min=0.0001,
+        max=4.9999,
+        precision=6,
+        subtype='PERCENTAGE'
+    )
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.active_object
+        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
+
+    def execute(self, context):
+        obj = context.active_object
+
+        if obj.type != 'MESH':
+            self.report({'ERROR'}, "Active object is not a mesh!")
+            return {'CANCELLED'}
+
+        # Ensure the object is in object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        config = {"command": "voronoi_diagram",
+                  "DISTANCE": str(self.distance_props),
+                  }
+        # Call the Rust function
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
+        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "distance_props")
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
 
 # SDF mesh operator
 class Hallr_SdfMesh25D(bpy.types.Operator):
@@ -663,6 +714,7 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
         layout.operator("mesh.hallr_meshtools_select_intersection_vertices")
         layout.operator("mesh.hallr_meshtools_knife_intersect_2d")
         layout.operator("mesh.hallr_meshtools_voronoi_mesh")
+        layout.operator("mesh.hallr_meshtools_voronoi_diagram")
         layout.operator("mesh.hallr_meshtools_sdf_mesh_2_5")
         layout.operator("mesh.hallr_simplify_rdp")
         layout.operator("mesh.hallr_centerline")
@@ -684,6 +736,7 @@ classes = (
     Hallr_ConvexHull2D,
     Hallr_KnifeIntersect,
     Hallr_Voronoi_Mesh,
+    Hallr_Voronoi_Diagram,
     Hallr_SdfMesh25D,
     Hallr_2DOutline,
     Hallr_SimplifyRdp,
