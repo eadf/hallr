@@ -29,6 +29,7 @@ type PaddedChunkShape = fast_surface_nets::ndshape::ConstShape3u32<
 const DEFAULT_SDF_VALUE: f32 = 999.0;
 type Extent3i = Extent<iglam::IVec3>;
 
+/// returns a list of type-converted vertices, a list of edges, and an AABB padded by radius
 #[allow(clippy::type_complexity)]
 fn parse_input(
     model: &Model<'_>,
@@ -153,7 +154,7 @@ fn generate_and_process_sdf_chunk(
             &mut array[PaddedChunkShape::linearize([p.x as u32, p.y as u32, p.z as u32]) as usize]
         };
         // Point With Offset from the un-padded extent minimum
-        let pwo = iglam::Vec3A::new(pwo.x as f32, pwo.y as f32, pwo.z as f32);
+        let pwo = pwo.as_vec3a();
 
         #[cfg(feature = "display_sdf_chunks")]
         {
@@ -331,7 +332,7 @@ pub(crate) fn build_output_model(
     let now = time::Instant::now();
 
     let (mut vertices, mut indices) = {
-        // calculate the maximum required vertices & facec capacity
+        // calculate the maximum required vertices & face capacity
         let (vertex_capacity, face_capacity) = mesh_buffers
             .iter()
             .fold((0_usize, 0_usize), |(v, f), chunk| {
@@ -449,7 +450,7 @@ pub(crate) fn process_command(
     let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
     let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
     println!(
-        "voronoi mesh operation returning {} vertices, {} indices",
+        "sdf mesh 2.5d operation returning {} vertices, {} indices",
         output_model.vertices.len(),
         output_model.indices.len()
     );

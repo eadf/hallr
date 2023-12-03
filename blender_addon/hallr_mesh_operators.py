@@ -480,6 +480,7 @@ class Hallr_Voronoi_Mesh(bpy.types.Operator):
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
 
+
 # Voronoi operator
 class Hallr_Voronoi_Diagram(bpy.types.Operator):
     bl_idname = "mesh.hallr_meshtools_voronoi_diagram"
@@ -532,7 +533,7 @@ class Hallr_Voronoi_Diagram(bpy.types.Operator):
         return wm.invoke_props_dialog(self)
 
 
-# SDF mesh operator
+# SDF mesh 2½D operator
 class Hallr_SdfMesh25D(bpy.types.Operator):
     """Tooltip: Generate a 3D SDF mesh from 2½D edges."""
     bl_idname = "mesh.hallr_meshtools_sdf_mesh_2_5"
@@ -545,14 +546,14 @@ class Hallr_SdfMesh25D(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     sdf_divisions_property: bpy.props.IntProperty(
-            name="Voxel Divisions",
-            description="The longest axis of the model will be divided into this number of voxels; the other axes "
-                        "will have a proportionally equal number of voxels.",
-            default=100,
-            min=50,
-            max=600,
-            subtype='FACTOR'
-        )
+        name="Voxel Divisions",
+        description="The longest axis of the model will be divided into this number of voxels; the other axes "
+                    "will have a proportionally equal number of voxels.",
+        default=100,
+        min=50,
+        max=600,
+        subtype='FACTOR'
+    )
 
     @classmethod
     def poll(cls, context):
@@ -581,6 +582,73 @@ class Hallr_SdfMesh25D(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "sdf_divisions_property")
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+
+# SDF mesh operator
+class Hallr_SdfMesh(bpy.types.Operator):
+    """Tooltip: Generate a 3D SDF mesh from 3d edges."""
+    bl_idname = "mesh.hallr_meshtools_sdf_mesh"
+    bl_label = "SDF Mesh"
+    bl_description = (
+        "Generate a 3D mesh from 3D edges. The geometry should be centered on the XY plane intersecting the origin."
+        "Each edge is converted into a SDF tube with a predefined radius."
+    )
+    bl_options = {'REGISTER', 'UNDO'}
+
+    sdf_divisions_prop: bpy.props.IntProperty(
+        name="Voxel Divisions",
+        description="The longest axis of the model will be divided into this number of voxels; the other axes "
+                    "will have a proportionally equal number of voxels.",
+        default=100,
+        min=50,
+        max=600,
+        subtype='FACTOR'
+    )
+
+    sdf_radius_prop: bpy.props.FloatProperty(
+        name="Radius",
+        description="Voxel tube radius as a percentage of the total AABB",
+        default=1.0,
+        min=0.01,
+        max=19.9999,
+        precision=6,
+        subtype='PERCENTAGE'
+    )
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.active_object
+        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
+
+    def execute(self, context):
+        obj = context.active_object
+
+        if obj.type != 'MESH':
+            self.report({'ERROR'}, "Active object is not a mesh!")
+            return {'CANCELLED'}
+
+        # Ensure the object is in object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        config = {"command": "sdf_mesh",
+                  "SDF_DIVISIONS": str(self.sdf_divisions_prop),
+                  "SDF_RADIUS_MULTIPLIER": str(self.sdf_radius_prop)
+                  }
+
+        # Call the Rust function
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
+        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "sdf_divisions_prop")
+        layout.prop(self, "sdf_radius_prop")
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -716,6 +784,7 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
         layout.operator("mesh.hallr_meshtools_voronoi_mesh")
         layout.operator("mesh.hallr_meshtools_voronoi_diagram")
         layout.operator("mesh.hallr_meshtools_sdf_mesh_2_5")
+        layout.operator("mesh.hallr_meshtools_sdf_mesh")
         layout.operator("mesh.hallr_simplify_rdp")
         layout.operator("mesh.hallr_centerline")
 
@@ -738,6 +807,7 @@ classes = (
     Hallr_Voronoi_Mesh,
     Hallr_Voronoi_Diagram,
     Hallr_SdfMesh25D,
+    Hallr_SdfMesh,
     Hallr_2DOutline,
     Hallr_SimplifyRdp,
     Hallr_Centerline

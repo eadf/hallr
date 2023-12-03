@@ -9,6 +9,7 @@ mod cmd_centerline;
 mod cmd_convex_hull_2d;
 mod cmd_delaunay_triangulation_2d;
 mod cmd_knife_intersect;
+mod cmd_sdf_mesh;
 mod cmd_sdf_mesh_2_5;
 mod cmd_simplify_rdp;
 pub mod cmd_surface_scan;
@@ -240,6 +241,7 @@ pub(crate) fn process_command(
         "voronoi_mesh" => cmd_voronoi_mesh::process_command(config, models)?,
         "voronoi_diagram" => cmd_voronoi_diagram::process_command(config, models)?,
         "sdf_mesh_2_5" => cmd_sdf_mesh_2_5::process_command(config, models)?,
+        "sdf_mesh" => cmd_sdf_mesh::process_command(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(
             "Invalid command:{}",
             illegal_command
