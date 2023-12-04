@@ -500,6 +500,12 @@ class Hallr_Voronoi_Diagram(bpy.types.Operator):
         subtype='PERCENTAGE'
     )
 
+    keep_input_props: bpy.props.BoolProperty(
+        name="Keep input edges",
+        description="Will keep the input edges in the output",
+        default=True
+    )
+
     @classmethod
     def poll(cls, context):
         ob = context.active_object
@@ -517,6 +523,7 @@ class Hallr_Voronoi_Diagram(bpy.types.Operator):
 
         config = {"command": "voronoi_diagram",
                   "DISTANCE": str(self.distance_props),
+                  "KEEP_INPUT": str(self.keep_input_props).lower(),
                   }
         # Call the Rust function
         vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
@@ -527,6 +534,7 @@ class Hallr_Voronoi_Diagram(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "distance_props")
+        layout.prop(self, "keep_input_props")
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -594,7 +602,7 @@ class Hallr_SdfMesh(bpy.types.Operator):
     bl_idname = "mesh.hallr_meshtools_sdf_mesh"
     bl_label = "SDF Mesh"
     bl_description = (
-        "Generate a 3D mesh from 3D edges. The geometry should be centered on the XY plane intersecting the origin."
+        "Generate a 3D mesh from 3D edges."
         "Each edge is converted into a SDF tube with a predefined radius."
     )
     bl_options = {'REGISTER', 'UNDO'}
@@ -773,7 +781,6 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator("mesh.hallr_meshtools_convex_hull_2d")
         layout.operator("mesh.hallr_2d_outline")
         layout.operator("mesh.hallr_meshtools_select_end_vertices")
         layout.operator("mesh.hallr_meshtools_select_collinear_edges")

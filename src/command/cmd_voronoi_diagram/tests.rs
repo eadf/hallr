@@ -13,6 +13,7 @@ fn test_voronoi_diagram_1() -> Result<(), HallrError> {
     let _ = config.insert("DISTANCE".to_string(), "1.0".to_string());
     let _ = config.insert("command".to_string(), "voronoi_diagram".to_string());
     let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert("KEEP_INPUT".to_string(), "false".to_string());
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),

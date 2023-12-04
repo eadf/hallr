@@ -35,7 +35,14 @@ fn parse_input(
     model: &Model<'_>,
     cmd_arg_radius_dimension: Plane,
 ) -> Result<(Vec<(iglam::Vec2, f32)>, Extent<iglam::Vec3A>), HallrError> {
-    let mut aabb: Option<Extent<iglam::Vec3A>> = None;
+    let zero = iglam::Vec3A::default();
+
+    let mut aabb = {
+        let vertex0 = model.vertices.first().ok_or_else(|| {
+            HallrError::InvalidInputData("Input vertex list was empty".to_string())
+        })?;
+        Extent::from_min_and_shape(iglam::vec3a(vertex0.x, vertex0.y, vertex0.z), zero)
+    };
 
     let vertices: Result<Vec<_>, HallrError> = model
         .vertices
@@ -48,31 +55,21 @@ fn parse_input(
                 )))?
             } else {
                 let (point2, radius) = match cmd_arg_radius_dimension {
-                    Plane::YZ => (iglam::Vec2::new(vertex.y, vertex.z), vertex.x.abs()),
-                    Plane::XZ => (iglam::Vec2::new(vertex.x, vertex.z), vertex.y.abs()),
-                    Plane::XY => (iglam::Vec2::new(vertex.x, vertex.y), vertex.z.abs()),
+                    Plane::YZ => (iglam::vec2(vertex.y, vertex.z), vertex.x.abs()),
+                    Plane::XZ => (iglam::vec2(vertex.x, vertex.z), vertex.y.abs()),
+                    Plane::XY => (iglam::vec2(vertex.x, vertex.y), vertex.z.abs()),
                 };
-                let v_aabb = Extent::from_min_and_shape(
-                    iglam::Vec3A::new(point2.x, point2.y, 0.0),
-                    iglam::Vec3A::splat(0.0),
-                )
-                .padded(radius);
+                let v_aabb =
+                    Extent::from_min_and_shape(iglam::vec3a(point2.x, point2.y, 0.0), zero)
+                        .padded(radius);
 
-                aabb = if let Some(aabb) = aabb {
-                    Some(aabb.bound_union(&v_aabb))
-                } else {
-                    Some(v_aabb)
-                };
+                aabb = aabb.bound_union(&v_aabb);
 
                 Ok((point2, radius))
             }
         })
         .collect();
-    let vertices = vertices?;
-
-    println!("aabb :{:?}", aabb);
-
-    Ok((vertices, aabb.unwrap()))
+    Ok((vertices?, aabb))
 }
 
 /// This is the sdf formula of a rounded cone (at origin)
@@ -95,6 +92,7 @@ struct RoundedCone {
 }
 
 /// Generate the data of a single chunk.
+/// This code is run in a single thread
 fn generate_and_process_sdf_chunk(
     un_padded_chunk_extent: Extent3i,
     rounded_cones: &[(RoundedCone, Extent3i)],
@@ -160,9 +158,9 @@ fn generate_and_process_sdf_chunk(
             let new_v = if k < 0.0 {
                 q.length() - cone.r0
             } else if k > cone.a * cone.h {
-                (q - iglam::Vec2::new(0.0, cone.h)).length() - cone.r1
+                (q - iglam::vec2(0.0, cone.h)).length() - cone.r1
             } else {
-                q.dot(iglam::Vec2::new(cone.a, cone.b)) - cone.r0
+                q.dot(iglam::vec2(cone.a, cone.b)) - cone.r0
             };
 
             *v = (*v).min(new_v);
@@ -207,11 +205,13 @@ fn build_voxel(
     verbose: bool,
 ) -> Result<
     (
-        f32, // <- voxel_size
+        f32, // voxel_size
         Vec<(iglam::Vec3A, SurfaceNetsBuffer)>,
     ),
     HallrError,
 > {
+    let zero = iglam::Vec3A::default();
+
     let max_dimension = {
         let dimensions = aabb.shape;
         dimensions.x.max(dimensions.y).max(dimensions.z)
@@ -236,32 +236,32 @@ fn build_voxel(
         .map(|edge| {
             let (e0, e1) = (edge[0], edge[1]);
 
-            let (v0, r0) = vertices[e0];
-            let (v0, r0) = (iglam::Vec2::new(v0.x, v0.y) * scale, (r0 * scale));
-            let (v1, r1) = vertices[e1];
-            let (v1, r1) = (iglam::Vec2::new(v1.x, v1.y) * scale, r1 * scale);
+            let (v0, r0) = {
+                let (v0, r0) = vertices[e0];
+                (iglam::vec2(v0.x, v0.y) * scale, r0 * scale)
+            };
 
-            let ex0 = Extent::<iglam::Vec3A>::from_min_and_shape(
-                iglam::Vec3A::new(v0.x, v0.y, 0.0),
-                iglam::Vec3A::splat(0.0),
-            )
-            .padded(r0);
-            let ex1 = Extent::<iglam::Vec3A>::from_min_and_shape(
-                iglam::Vec3A::new(v1.x, v1.y, 0.0),
-                iglam::Vec3A::splat(0.0),
-            )
-            .padded(r1);
+            let (v1, r1) = {
+                let (v1, r1) = vertices[e1];
+                (iglam::vec2(v1.x, v1.y) * scale, r1 * scale)
+            };
+
+            let ex0 =
+                Extent::<iglam::Vec3A>::from_min_and_shape(iglam::vec3a(v0.x, v0.y, 0.0), zero)
+                    .padded(r0);
+            let ex1 =
+                Extent::<iglam::Vec3A>::from_min_and_shape(iglam::vec3a(v1.x, v1.y, 0.0), zero)
+                    .padded(r1);
             // The AABB of the rounded cone intersected this chunk - keep it
             let v = v1 - v0;
-            let _c = v0 + v * 0.5; // center
+            //let _c = v0 + v * 0.5; // center
             let h = v.length();
             let b = (r0 - r1) / h;
             let a = (1.0 - b * b).sqrt();
             // todo: this can't be correct and/or efficient
-            let rotation =
-                iglam::Mat3::from_rotation_z(v.angle_between(iglam::Vec2::new(0.0, 1.0)));
+            let rotation = iglam::Mat3::from_rotation_z(v.angle_between(iglam::vec2(0.0, 1.0)));
             let translation = rotation.transform_point2(v0);
-            let translation = -iglam::Vec3::new(translation.x(), translation.y(), 0.0);
+            let translation = -iglam::vec3(translation.x(), translation.y(), 0.0);
             let m = iglam::Affine3A::from_mat3_translation(rotation, translation);
 
             (
@@ -281,7 +281,7 @@ fn build_voxel(
     let now = time::Instant::now();
 
     let sdf_chunks: Vec<_> = {
-        let un_padded_chunk_shape = iglam::IVec3::from([UN_PADDED_CHUNK_SIDE as i32; 3]);
+        let un_padded_chunk_shape = iglam::IVec3::splat(UN_PADDED_CHUNK_SIDE as i32);
         // Spawn off thread tasks creating and processing chunks.
         // Could also do:
         // (min.x..max.x).into_par_iter().flat_map(|x|
@@ -433,7 +433,7 @@ pub(crate) fn process_command(
     let (voxel_size, mesh) = build_voxel(
         cmd_arg_sdf_divisions,
         vertices,
-        &input_model.indices,
+        input_model.indices,
         aabb,
         true,
     )?;

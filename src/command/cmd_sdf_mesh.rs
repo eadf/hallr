@@ -28,7 +28,13 @@ type Extent3i = Extent<iglam::IVec3>;
 /// returns an AABB (not padded by radius)
 #[allow(clippy::type_complexity)]
 fn parse_input(model: &Model<'_>) -> Result<Extent<iglam::Vec3A>, HallrError> {
-    let mut aabb: Option<Extent<iglam::Vec3A>> = None;
+    let zero = iglam::Vec3A::default();
+    let mut aabb = {
+        let vertex0 = model.vertices.first().ok_or_else(|| {
+            HallrError::InvalidInputData("Input vertex list was empty".to_string())
+        })?;
+        Extent::from_min_and_shape(iglam::vec3a(vertex0.x, vertex0.y, vertex0.z), zero)
+    };
 
     for vertex in model.vertices.iter() {
         if !vertex.x.is_finite() || !vertex.y.is_finite() || !vertex.z.is_finite() {
@@ -38,16 +44,12 @@ fn parse_input(model: &Model<'_>) -> Result<Extent<iglam::Vec3A>, HallrError> {
             )))?
         } else {
             let point = iglam::vec3a(vertex.x, vertex.y, vertex.z);
-            let v_aabb = Extent::from_min_and_shape(point, iglam::Vec3A::splat(0.0));
-            aabb = if let Some(aabb) = aabb {
-                Some(aabb.bound_union(&v_aabb))
-            } else {
-                Some(v_aabb)
-            };
+            let v_aabb = Extent::from_min_and_shape(point, zero);
+            aabb = aabb.bound_union(&v_aabb);
         }
     }
 
-    Ok(aabb.unwrap())
+    Ok(aabb)
 }
 
 /// Build the chunk lattice and spawn off thread tasks for each chunk
@@ -106,7 +108,7 @@ fn build_voxel(
 
     let sdf_chunks: Vec<_> = {
         let radius = radius * scale;
-        let unpadded_chunk_shape = iglam::IVec3::from([UN_PADDED_CHUNK_SIDE as i32; 3]);
+        let unpadded_chunk_shape = iglam::IVec3::splat(UN_PADDED_CHUNK_SIDE as i32);
         // Spawn off thread tasks creating and processing chunks.
         chunks_extent
             .iter3()
@@ -115,7 +117,7 @@ fn build_voxel(
                 let unpadded_chunk_extent =
                     Extent3i::from_min_and_shape(p * unpadded_chunk_shape, unpadded_chunk_shape);
 
-                generate_and_process_sdf_chunk(unpadded_chunk_extent, &vertices, &indices, radius)
+                generate_and_process_sdf_chunk(unpadded_chunk_extent, &vertices, indices, radius)
             })
             .collect()
     };
@@ -148,8 +150,8 @@ fn generate_and_process_sdf_chunk(
             let (e0, e1) = (edge[0], edge[1]);
 
             let tube_extent = Extent::from_min_and_lub(
-                vertices[e0].min(vertices[e1]) - iglam::Vec3A::from([thickness; 3]),
-                vertices[e0].max(vertices[e1]) + iglam::Vec3A::from([thickness; 3]),
+                vertices[e0].min(vertices[e1]) - iglam::Vec3A::splat(thickness),
+                vertices[e0].max(vertices[e1]) + iglam::Vec3A::splat(thickness),
             )
             .containing_integer_extent();
             if !padded_chunk_extent.intersection(&tube_extent).is_empty() {
@@ -339,8 +341,8 @@ pub(crate) fn process_command(
     let (voxel_size, mesh) = build_voxel(
         cmd_arg_sdf_radius_multiplier,
         cmd_arg_sdf_divisions,
-        &input_model.vertices,
-        &input_model.indices,
+        input_model.vertices,
+        input_model.indices,
         aabb,
         true,
     )?;

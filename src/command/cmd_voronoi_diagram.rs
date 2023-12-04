@@ -113,6 +113,7 @@ pub(crate) fn compute_voronoi_diagram(
     input_model: &Model<'_>,
     cmd_arg_max_voronoi_dimension: f32,
     cmd_discretization_distance: f32,
+    cmd_arg_keep_input: bool,
 ) -> Result<(Vec<Vec3A>, Vec<usize>), HallrError> {
     let (vor_vertices, vor_lines, vor_aabb2, inverted_transform) =
         parse_input::<Vec3A>(input_model, cmd_arg_max_voronoi_dimension)?;
@@ -142,7 +143,8 @@ pub(crate) fn compute_voronoi_diagram(
     };
 
     let (dhrw, mod_edges) = diagram_helper.convert_edges(discretization_distance)?;
-    let (indices, vertices) = diagram_helper.generate_voronoi_edges_from_cells(dhrw, mod_edges)?;
+    let (indices, vertices) =
+        diagram_helper.generate_voronoi_edges_from_cells(dhrw, mod_edges, cmd_arg_keep_input)?;
     Ok((vertices, indices))
 }
 
@@ -194,6 +196,8 @@ pub(crate) fn process_command(
         )));
     }
 
+    let cmd_arg_keep_input = config.get_parsed_option("KEEP_INPUT")?.unwrap_or(false);
+
     // used for simplification and discretization distance
     let max_distance: Scalar =
         cmd_arg_max_voronoi_dimension * cmd_arg_discretization_distance / 100.0;
@@ -222,7 +226,9 @@ pub(crate) fn process_command(
         "VORONOI_DISCRETE_DISTANCE:{:?}%",
         cmd_arg_discretization_distance
     );
+    println!("KEEP_INPUT:{:?}", cmd_arg_keep_input);
     println!("max_distance:{:?}", max_distance);
+
     println!();
 
     // do the actual operation
@@ -230,6 +236,7 @@ pub(crate) fn process_command(
         input_model,
         cmd_arg_max_voronoi_dimension,
         cmd_arg_discretization_distance,
+        cmd_arg_keep_input,
     )?;
     let output_model = OwnedModel {
         world_orientation: Model::copy_world_orientation(input_model)?,
@@ -245,6 +252,8 @@ pub(crate) fn process_command(
 
     let mut return_config = ConfigType::new();
     let _ = return_config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
+
     println!(
         "cmd_voronoi_diagram mesh operation returning {} vertices, {} indices",
         output_model.vertices.len(),

@@ -693,14 +693,31 @@ where
     /// Iterate over each cell, generate edges in "chunk" format
     pub(crate) fn generate_voronoi_edges_from_cells(
         &self,
-        dhrw: DiagramHelperRw<T>,
+        mut dhrw: DiagramHelperRw<T>,
         edge_map: ahash::AHashMap<usize, Vec<usize>>,
+        cmd_arg_keep_input: bool,
     ) -> Result<(Vec<usize>, Vec<T>), HallrError> {
         // A vec containing the edges of the faces in "chunk" format
-        let mut return_indices = Vec::<usize>::new();
+        let mut return_indices = Vec::<usize>::with_capacity(edge_map.len() * 3);
         for (_, edge) in edge_map.iter() {
             for line in edge.windows(2) {
                 return_indices.extend(line);
+            }
+        }
+
+        // lookup already existing vertex indices. TODO: figure out the indices from input
+        if cmd_arg_keep_input {
+            for line in self.segments.iter() {
+                return_indices.push(dhrw.place_new_vertex_dup_check(T::new_3d(
+                    line.start.x.as_(),
+                    line.start.y.as_(),
+                    T::Scalar::ZERO,
+                ))?);
+                return_indices.push(dhrw.place_new_vertex_dup_check(T::new_3d(
+                    line.end.x.as_(),
+                    line.end.y.as_(),
+                    T::Scalar::ZERO,
+                ))?);
             }
         }
 
