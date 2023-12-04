@@ -34,15 +34,7 @@ type Extent3i = Extent<iglam::IVec3>;
 fn parse_input(
     model: &Model<'_>,
     cmd_arg_radius_dimension: Plane,
-) -> Result<
-    (
-        Vec<(iglam::Vec2, f32)>,
-        Vec<(u32, u32)>,
-        Extent<iglam::Vec3A>,
-    ),
-    HallrError,
-> {
-    let mut edges = Vec::<(u32, u32)>::default();
+) -> Result<(Vec<(iglam::Vec2, f32)>, Extent<iglam::Vec3A>), HallrError> {
     let mut aabb: Option<Extent<iglam::Vec3A>> = None;
 
     let vertices: Result<Vec<_>, HallrError> = model
@@ -78,15 +70,9 @@ fn parse_input(
         .collect();
     let vertices = vertices?;
 
-    for chunk in model.indices.chunks_exact(2) {
-        if vertices[chunk[0]].1 != 0.0 || vertices[chunk[1]].1 != 0.0 {
-            edges.push((chunk[0] as u32, chunk[1] as u32));
-        }
-    }
-    println!("edges.len():{}", edges.len());
     println!("aabb :{:?}", aabb);
 
-    Ok((vertices, edges, aabb.unwrap()))
+    Ok((vertices, aabb.unwrap()))
 }
 
 /// This is the sdf formula of a rounded cone (at origin)
@@ -216,7 +202,7 @@ fn generate_and_process_sdf_chunk(
 fn build_voxel(
     divisions: f32,
     vertices: Vec<(iglam::Vec2, f32)>,
-    edges: Vec<(u32, u32)>,
+    indices: &[usize],
     aabb: Extent<iglam::Vec3A>,
     verbose: bool,
 ) -> Result<
@@ -243,14 +229,16 @@ fn build_voxel(
         );
         println!();
     }
-    println!("edges.len():{:?}", edges.len());
+    println!("indices.len():{:?}", indices.len());
 
-    let rounded_cones: Vec<(RoundedCone, Extent3i)> = edges
-        .into_par_iter()
-        .map(|(e0, e1)| {
-            let (v0, r0) = vertices[e0 as usize];
+    let rounded_cones: Vec<(RoundedCone, Extent3i)> = indices
+        .par_chunks_exact(2)
+        .map(|edge| {
+            let (e0, e1) = (edge[0], edge[1]);
+
+            let (v0, r0) = vertices[e0];
             let (v0, r0) = (iglam::Vec2::new(v0.x, v0.y) * scale, (r0 * scale));
-            let (v1, r1) = vertices[e1 as usize];
+            let (v1, r1) = vertices[e1];
             let (v1, r1) = (iglam::Vec2::new(v1.x, v1.y) * scale, r1 * scale);
 
             let ex0 = Extent::<iglam::Vec3A>::from_min_and_shape(
@@ -441,8 +429,14 @@ pub(crate) fn process_command(
     println!("model.vertices:{:?}, ", input_model.vertices.len());
 
     let plane = Plane::XY;
-    let (vertices, edges, aabb) = parse_input(input_model, plane)?;
-    let (voxel_size, mesh) = build_voxel(cmd_arg_sdf_divisions, vertices, edges, aabb, true)?;
+    let (vertices, aabb) = parse_input(input_model, plane)?;
+    let (voxel_size, mesh) = build_voxel(
+        cmd_arg_sdf_divisions,
+        vertices,
+        &input_model.indices,
+        aabb,
+        true,
+    )?;
 
     let output_model = build_output_model(voxel_size, mesh, plane, true)?;
 

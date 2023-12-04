@@ -25,53 +25,37 @@ type PaddedChunkShape = fast_surface_nets::ndshape::ConstShape3u32<
 const DEFAULT_SDF_VALUE: f32 = 999.0;
 type Extent3i = Extent<iglam::IVec3>;
 
-/// returns a list of type-converted vertices, a list of edges, and a AABB (not padded by radius)
+/// returns an AABB (not padded by radius)
 #[allow(clippy::type_complexity)]
-fn parse_input(
-    model: &Model<'_>,
-) -> Result<(Vec<iglam::Vec3A>, Vec<(u32, u32)>, Extent<iglam::Vec3A>), HallrError> {
-    let mut edges = Vec::<(u32, u32)>::default();
+fn parse_input(model: &Model<'_>) -> Result<Extent<iglam::Vec3A>, HallrError> {
     let mut aabb: Option<Extent<iglam::Vec3A>> = None;
 
-    let vertices: Result<Vec<_>, HallrError> = model
-        .vertices
-        .iter()
-        .map(|vertex| {
-            if !vertex.x.is_finite() || !vertex.y.is_finite() || !vertex.z.is_finite() {
-                Err(HallrError::InvalidInputData(format!(
-                    "Only finite coordinates are allowed ({},{},{})",
-                    vertex.x, vertex.y, vertex.z
-                )))?
+    for vertex in model.vertices.iter() {
+        if !vertex.x.is_finite() || !vertex.y.is_finite() || !vertex.z.is_finite() {
+            Err(HallrError::InvalidInputData(format!(
+                "Only finite coordinates are allowed ({},{},{})",
+                vertex.x, vertex.y, vertex.z
+            )))?
+        } else {
+            let point = iglam::vec3a(vertex.x, vertex.y, vertex.z);
+            let v_aabb = Extent::from_min_and_shape(point, iglam::Vec3A::splat(0.0));
+            aabb = if let Some(aabb) = aabb {
+                Some(aabb.bound_union(&v_aabb))
             } else {
-                let point = iglam::vec3a(vertex.x, vertex.y, vertex.z);
-                let v_aabb = Extent::from_min_and_shape(point, iglam::Vec3A::splat(0.0));
-                aabb = if let Some(aabb) = aabb {
-                    Some(aabb.bound_union(&v_aabb))
-                } else {
-                    Some(v_aabb)
-                };
-
-                Ok(point)
-            }
-        })
-        .collect();
-    let vertices = vertices?;
-
-    for chunk in model.indices.chunks_exact(2) {
-        edges.push((chunk[0] as u32, chunk[1] as u32));
+                Some(v_aabb)
+            };
+        }
     }
-    println!("edges.len():{}", edges.len());
-    println!("aabb :{:?}", aabb);
 
-    Ok((vertices, edges, aabb.unwrap()))
+    Ok(aabb.unwrap())
 }
 
 /// Build the chunk lattice and spawn off thread tasks for each chunk
 fn build_voxel(
     radius_multiplier: f32,
     divisions: f32,
-    vertices: &[iglam::Vec3A],
-    edges: Vec<(u32, u32)>,
+    vertices: &[FFIVector3],
+    indices: &[usize],
     unpadded_aabb: Extent<iglam::Vec3A>,
     verbose: bool,
 ) -> Result<
@@ -131,7 +115,7 @@ fn build_voxel(
                 let unpadded_chunk_extent =
                     Extent3i::from_min_and_shape(p * unpadded_chunk_shape, unpadded_chunk_shape);
 
-                generate_and_process_sdf_chunk(unpadded_chunk_extent, &vertices, &edges, radius)
+                generate_and_process_sdf_chunk(unpadded_chunk_extent, &vertices, &indices, radius)
             })
             .collect()
     };
@@ -151,17 +135,18 @@ fn build_voxel(
 fn generate_and_process_sdf_chunk(
     unpadded_chunk_extent: Extent3i,
     vertices: &[iglam::Vec3A],
-    edges: &[(u32, u32)],
+    indices: &[usize],
     thickness: f32,
 ) -> Option<(iglam::Vec3A, SurfaceNetsBuffer)> {
     // the origin of this chunk, in voxel scale
     let padded_chunk_extent = unpadded_chunk_extent.padded(1);
 
     // filter out the edges that does not affect this chunk
-    let filtered_edges: Vec<_> = edges
-        .iter()
-        .filter_map(|(e0, e1)| {
-            let (e0, e1) = (*e0 as usize, *e1 as usize);
+    let filtered_edges: Vec<_> = indices
+        .par_chunks_exact(2)
+        .filter_map(|edge| {
+            let (e0, e1) = (edge[0], edge[1]);
+
             let tube_extent = Extent::from_min_and_lub(
                 vertices[e0].min(vertices[e1]) - iglam::Vec3A::from([thickness; 3]),
                 vertices[e0].max(vertices[e1]) + iglam::Vec3A::from([thickness; 3]),
@@ -176,7 +161,7 @@ fn generate_and_process_sdf_chunk(
         })
         .collect();
 
-    #[cfg(not(feature = "display_chunks"))]
+    #[cfg(not(feature = "display_sdf_chunks"))]
     if filtered_edges.is_empty() {
         // no tubes intersected this chunk
         return None;
@@ -184,12 +169,12 @@ fn generate_and_process_sdf_chunk(
 
     let mut array = { [DEFAULT_SDF_VALUE; PaddedChunkShape::SIZE as usize] };
 
-    #[cfg(feature = "display_chunks")]
+    #[cfg(feature = "display_sdf_chunks")]
     // The corners of the un-padded chunk extent
     let corners: Vec<_> = unpadded_chunk_extent
         .corners3()
         .iter()
-        .map(|p| p.to_float())
+        .map(|p| p.as_vec3a())
         .collect();
 
     let mut some_neg_or_zero_found = false;
@@ -202,7 +187,7 @@ fn generate_and_process_sdf_chunk(
         };
         let pwo = pwo.as_vec3a();
         // Point With Offset from the un-padded extent minimum
-        #[cfg(feature = "display_chunks")]
+        #[cfg(feature = "display_sdf_chunks")]
         {
             // todo: this could probably be optimized with PaddedChunkShape::linearize(corner_pos)
             let mut x = *v;
@@ -350,12 +335,12 @@ pub(crate) fn process_command(
 
     println!("model.vertices:{:?}, ", input_model.vertices.len());
 
-    let (vertices, edges, aabb) = parse_input(input_model)?;
+    let aabb = parse_input(input_model)?;
     let (voxel_size, mesh) = build_voxel(
         cmd_arg_sdf_radius_multiplier,
         cmd_arg_sdf_divisions,
-        &vertices,
-        edges,
+        &input_model.vertices,
+        &input_model.indices,
         aabb,
         true,
     )?;
