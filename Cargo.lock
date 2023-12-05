@@ -120,7 +120,7 @@ checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 [[package]]
 name = "centerline"
 version = "0.10.0"
-source = "git+https://github.com/eadf/centerline.rs.git#5fbf4b66c6f69357f03f81af9d3aa658e78fed0e"
+source = "git+https://github.com/eadf/centerline.rs.git#ed1fe070c106122000c63b2a7e18fb5af8002843"
 dependencies = [
  "ahash",
  "bitflags",
@@ -485,7 +485,7 @@ checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 [[package]]
 name = "linestring"
 version = "0.12.1"
-source = "git+https://github.com/eadf/linestring.rs.git#e005e8cfcabad0d235f509b37289d881962d5ca0"
+source = "git+https://github.com/eadf/linestring.rs.git#9cb391a1d4eabfc5b68ce60dca3fc48f64a3957c"
 dependencies = [
  "ahash",
  "itertools 0.12.0",
