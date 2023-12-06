@@ -39,8 +39,11 @@ class HALLR_PT_MeanderToolpath(bpy.types.Panel):
 
         row = layout.row(align=True)
         # Bounding shape selection
-        row.operator("object.hallr_mt_select_bounding_shape", text="Select Bounding Shape")
-        if settings.bounding_shape:
+        if settings.bounding_shape is not None:
+            row.operator("object.hallr_mt_select_bounding_shape", text="De-Select Bounding Shape", icon='X')
+        else:
+            row.operator("object.hallr_mt_select_bounding_shape", text="Select Bounding Shape", icon='EYEDROPPER')
+        if settings.bounding_shape is not None:
             row.label(text=settings.bounding_shape.name, icon='CHECKMARK')
 
         if settings.bounding_shape is not None:
@@ -48,8 +51,11 @@ class HALLR_PT_MeanderToolpath(bpy.types.Panel):
 
         row = layout.row(align=True)
         # 3D mesh for height offsets
-        row.operator("object.hallr_mt_select_mesh", text="Select mesh")
-        if settings.mesh:
+        if settings.mesh is not None:
+            row.operator("object.hallr_mt_select_mesh", text="De-Select mesh", icon='X')
+        else:
+            row.operator("object.hallr_mt_select_mesh", text="Select mesh", icon='EYEDROPPER')
+        if settings.mesh is not None:
             row.label(text=settings.mesh.name, icon='CHECKMARK')
 
         layout.row(align=True).prop(settings, "enable_adaptive_scan_props")
@@ -73,11 +79,18 @@ class OBJECT_OT_MTSelectBoundingShape(bpy.types.Operator):
     """ Select the object that contains the bounding shape """
     bl_idname = "object.hallr_mt_select_bounding_shape"
     bl_label = "Select Bounding Shape"
+    bl_description = (
+        "Select the bounding shape"
+    )
 
     def execute(self, context):
         # Check the bounding shape
         bounding_shape = bpy.context.active_object
         settings = context.scene.hallr_meander_settings
+
+        if settings.bounding_shape is not None:
+            settings.bounding_shape = None
+            return {'FINISHED'}
         if bounding_shape.type != 'MESH':
             self.report({'ERROR'}, "The bounding shape should be of type 'MESH'.")
             settings.bounding_shape = None
@@ -99,10 +112,17 @@ class OBJECT_OT_MTSelectMesh(bpy.types.Operator):
     """ Select the object that contains the mesh """
     bl_idname = "object.hallr_mt_select_mesh"
     bl_label = "Select Height Mesh"
+    bl_description = (
+        "Select the mesh object"
+    )
 
     def execute(self, context):
         active_object = bpy.context.active_object
         settings = context.scene.hallr_meander_settings
+        if settings.mesh is not None:
+            settings.mesh = None
+            return {'FINISHED'}
+
         if active_object.type != 'MESH':
             self.report({'ERROR'}, "The mesh shape should be of type 'MESH'.")
             settings.mesh = None
@@ -122,6 +142,7 @@ class OBJECT_OT_GenerateMesh(bpy.types.Operator):
     """ Execute the toolpath generation"""
     bl_idname = "object.hallr_mt_generate_mesh"
     bl_label = "Generate Toolpath (why are these read-only?)"
+
     # bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -178,7 +199,8 @@ class OBJECT_OT_GenerateMesh(bpy.types.Operator):
         except AttributeError:
             pass
         try:
-            print("settings.step_props.is_readonly():", context.scene.hallr_meander_settings.is_property_readonly("step_props"))
+            print("settings.step_props.is_readonly():",
+                  context.scene.hallr_meander_settings.is_property_readonly("step_props"))
         except AttributeError:
             pass
         layout = self.layout

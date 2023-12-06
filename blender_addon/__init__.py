@@ -35,7 +35,7 @@ modules = (
     hallr_mesh_operators,  # always register hallr_mesh_operators first
     hallr_collision,
     hallr_2d_delaunay_triangulation,
-   # hallr_cnc_engravingpanel,
+    # hallr_cnc_engravingpanel,
     hallr_meander_toolpath,
 )
 

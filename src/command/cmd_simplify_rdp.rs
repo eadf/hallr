@@ -77,7 +77,7 @@ where
             // in 3d mode
             let mut vdd = IndexDeduplicator::<FFIVector3>::with_capacity(model.indices.len());
 
-            for line in divide_into_shapes(model.indices) {
+            for line in divide_into_shapes(model.indices).0 {
                 let simplified = indexed_simplify_rdp_3d(&vertices, &line, simplify_distance);
 
                 for line in simplified.windows(2) {
@@ -93,7 +93,7 @@ where
             let mut vdd = IndexDeduplicator::<FFIVector3>::with_capacity(model.indices.len());
             let vertices_2d = vertices.copy_to_2d(Plane::XY);
 
-            for line in divide_into_shapes(model.indices) {
+            for line in divide_into_shapes(model.indices).0 {
                 let simplified = indexed_simplify_rdp_2d(&vertices_2d, &line, simplify_distance);
 
                 for line in simplified.windows(2) {

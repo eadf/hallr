@@ -663,6 +663,61 @@ class Hallr_SdfMesh(bpy.types.Operator):
         return wm.invoke_props_dialog(self)
 
 
+# Discretize operator
+class Hallr_Discretize(bpy.types.Operator):
+    """Subdivide edges by length"""
+    bl_idname = "mesh.hallr_meshtools_discretize"
+    bl_label = "Subdivide by length"
+    bl_description = (
+        "Subdivides edges by length."
+    )
+    bl_options = {'REGISTER', 'UNDO'}
+
+    discretize_length_prop: bpy.props.FloatProperty(
+        name="Length",
+        description="Discretize length as a percentage of the total AABB. The edges will be split up by up to this "
+                    "length, and no more",
+        default=25.0,
+        min=0.1,
+        max=51,
+        precision=3,
+        subtype='PERCENTAGE'
+    )
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.active_object
+        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
+
+    def execute(self, context):
+        obj = context.active_object
+
+        if obj.type != 'MESH':
+            self.report({'ERROR'}, "Active object is not a mesh!")
+            return {'CANCELLED'}
+
+        # Ensure the object is in object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        config = {"command": "discretize",
+                  "discretize_length": str(self.discretize_length_prop),
+                  }
+
+        # Call the Rust function
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
+        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "discretize_length_prop")
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+
 class Hallr_Centerline(bpy.types.Operator):
     """Finds the center line of closed geometry, works in the XY plane"""
 
@@ -794,6 +849,7 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
         layout.operator("mesh.hallr_meshtools_sdf_mesh")
         layout.operator("mesh.hallr_simplify_rdp")
         layout.operator("mesh.hallr_centerline")
+        layout.operator("mesh.hallr_meshtools_discretize")
 
 
 # draw function for integration in menus
@@ -817,7 +873,8 @@ classes = (
     Hallr_SdfMesh,
     Hallr_2DOutline,
     Hallr_SimplifyRdp,
-    Hallr_Centerline
+    Hallr_Centerline,
+    Hallr_Discretize,
 )
 
 

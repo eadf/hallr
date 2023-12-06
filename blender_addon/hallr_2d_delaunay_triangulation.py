@@ -27,8 +27,11 @@ class HALLR_PT_DelaunayTriangulation2D(bpy.types.Panel):
         row = layout.row(align=True)
         # Bounding shape selection
         # row.label(text="Bounding Shape:")
-        row.operator("object.hallr_dt2_select_bounding_shape", text="Select Bounding Shape")
-        if context.scene.hallr_dt2_delaunay_settings.bounding_shape:
+        if context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None:
+            row.operator("object.hallr_dt2_select_bounding_shape", text="De-Select Bounding Shape", icon='CANCEL')
+        else:
+            row.operator("object.hallr_dt2_select_bounding_shape", text="Select Bounding Shape", icon='EYEDROPPER')
+        if context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None:
             row.label(text=context.scene.hallr_dt2_delaunay_settings.bounding_shape.name, icon='CHECKMARK')
 
         if context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None:
@@ -37,7 +40,11 @@ class HALLR_PT_DelaunayTriangulation2D(bpy.types.Panel):
 
         row = layout.row(align=True)
         # 3D mesh/point cloud for height offsets
-        row.operator("object.hallr_dt2_select_point_cloud", text="Select Point cloud")
+        if context.scene.hallr_dt2_delaunay_settings.point_cloud is not None:
+            row.operator("object.hallr_dt2_select_point_cloud", text="De-Select Point cloud", icon='CANCEL')
+        else:
+            row.operator("object.hallr_dt2_select_point_cloud", text="Select Point cloud", icon='EYEDROPPER')
+
         if context.scene.hallr_dt2_delaunay_settings.point_cloud:
             row.label(text=context.scene.hallr_dt2_delaunay_settings.point_cloud.name, icon='CHECKMARK')
 
@@ -50,8 +57,15 @@ class HALLR_PT_DelaunayTriangulation2D(bpy.types.Panel):
 class OBJECT_OT_SelectBoundingShape(bpy.types.Operator):
     bl_idname = "object.hallr_dt2_select_bounding_shape"
     bl_label = "Select Bounding Shape"
+    bl_description = (
+        "Select the bounding shape"
+    )
 
     def execute(self, context):
+        if context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None:
+            context.scene.hallr_dt2_delaunay_settings.bounding_shape = None
+            return {'FINISHED'}
+
         # Check the bounding shape
         bounding_shape = bpy.context.active_object
         if bounding_shape.type != 'MESH':
@@ -74,8 +88,15 @@ class OBJECT_OT_SelectBoundingShape(bpy.types.Operator):
 class OBJECT_OT_SelectPointCloud(bpy.types.Operator):
     bl_idname = "object.hallr_dt2_select_point_cloud"
     bl_label = "Select Height Mesh"
+    bl_description = (
+        "Select the point cloud"
+    )
 
     def execute(self, context):
+        if context.scene.hallr_dt2_delaunay_settings.point_cloud is not None:
+            context.scene.hallr_dt2_delaunay_settings.point_cloud = None
+            return {'FINISHED'}
+
         if bpy.context.active_object.type != 'MESH':
             self.report({'ERROR'}, "The point cloud should be of type 'MESH'.")
             context.scene.hallr_dt2_delaunay_settings.point_cloud = None

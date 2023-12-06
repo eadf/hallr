@@ -133,7 +133,7 @@ impl<T: GenericVector3> VertexDeduplicator3D<T> {
     }
 
     /// inserts a vertex without de-dup checking
-    pub fn get_index_and_insert(&mut self, vector: T) -> u32 {
+    pub fn insert_and_get_index(&mut self, vector: T) -> u32 {
         let index = self.vertices.len() as u32;
         self.vertices.push(vector);
         index

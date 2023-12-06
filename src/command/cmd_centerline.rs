@@ -201,7 +201,7 @@ where
                         .iter()
                         .skip(1)
                         .take(linestring.len() - 2)
-                        .map(|p| v_map.get_index_and_insert(*p)),
+                        .map(|p| v_map.insert_and_get_index(*p)),
                 )
                 .chain(Some(v1_index).into_iter());
             for p in vertex_index_iterator.tuple_windows::<(_, _)>() {

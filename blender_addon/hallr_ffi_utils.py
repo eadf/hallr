@@ -535,7 +535,8 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
     map_data = StringMap(keys_array, values_array, len(keys_list))
 
     # 8. Make the call to rust
-    rust_result = rust_lib.process_geometry(vertices_ptr, len(vertices), indices_ptr, len(indices), matrices_ptr, len(matrices), map_data)
+    rust_result = rust_lib.process_geometry(vertices_ptr, len(vertices), indices_ptr, len(indices), matrices_ptr,
+                                            len(matrices), map_data)
 
     print("python received: ", rust_result.geometry.vertex_count, "vertices",
           rust_result.geometry.indices_count, "indices")
