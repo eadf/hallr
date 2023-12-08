@@ -4,6 +4,7 @@ Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
 This file is part of the hallr crate.
 """
 
+import random
 import bpy
 import bmesh
 import math
@@ -598,7 +599,7 @@ class Hallr_SdfMesh25D(bpy.types.Operator):
 
 # SDF mesh operator
 class Hallr_SdfMesh(bpy.types.Operator):
-    """Tooltip: Generate a 3D SDF mesh from 3d edges."""
+    """Generate a 3D SDF mesh from 3d edges."""
     bl_idname = "mesh.hallr_meshtools_sdf_mesh"
     bl_label = "SDF Mesh"
     bl_description = (
@@ -657,6 +658,94 @@ class Hallr_SdfMesh(bpy.types.Operator):
         layout = self.layout
         layout.prop(self, "sdf_divisions_prop")
         layout.prop(self, "sdf_radius_prop")
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+
+# Random vertices operation
+class Hallr_RandomVertices(bpy.types.Operator):
+    """Generate some random vertices"""
+    bl_idname = "mesh.hallr_meshtools_random_vertices"
+    bl_label = "Random vertices"
+    bl_description = (
+        "Generate some random vertices in the XY plane"
+    )
+    bl_options = {'REGISTER', 'UNDO'}
+
+    number_of_vertices_prop: bpy.props.IntProperty(
+        name="Number of vertices",
+        description="Generate this many vertices",
+        default=10,
+        min=1,
+        max=100,
+    )
+
+    std_deviation_prop: bpy.props.FloatProperty(
+        name="Standard deviation",
+        description="Defines the random spread of the vertices",
+        default=1.0,
+        min=0.01,
+        max=19.9999,
+        precision=6,
+    )
+
+    merge_distance_prop: bpy.props.FloatProperty(
+        name="Merge Distance",
+        description="Merge vertices that are closer than this distance",
+        default=0.01,
+        min=0.0,
+        max=2.0,
+        precision=6,
+    )
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.active_object
+        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
+
+    def execute(self, context):
+        obj = context.active_object
+
+        if obj.type != 'MESH':
+            self.report({'ERROR'}, "Active object is not a mesh!")
+            return {'CANCELLED'}
+
+        # Get the mesh data
+        mesh = bpy.context.edit_object.data
+        bm = bmesh.from_edit_mesh(mesh)
+
+        # Create random vertices
+        for i in range(self.number_of_vertices_prop):
+            angle = random.uniform(0, 2 * math.pi)
+            radius = random.gauss(0, self.std_deviation_prop)
+
+            x = radius * math.cos(angle)
+            y = radius * math.sin(angle)
+
+            # Add vertex to the mesh
+            vert = bm.verts.new((x, y, 0.0))
+
+        # Select only the generated vertices
+        bpy.ops.mesh.select_all(action='DESELECT')
+        for vert in bm.verts:
+            if vert.index == -1:
+                # this vertex was randomly generated
+                vert.select = True
+
+        # Merge vertices based on distance
+        bpy.ops.mesh.remove_doubles(threshold=self.merge_distance_prop)
+
+        # Update the mesh
+        bmesh.update_edit_mesh(mesh)
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "number_of_vertices_prop")
+        layout.prop(self, "std_deviation_prop")
+        layout.prop(self, "merge_distance_prop")
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -850,6 +939,7 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
         layout.operator("mesh.hallr_simplify_rdp")
         layout.operator("mesh.hallr_centerline")
         layout.operator("mesh.hallr_meshtools_discretize")
+        layout.operator("mesh.hallr_meshtools_random_vertices")
 
 
 # draw function for integration in menus
@@ -875,6 +965,7 @@ classes = (
     Hallr_SimplifyRdp,
     Hallr_Centerline,
     Hallr_Discretize,
+    Hallr_RandomVertices,
 )
 
 
