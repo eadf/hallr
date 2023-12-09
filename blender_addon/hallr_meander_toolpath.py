@@ -5,12 +5,14 @@ This file is part of the hallr crate.
 """
 
 import bpy
+import math
 from . import hallr_ffi_utils
 
 # Define the choices for the tool/probe property
 probes_props_items = [
     ("BALL_NOSE", "Ball Nose", "Ball Nose probe"),
-    ("SQUARE_END", "Square End", "Square End probe")
+    ("SQUARE_END", "Square End", "Square End probe"),
+    ("TAPERED_END", "Tapered End", "Tapered End probe"),
 ]
 
 # Define the choices for the search pattern property
@@ -63,6 +65,10 @@ class HALLR_PT_MeanderToolpath(bpy.types.Panel):
             layout.row(align=True).prop(settings, "z_jump_threshold_multiplier_props")
             layout.row(align=True).prop(settings, "xy_sample_dist_multiplier_props")
             layout.row(align=True).prop(settings, "enable_reduce_props")
+
+        layout.row(align=True).prop(settings, "probe_props")
+        if str(settings.probe_props) == "TAPERED_END":
+            layout.row(align=True).prop(settings, "probe_angle_props")
 
         layout.row(align=True).prop(settings, "probe_radius_props")
         layout.row(align=True).prop(settings, "step_props")
@@ -157,11 +163,17 @@ class OBJECT_OT_GenerateMesh(bpy.types.Operator):
             print("bounding type:", settings.bounds_props)
             print("Height Mesh:", point_cloud.name)
 
-            config = {"probe_radius": str(settings.probe_radius_props), "probe": str(settings.probe_props),
+            config = {"probe_radius": str(settings.probe_radius_props),
+                      "probe": str(settings.probe_props),
                       "bounds": str(settings.bounds_props),
-                      "pattern": str(settings.pattern_props), "step": str(settings.step_props),
-                      "mesh.format": "triangulated", "minimum_z": str(settings.minimum_z_props),
+                      "pattern": str(settings.pattern_props),
+                      "step": str(settings.step_props),
+                      "mesh.format": "triangulated",
+                      "minimum_z": str(settings.minimum_z_props),
                       "command": "surface_scan"}
+            if str(settings.probe_props) == "TAPERED_END":
+                config["probe_angle"] = str(settings.probe_angle_props)
+
             if settings.enable_adaptive_scan_props:
                 config["z_jump_threshold_multiplier"] = str(settings.z_jump_threshold_multiplier_props)
                 config["xy_sample_dist_multiplier"] = str(settings.xy_sample_dist_multiplier_props)
@@ -191,33 +203,6 @@ class OBJECT_OT_GenerateMesh(bpy.types.Operator):
         return (settings.bounding_shape is not None and
                 settings.mesh is not None
                 )
-
-    def draw(self, context):
-        settings = context.scene.hallr_meander_settings
-        try:
-            print("settings.step_props.is_readonly():", settings.is_property_readonly("step_props"))
-        except AttributeError:
-            pass
-        try:
-            print("settings.step_props.is_readonly():",
-                  context.scene.hallr_meander_settings.is_property_readonly("step_props"))
-        except AttributeError:
-            pass
-        layout = self.layout
-        layout.label(text="Use the second object to define an axis aligned")
-        layout.label(text="bounding box or a bounding convex hull.")
-        layout.prop(settings, "probe_props")
-        layout.prop(settings, "pattern_props")
-        layout.prop(settings, "bounds_props")
-        layout.prop(settings, "enable_adaptive_scan_props")
-        if settings.enable_adaptive_scan_props:
-            layout.prop(settings, "z_jump_threshold_multiplier_props")
-            layout.prop(settings, "xy_sample_dist_multiplier_props")
-            layout.prop(settings, "enable_reduce_props")
-        layout.separator()
-        layout.prop(settings, "probe_radius_props")
-        layout.prop(settings, "step_props")
-        layout.prop(settings, "minimum_z_props")
 
 
 # Property group to store selected objects
@@ -279,6 +264,14 @@ class MeanderToolpathSettings(bpy.types.PropertyGroup):
         description="Choose a tool or probe",
         items=probes_props_items,
         default="BALL_NOSE"
+    )
+    probe_angle_props: bpy.props.FloatProperty(
+        name="Probe angle",
+        description="Define the angle of the tapered probe.",
+        default=math.radians(45.0),
+        min=math.radians(30.0),
+        max=math.radians(75.0),
+        subtype='ANGLE',
     )
     pattern_props: bpy.props.EnumProperty(
         name="Scan Pattern",

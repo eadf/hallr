@@ -23,7 +23,6 @@ if DEV_MODE:
     if addon_path not in sys.path:
         sys.path.append(addon_path)
 # the string "from ." will be find-and-replaced with "" if run in DEV_MODE
-from . import hallr_collision
 from . import hallr_ffi_utils
 from . import hallr_2d_delaunay_triangulation
 from . import hallr_mesh_operators
@@ -33,7 +32,6 @@ from . import hallr_meander_toolpath
 # define modules for registration
 modules = (
     hallr_mesh_operators,  # always register hallr_mesh_operators first
-    hallr_collision,
     hallr_2d_delaunay_triangulation,
     # hallr_cnc_engravingpanel,
     hallr_meander_toolpath,

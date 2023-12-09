@@ -28,7 +28,7 @@ class HALLR_PT_DelaunayTriangulation2D(bpy.types.Panel):
         # Bounding shape selection
         # row.label(text="Bounding Shape:")
         if context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None:
-            row.operator("object.hallr_dt2_select_bounding_shape", text="De-Select Bounding Shape", icon='CANCEL')
+            row.operator("object.hallr_dt2_select_bounding_shape", text="De-Select Bounding Shape", icon='X')
         else:
             row.operator("object.hallr_dt2_select_bounding_shape", text="Select Bounding Shape", icon='EYEDROPPER')
         if context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None:
@@ -41,7 +41,7 @@ class HALLR_PT_DelaunayTriangulation2D(bpy.types.Panel):
         row = layout.row(align=True)
         # 3D mesh/point cloud for height offsets
         if context.scene.hallr_dt2_delaunay_settings.point_cloud is not None:
-            row.operator("object.hallr_dt2_select_point_cloud", text="De-Select Point cloud", icon='CANCEL')
+            row.operator("object.hallr_dt2_select_point_cloud", text="De-Select Point cloud", icon='X')
         else:
             row.operator("object.hallr_dt2_select_point_cloud", text="Select Point cloud", icon='EYEDROPPER')
 
