@@ -377,9 +377,9 @@ checksum = "d77f7ec81a6d05a3abb01ab6eb7590f6083d08449fe5a1c8b1e620283546ccb7"
 
 [[package]]
 name = "hronn"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f3c34a548555cfaefc971ae0446b2f2ff5a9dedb848afd51f56fa57e3ad8310"
+checksum = "ab5e4ad87c3442e708b960350a60fb40f651bc0c64758914c4e3f42de10b3cbd"
 dependencies = [
  "itertools 0.12.0",
  "krakel",
@@ -441,9 +441,9 @@ dependencies = [
 
 [[package]]
 name = "itoa"
-version = "1.0.9"
+version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af150ab688ff2122fcef229be89cb50dd66af9e01a4ff320cc137eecc9bacc38"
+checksum = "b1a46d1a171d865aa5f83f92695765caa047a9b4cbae2cbf37dbd613a793fd4c"
 
 [[package]]
 name = "js-sys"
@@ -456,9 +456,9 @@ dependencies = [
 
 [[package]]
 name = "krakel"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd6ce6620ca34ebfd4450716b30078ff799e03e3a69a779398ac35aa68411094"
+checksum = "a69183b3671e85de84f8fcb59cfaf2d9252fa9f4c7134d971ed6582a94a71bc4"
 dependencies = [
  "approx",
  "num-traits",

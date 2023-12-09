@@ -24,7 +24,7 @@ impl DecimalRepresentation for f32 {
 #[allow(dead_code)]
 pub(crate) fn process_command(
     config: &ConfigType,
-    models: &Vec<Model<'_>>,
+    models: &[Model<'_>],
 ) -> Result<(), HallrError> {
     let command = config.get_mandatory_option("command")?;
 

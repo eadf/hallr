@@ -109,7 +109,7 @@ fn test_convex_hull_2d_3() -> Result<(), HallrError> {
     let _ = config.insert("command".to_string(), "convex_hull_2d".to_string());
     let model_0 = Model {
         world_orientation: &owned_model_0.world_orientation,
-        indices: &vec![],
+        indices: &[],
         vertices: &result.0,
     };
     let models = vec![model_0];

@@ -532,7 +532,7 @@ where
         &self,
         v0n: usize,
         v1n: usize,
-        pb_face: &Vec<usize>,
+        pb_face: &[usize],
     ) -> Result<Option<(Vec<usize>, Vec<usize>)>, HallrError> {
         if let Some(v0i) = pb_face.iter().position(|x| x == &v0n) {
             if let Some(v1i) = pb_face.iter().position(|x| x == &v1n) {
