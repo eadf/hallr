@@ -14,19 +14,19 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 vector-traits = { version = "0.3.4", features = ["glam"] }
 #vector-traits = { path = "../vector-traits", features = ["glam"] }
-#vector-traits = {git = "git@codeberg.org:eadf/vector_traits_rs.git", features = ["glam"]}
+#vector-traits = {git = "https://codeberg.org/eadf/vector_traits_rs.git", features = ["glam"]}
 linestring = "0.13.0"
 #linestring = { path="../linestring.rs"}
-#linestring = {git = "git@codeberg.org:eadf/linestring_rs.git"}
+#linestring = {git = "https://codeberg.org/eadf/linestring_rs.git"}
 centerline = { version="0.11.0", features = ["glam"]}
 #centerline = { path="../centerline.rs", features = ["glam"]}
-#centerline = {git = "git@codeberg.org:eadf/centerline_rs.git", features = ["glam"]}
-krakel = {version = "0.2.2", features = ["vector-traits", "glam"]}
+#centerline = {git = "https://codeberg.org/eadf/centerline_rs.git", features = ["glam"]}
+krakel = {version = "0.2.3", features = ["vector-traits", "glam"]}
 #krakel = {path = "../krakel", features = ["vector-traits", "glam"]}
-#krakel = {git = "git@codeberg.org:eadf/krakel.git", features = ["vector-traits", "glam"]}
-hronn = { version = "0.4.0", features = ["glam"]}
+#krakel = {git = "https://codeberg.org/eadf/krakel_rs.git", features = ["vector-traits", "glam"]}
+#hronn = { version = "0.4.1", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
-#hronn = { git = "git@codeberg.org:eadf/hronn.git", features = ["glam"]}
+hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
 boostvoronoi = { version = "0.11.1" }
 thiserror = "1.0.50"
 ahash = "0.8.6"

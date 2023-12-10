@@ -10,9 +10,10 @@ from . import hallr_ffi_utils
 
 # Define the choices for the tool/probe property
 probes_props_items = [
-    ("BALL_NOSE", "Ball Nose", "Ball Nose probe"),
-    ("SQUARE_END", "Square End", "Square End probe"),
-    ("TAPERED_END", "Tapered End", "Tapered End probe"),
+    ("BALL_NOSE", "Ball Nose", "Use a ball nose probe, a cylinder ending in a half-sphere"),
+    ("SQUARE_END", "Square End", "Use a square end probe, just a cylinder"),
+    ("TAPERED_END", "Tapered End", "Use a tapered end probe, radius is the largest radius and angle is the angle of "
+                                   "the taper"),
 ]
 
 # Define the choices for the search pattern property
@@ -67,15 +68,16 @@ class HALLR_PT_MeanderToolpath(bpy.types.Panel):
             layout.row(align=True).prop(settings, "enable_reduce_props")
 
         layout.row(align=True).prop(settings, "probe_props")
-        if str(settings.probe_props) == "TAPERED_END":
+        if settings.probe_props == "TAPERED_END":
             layout.row(align=True).prop(settings, "probe_angle_props")
 
         layout.row(align=True).prop(settings, "probe_radius_props")
+        layout.row(align=True).separator()
         layout.row(align=True).prop(settings, "step_props")
         layout.row(align=True).prop(settings, "minimum_z_props")
         layout.row(align=True).prop(settings, "pattern_props")
 
-        # Generate toolpath button
+        # Generate tool-path button
         if (settings.bounding_shape is not None and
                 settings.mesh is not None):
             layout.row(align=True).operator("object.hallr_mt_generate_mesh", text="Generate Mesh")
@@ -267,7 +269,7 @@ class MeanderToolpathSettings(bpy.types.PropertyGroup):
     )
     probe_angle_props: bpy.props.FloatProperty(
         name="Probe angle",
-        description="Define the angle of the tapered probe.",
+        description="Define the angle of the tapered probe (included angle).",
         default=math.radians(45.0),
         min=math.radians(30.0),
         max=math.radians(75.0),

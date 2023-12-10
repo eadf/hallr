@@ -6,8 +6,8 @@ use super::{ConfigType, Model};
 use hronn::{
     generate_aabb_then_convex_hull, generate_convex_hull_then_aabb,
     prelude::{
-        AdaptiveSearchConfig, BallNoseProbe, ConvertTo, MeanderPattern, MeshAnalyzer,
-        MeshAnalyzerBuilder, Probe, SearchPattern, SearchPatternConfig, SquareEndProbe,
+        AdaptiveSearchConfig, Probe, BallNoseProbe, SquareEndProbe, TaperedProbe, ConvertTo, MeanderPattern, MeshAnalyzer,
+        MeshAnalyzerBuilder, SearchPattern, SearchPatternConfig,
         TriangulatePattern,
     },
     HronnError,
@@ -166,6 +166,10 @@ where
     let probe: Box<dyn Probe<T, FFIVector3>> = match config.get_mandatory_option("probe")? {
         "SQUARE_END" => Box::new(SquareEndProbe::new(&mesh_analyzer, probe_radius)?),
         "BALL_NOSE" => Box::new(BallNoseProbe::new(&mesh_analyzer, probe_radius)?),
+        "TAPERED_END" => {
+            let angle = config.get_mandatory_parsed_option("probe_angle", None)?;
+            Box::new(TaperedProbe::new(&mesh_analyzer, probe_radius, angle)?)
+        },
         probe_name => Err(HronnError::InvalidParameter(format!(
             "{} is not a valid \"probe\" parameter",
             probe_name
