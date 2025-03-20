@@ -3,8 +3,8 @@
 // This file is part of the hallr crate.
 
 use crate::{
-    command::{ConfigType, Model, OwnedModel},
     HallrError,
+    command::{ConfigType, Model, OwnedModel},
 };
 use vector_traits::glam::Vec3;
 
@@ -74,7 +74,7 @@ fn test_convex_hull_2d_2() -> Result<(), HallrError> {
 
 #[test]
 fn test_convex_hull_2d_3() -> Result<(), HallrError> {
-    use rand::{rngs::StdRng, Rng, SeedableRng};
+    use rand::{Rng, SeedableRng, rngs::StdRng};
 
     let mut config = ConfigType::default();
     let _ = config.insert("command".to_string(), "convex_hull_2d".to_string());
@@ -88,8 +88,8 @@ fn test_convex_hull_2d_3() -> Result<(), HallrError> {
     for _i in 0..3023 {
         owned_model_0.vertices.push(
             (
-                rng.gen_range(-100_f32..100.0),
-                rng.gen_range(-100_f32..100.0),
+                rng.random_range(-100_f32..100.0),
+                rng.random_range(-100_f32..100.0),
                 0.0,
             )
                 .into(),

@@ -10,7 +10,7 @@ use linestring::{
     prelude::{divide_into_shapes, indexed_simplify_rdp_2d, indexed_simplify_rdp_3d},
 };
 use vector_traits::{
-    num_traits::AsPrimitive, GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ,
+    GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ, num_traits::AsPrimitive,
 };
 
 #[cfg(test)]
@@ -41,11 +41,12 @@ where
     Ok((converted_vertices, aabb))
 }
 
-pub(crate) fn process_command<T: GenericVector3>(
+pub(crate) fn process_command<T>(
     config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
+    T: GenericVector3,
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
     f32: AsPrimitive<T::Scalar>,

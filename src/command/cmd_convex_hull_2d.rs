@@ -3,20 +3,21 @@
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, OwnedModel};
-use crate::{ffi::FFIVector3, HallrError};
+use crate::{HallrError, ffi::FFIVector3};
 use hronn::prelude::ConvertTo;
 use krakel::PointTrait;
 use linestring::linestring_2d::convex_hull;
-use vector_traits::{approx::UlpsEq, GenericScalar, GenericVector2, GenericVector3};
+use vector_traits::{GenericScalar, GenericVector2, GenericVector3, approx::UlpsEq};
 
 #[cfg(test)]
 mod tests;
 
-pub(crate) fn process_command<T: GenericVector3>(
+pub(crate) fn process_command<T>(
     _config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
+    T: GenericVector3,
     T::Vector2: PointTrait<PScalar = T::Scalar>,
     T::Scalar: UlpsEq,
     T: ConvertTo<FFIVector3>,

@@ -21,7 +21,7 @@ mod impls;
 
 use crate::{ffi::FFIVector3, prelude::*};
 use std::collections::HashMap;
-use vector_traits::{approx::ulps_eq, glam::Vec3A, GenericVector3};
+use vector_traits::{GenericVector3, approx::ulps_eq, glam::Vec3A};
 
 /// The largest dimension of the voronoi input, totally arbitrarily selected.
 const DEFAULT_MAX_VORONOI_DIMENSION: f32 = 200000.0;

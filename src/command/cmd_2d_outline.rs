@@ -3,17 +3,17 @@
 // This file is part of the hallr crate.
 
 use crate::{
+    HallrError,
     command::{ConfigType, Model, OwnedModel},
     prelude::FFIVector3,
-    HallrError,
 };
 use centerline::HasMatrix4;
 use hronn::prelude::ConvertTo;
 use itertools::Itertools;
 use linestring::linestring_3d;
 use vector_traits::{
-    approx::{AbsDiffEq, UlpsEq},
     GenericScalar, GenericVector3, HasXY, HasXYZ,
+    approx::{AbsDiffEq, UlpsEq},
 };
 
 #[cfg(test)]
@@ -22,11 +22,7 @@ mod tests;
 #[inline(always)]
 /// make a key from v0 and v1, lowest index will always be first
 fn make_edge_key(v0: u32, v1: u32) -> (u32, u32) {
-    if v0 < v1 {
-        (v0, v1)
-    } else {
-        (v1, v0)
-    }
+    if v0 < v1 { (v0, v1) } else { (v1, v0) }
 }
 
 #[allow(clippy::type_complexity)]
@@ -153,11 +149,12 @@ where
 }
 
 /// Run the 2d_outline command
-pub(crate) fn process_command<T: GenericVector3>(
+pub(crate) fn process_command<T>(
     _config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
+    T: GenericVector3,
     T: ConvertTo<FFIVector3> + HasMatrix4,
     FFIVector3: ConvertTo<T>,
 {

@@ -13,11 +13,12 @@ use hronn::prelude::MaximumTracker;
 use smallvec::SmallVec;
 use std::cmp::Reverse;
 use vector_traits::{
-    num_traits::float::FloatCore, GenericScalar, GenericVector2, GenericVector3, HasXYZ,
+    GenericScalar, GenericVector2, GenericVector3, HasXYZ, num_traits::float::FloatCore,
 };
 
 pub(crate) trait GrowingVob {
     fn fill_with_false(initial_size: usize) -> vob::Vob<u32>;
+    #[allow(dead_code)]
     fn set_grow(&mut self, bit: usize, state: bool) -> bool;
     /// get with default value: false
     fn get_f(&self, bit: usize) -> bool;
@@ -228,7 +229,7 @@ pub fn adjacency_map_from_unordered_edges(
 /// # Arguments
 ///
 /// * `edges` - A slice of vertex indices, where each consecutive pair represents an edge.
-///             The slice's length should be even.
+///   The slice's length should be even.
 ///
 /// # Returns
 ///

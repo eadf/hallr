@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, OwnedModel};
-use crate::{ffi::FFIVector3, HallrError};
+use crate::{HallrError, ffi::FFIVector3};
 use hronn::prelude::ConvertTo;
 use itertools::Itertools;
 use linestring::{
@@ -11,17 +11,18 @@ use linestring::{
     linestring_3d::{Aabb3, Plane},
 };
 use vector_traits::{
+    GenericScalar, GenericVector2, GenericVector3, HasXY,
     approx::{AbsDiffEq, UlpsEq},
     num_traits::{AsPrimitive, Float},
-    GenericScalar, GenericVector2, GenericVector3, HasXY,
 };
 
 #[cfg(test)]
 mod tests;
 
 /// detect self intersections and cut those lines at the intersection
-fn knife_intersect<T: GenericVector3>(input_model: &Model<'_>) -> Result<OwnedModel, HallrError>
+fn knife_intersect<T>(input_model: &Model<'_>) -> Result<OwnedModel, HallrError>
 where
+    T: GenericVector3,
     FFIVector3: ConvertTo<T>,
     f32: AsPrimitive<T::Scalar>,
     T: ConvertTo<FFIVector3>,
@@ -40,7 +41,10 @@ where
         ))
     })?;
     if plane != Plane::XY {
-        return Err(HallrError::InvalidInputData(format!("At the moment the knife intersect operation only supports input data in the XY plane. {:?}", plane)));
+        return Err(HallrError::InvalidInputData(format!(
+            "At the moment the knife intersect operation only supports input data in the XY plane. {:?}",
+            plane
+        )));
     }
     println!(
         "knife_intersect: data was in plane:{:?} aabb:{:?}",
@@ -171,11 +175,12 @@ where
     Ok(output_model)
 }
 
-pub(crate) fn process_command<T: GenericVector3>(
+pub(crate) fn process_command<T>(
     _config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
+    T: GenericVector3,
     T::Scalar: UlpsEq,
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,

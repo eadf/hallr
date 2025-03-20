@@ -4,20 +4,21 @@
 
 use super::{ConfigType, Model, Options};
 use crate::prelude::*;
-use hronn::prelude::{triangulate_vertices, ConvertTo};
+use hronn::prelude::{ConvertTo, triangulate_vertices};
 
 use krakel::PointTrait;
-use linestring::linestring_2d::{convex_hull, Aabb2};
-use vector_traits::{num_traits::AsPrimitive, GenericVector3, HasXY};
+use linestring::linestring_2d::{Aabb2, convex_hull};
+use vector_traits::{GenericVector3, HasXY, num_traits::AsPrimitive};
 
 #[cfg(test)]
 mod tests;
 
-fn aabb_delaunay_triangulation_2d<T: GenericVector3>(
+fn aabb_delaunay_triangulation_2d<T>(
     _config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
+    T: GenericVector3,
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
     T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
@@ -55,11 +56,12 @@ where
     ))
 }
 
-fn convex_hull_delaunay_triangulation_2d<T: GenericVector3>(
+fn convex_hull_delaunay_triangulation_2d<T>(
     _config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
+    T: GenericVector3,
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
     T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
@@ -95,11 +97,12 @@ where
     ))
 }
 
-pub(crate) fn process_command<T: GenericVector3>(
+pub(crate) fn process_command<T>(
     config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
+    T: GenericVector3,
     T::Vector2: PointTrait<PScalar = T::Scalar>,
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,

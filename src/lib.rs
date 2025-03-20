@@ -35,8 +35,8 @@ use hronn::HronnError;
 
 pub mod prelude {
     pub use crate::{
-        ffi::{free_process_results, process_geometry, FFIVector3, GeometryOutput, StringMap},
         HallrError,
+        ffi::{FFIVector3, GeometryOutput, StringMap, free_process_results, process_geometry},
     };
 }
 

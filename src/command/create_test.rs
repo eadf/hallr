@@ -22,10 +22,7 @@ impl DecimalRepresentation for f32 {
 
 /// This is a command that peeks at incoming data and creates a test case out of it
 #[allow(dead_code)]
-pub(crate) fn process_command(
-    config: &ConfigType,
-    models: &[Model<'_>],
-) -> Result<(), HallrError> {
+pub(crate) fn process_command(config: &ConfigType, models: &[Model<'_>]) -> Result<(), HallrError> {
     let command = config.get_mandatory_option("command")?;
 
     println!();

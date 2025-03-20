@@ -6,10 +6,10 @@
 mod tests;
 
 use crate::{
+    HallrError,
     command::{ConfigType, Model, Options, OwnedModel},
     ffi::FFIVector3,
     utils::VertexDeduplicator3D,
-    HallrError,
 };
 use itertools::Itertools;
 use linestring::linestring_3d::{Aabb3, LineString3};

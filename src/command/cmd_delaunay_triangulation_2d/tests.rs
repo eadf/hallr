@@ -3,8 +3,8 @@
 // This file is part of the hallr crate.
 
 use crate::{
-    command::{ConfigType, OwnedModel},
     HallrError,
+    command::{ConfigType, OwnedModel},
 };
 use vector_traits::glam::Vec3;
 

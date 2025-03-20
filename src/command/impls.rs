@@ -4,7 +4,7 @@
 
 //! A module containing boiler-plate implementations of standard traits such as Default, From etc etc
 
-use crate::{command::Options, HallrError};
+use crate::{HallrError, command::Options};
 use std::collections::HashMap;
 
 impl Options for HashMap<String, String> {

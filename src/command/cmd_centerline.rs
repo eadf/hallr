@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, Options, OwnedModel};
-use crate::{ffi::FFIVector3, utils, HallrError};
+use crate::{HallrError, ffi::FFIVector3, utils};
 use boostvoronoi as BV;
 use boostvoronoi::OutputType;
 use centerline::{HasMatrix4, Matrix4};
@@ -18,9 +18,9 @@ use rayon::{
     prelude::{IntoParallelIterator, IntoParallelRefIterator},
 };
 use vector_traits::{
-    approx::{AbsDiffEq, UlpsEq},
-    num_traits::{real::Real, AsPrimitive, NumCast},
     GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ,
+    approx::{AbsDiffEq, UlpsEq},
+    num_traits::{AsPrimitive, NumCast, real::Real},
 };
 
 #[cfg(test)]
@@ -29,11 +29,7 @@ mod tests;
 #[inline(always)]
 /// make a key from v0 and v1, lowest index will always be first
 fn make_edge_key(v0: usize, v1: usize) -> (usize, usize) {
-    if v0 < v1 {
-        (v0, v1)
-    } else {
-        (v1, v0)
-    }
+    if v0 < v1 { (v0, v1) } else { (v1, v0) }
 }
 
 /// reformat the input into a useful structure
@@ -91,7 +87,7 @@ where
 
 /// Build the return model
 #[allow(clippy::type_complexity)]
-fn build_output_model<T: GenericVector3>(
+fn build_output_model<T>(
     _a_command: &ConfigType,
     shapes: Vec<(
         centerline::LineStringSet2<T::Vector2>,
@@ -103,6 +99,7 @@ fn build_output_model<T: GenericVector3>(
     cmd_arg_keep_input: bool,
 ) -> Result<OwnedModel, HallrError>
 where
+    T: GenericVector3,
     T: HasMatrix4 + ConvertTo<FFIVector3>,
     T::Scalar: OutputType,
 {
@@ -252,11 +249,12 @@ where
 }
 
 /// Run the centerline command
-pub(crate) fn process_command<T: GenericVector3>(
+pub(crate) fn process_command<T>(
     config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
+    T: GenericVector3,
     T: ConvertTo<FFIVector3> + HasMatrix4,
     FFIVector3: ConvertTo<T>,
     T::Scalar: OutputType,

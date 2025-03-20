@@ -190,7 +190,7 @@ fn process_command_error_handler(
 /// Furthermore, after using this function, you MUST NOT use the passed memory blocks from the caller's side until you're done with them in Rust, to avoid data races and undefined behavior.
 ///
 /// For FFI purposes, the caller from other languages (like Python) must be aware of these safety requirements, even though they won't explicitly use `unsafe` in their language.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn process_geometry(
     input_ffi_vertices: *const FFIVector3,
     vertex_count: usize,
@@ -204,42 +204,46 @@ pub unsafe extern "C" fn process_geometry(
         !config.is_null(),
         "Rust: process_geometry(): Config ptr was null"
     );
-    let count = (*config).count;
+
+    let count = unsafe { (*config).count };
     println!("Rust:Received config of size:{:?}", count);
+
     assert!(
-        (*config).count < 1000,
+        count < 1000,
         "Rust: process_geometry(): Number of configuration parameters was too large: {} (limit is 999)",
-        (*config).count
+        count
     );
+
     // Use (*config).keys and (*config).values to access the arrays.
-    let keys = slice::from_raw_parts((*config).keys, count);
-    let values = slice::from_raw_parts((*config).values, count);
+    let keys = unsafe { slice::from_raw_parts((*config).keys, count) };
+    let values = unsafe { slice::from_raw_parts((*config).values, count) };
 
     let mut input_config = HashMap::with_capacity(count);
     for i in 0..count {
-        let key = CStr::from_ptr(*keys.get(i).unwrap())
+        let key = unsafe { CStr::from_ptr(*keys.get(i).unwrap()) }
             .to_str()
             .unwrap()
             .to_string();
-        let value = CStr::from_ptr(*values.get(i).unwrap())
+        let value = unsafe { CStr::from_ptr(*values.get(i).unwrap()) }
             .to_str()
             .unwrap()
             .to_string();
-        // input_config now contains cloned strings.
-        //println!("Rust:Received Key: {}, Value: {}", key, value);
         let _ = input_config.insert(key, value);
     }
     println!("Rust:Received config:{:?}", input_config);
 
-    let input_vertices = slice::from_raw_parts(input_ffi_vertices, vertex_count);
-    let input_indices = slice::from_raw_parts(input_ffi_indices, indices_count);
-    let input_matrix = slice::from_raw_parts(input_ffi_matrix, matrix_count);
+    let input_vertices = unsafe { slice::from_raw_parts(input_ffi_vertices, vertex_count) };
+    let input_indices = unsafe { slice::from_raw_parts(input_ffi_indices, indices_count) };
+    let input_matrix = unsafe { slice::from_raw_parts(input_ffi_matrix, matrix_count) };
+
     println!("Rust:received {} vertices", input_vertices.len());
     println!("Rust:received {} indices", input_indices.len());
     println!("Rust:received {} matrix", input_matrix.len());
 
+    // Safe code: Processing the data
     let (output_vertices, output_indices, output_matrix, output_config) =
         process_command_error_handler(input_vertices, input_indices, input_matrix, input_config);
+
     println!(
         "Rust returning: vertices:{}, indices:{}, matrices:{}/16, config:{:?}",
         output_vertices.len(),
@@ -302,7 +306,7 @@ pub unsafe extern "C" fn process_geometry(
 ///
 /// * `result` - A pointer to a `ProcessResult` struct that you want to free the memory for.
 ///
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn free_process_results(result: *mut ProcessResult) {
     assert!(
         !result.is_null(),
@@ -315,6 +319,8 @@ pub unsafe extern "C" fn free_process_results(result: *mut ProcessResult) {
         (*result).geometry.matrices_count,
         (*result).map.count
     );*/
-    (*result).geometry.free();
-    (*result).map.free();
+    unsafe {
+        (*result).geometry.free();
+        (*result).map.free();
+    }
 }

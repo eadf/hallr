@@ -6,11 +6,11 @@
 mod tests;
 
 use crate::{
+    HallrError,
     command::{ConfigType, Model, Options, OwnedModel},
     ffi::FFIVector3,
-    HallrError,
 };
-use fast_surface_nets::{ndshape::ConstShape, surface_nets, SurfaceNetsBuffer};
+use fast_surface_nets::{SurfaceNetsBuffer, ndshape::ConstShape, surface_nets};
 use ilattice::{
     glam as iglam,
     prelude::{Extent, Vector2},
@@ -327,11 +327,17 @@ pub(crate) fn build_output_model(
                 (v + chunk.1.positions.len(), f + chunk.1.indices.len())
             });
         if vertex_capacity >= u32::MAX as usize {
-            return Err(HallrError::Overflow(format!("Generated mesh contains too many vertices to be referenced by u32: {}. Reduce the resolution.", vertex_capacity)));
+            return Err(HallrError::Overflow(format!(
+                "Generated mesh contains too many vertices to be referenced by u32: {}. Reduce the resolution.",
+                vertex_capacity
+            )));
         }
 
         if face_capacity >= u32::MAX as usize {
-            return Err(HallrError::Overflow(format!("Generated mesh contains too many faces to be referenced by u32: {}. Reduce the resolution.", vertex_capacity)));
+            return Err(HallrError::Overflow(format!(
+                "Generated mesh contains too many faces to be referenced by u32: {}. Reduce the resolution.",
+                vertex_capacity
+            )));
         }
         (
             Vec::with_capacity(vertex_capacity),

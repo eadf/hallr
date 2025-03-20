@@ -20,6 +20,7 @@ class HALLR_PT_DelaunayTriangulation2D(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Hallr tools"
+    bl_context = "object"
 
     def draw(self, context):
         layout = self.layout
@@ -60,6 +61,7 @@ class OBJECT_OT_SelectBoundingShape(bpy.types.Operator):
     bl_description = (
         "Select the bounding shape"
     )
+    bl_context = "object"
 
     def execute(self, context):
         if context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None:
@@ -91,6 +93,7 @@ class OBJECT_OT_SelectPointCloud(bpy.types.Operator):
     bl_description = (
         "Select the point cloud"
     )
+    bl_context = "object"
 
     def execute(self, context):
         if context.scene.hallr_dt2_delaunay_settings.point_cloud is not None:
@@ -108,6 +111,7 @@ class OBJECT_OT_SelectPointCloud(bpy.types.Operator):
 class OBJECT_OT_GenerateMesh(bpy.types.Operator):
     bl_idname = "object.hallr_d2t_generate_mesh"
     bl_label = "Generate Toolpath"
+    bl_context = "object"
 
     def execute(self, context):
         # Check if all objects are selected

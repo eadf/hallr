@@ -11,8 +11,8 @@ use itertools::Itertools;
 use linestring::linestring_2d::VoronoiParabolicArc;
 use std::collections::VecDeque;
 use vector_traits::{
-    num_traits::{AsPrimitive, Float},
     GenericScalar, GenericVector2, GenericVector3, HasXY,
+    num_traits::{AsPrimitive, Float},
 };
 
 /// Mark infinite edges and their adjacent edges as EXTERNAL.

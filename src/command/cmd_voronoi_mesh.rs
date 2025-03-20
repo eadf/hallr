@@ -3,20 +3,20 @@
 // This file is part of the hallr crate.
 
 use crate::{
+    HallrError,
     command::{ConfigType, Model, Options, OwnedModel},
     ffi::FFIVector3,
-    utils::{voronoi_utils, GrowingVob},
-    HallrError,
+    utils::{GrowingVob, voronoi_utils},
 };
 use boostvoronoi as BV;
 use centerline::{HasMatrix4, Matrix4};
 use hronn::prelude::ConvertTo;
 use linestring::{linestring_2d::Aabb2, linestring_3d::Plane};
 use vector_traits::{
+    GenericVector2, GenericVector3, HasXY,
     approx::{AbsDiffEq, UlpsEq},
     glam::Vec3A,
     num_traits::AsPrimitive,
-    GenericVector2, GenericVector3, HasXY,
 };
 
 #[cfg(test)]
@@ -57,7 +57,10 @@ where
     })?;
 
     if plane != Plane::XY {
-        return Err(HallrError::InvalidInputData(format!("At the moment the voronoi mesh operation only supports input data in the XY plane. {:?}", plane)));
+        return Err(HallrError::InvalidInputData(format!(
+            "At the moment the voronoi mesh operation only supports input data in the XY plane. {:?}",
+            plane
+        )));
     }
 
     let inverse_transform = transform.safe_inverse().ok_or(HallrError::InternalError(

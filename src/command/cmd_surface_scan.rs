@@ -4,22 +4,21 @@
 
 use super::{ConfigType, Model};
 use hronn::{
-    generate_aabb_then_convex_hull, generate_convex_hull_then_aabb,
+    HronnError, generate_aabb_then_convex_hull, generate_convex_hull_then_aabb,
     prelude::{
-        AdaptiveSearchConfig, Probe, BallNoseProbe, SquareEndProbe, TaperedProbe, ConvertTo, MeanderPattern, MeshAnalyzer,
-        MeshAnalyzerBuilder, SearchPattern, SearchPatternConfig,
-        TriangulatePattern,
+        AdaptiveSearchConfig, BallNoseProbe, ConvertTo, MeanderPattern, MeshAnalyzer,
+        MeshAnalyzerBuilder, Probe, SearchPattern, SearchPatternConfig, SquareEndProbe,
+        TaperedProbe, TriangulatePattern,
     },
-    HronnError,
 };
 
-use crate::{command::Options, prelude::FFIVector3, HallrError};
+use crate::{HallrError, command::Options, prelude::FFIVector3};
 use krakel::PointTrait;
-use vector_traits::{num_traits::AsPrimitive, GenericVector3, HasXY};
+use vector_traits::{GenericVector3, HasXY, num_traits::AsPrimitive};
 
 #[cfg(test)]
 mod tests;
-fn do_meander_scan<T: GenericVector3>(
+fn do_meander_scan<T>(
     config: ConfigType,
     bounding_vertices: &[FFIVector3],
     _bounding_indices: &[usize],
@@ -29,6 +28,7 @@ fn do_meander_scan<T: GenericVector3>(
     step: T::Scalar,
 ) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
+    T: GenericVector3,
     T::Vector2: PointTrait<PScalar = T::Scalar>,
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
@@ -80,7 +80,7 @@ where
     Ok((results.vertices, indices, return_config))
 }
 
-fn do_triangulation_scan<T: GenericVector3>(
+fn do_triangulation_scan<T>(
     config: ConfigType,
     bounding_vertices: &[FFIVector3],
     _bounding_indices: &[usize],
@@ -90,6 +90,7 @@ fn do_triangulation_scan<T: GenericVector3>(
     step: T::Scalar,
 ) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
 where
+    T: GenericVector3,
     T::Vector2: PointTrait<PScalar = T::Scalar>,
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
@@ -131,17 +132,19 @@ where
     Ok((results.vertices, results.indices, return_config))
 }
 
-pub(crate) fn process_command<T: GenericVector3>(
+pub(crate) fn process_command<T>(
     config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
+    T: GenericVector3,
     T::Vector2: PointTrait<PScalar = T::Scalar>,
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
     u32: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
     u32: AsPrimitive<T::Scalar>,
     T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
+    f64: AsPrimitive<T::Scalar>,
 {
     if models.len() < 2 {
         Err(HronnError::InvalidParameter(
@@ -169,7 +172,7 @@ where
         "TAPERED_END" => {
             let angle = config.get_mandatory_parsed_option("probe_angle", None)?;
             Box::new(TaperedProbe::new(&mesh_analyzer, probe_radius, angle)?)
-        },
+        }
         probe_name => Err(HronnError::InvalidParameter(format!(
             "{} is not a valid \"probe\" parameter",
             probe_name

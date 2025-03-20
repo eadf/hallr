@@ -23,7 +23,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dev_mode",
         action="store_true",
-        help="Enable development mode"
+        help="Enable development mode, in this mode you can open the ’__init__.py’ file in blender and run it there, directly. " +
+             "You can also re-run it without having to recreate the zip file every time."
     )
     args = parser.parse_args()
 
@@ -88,6 +89,8 @@ if __name__ == "__main__":
             new_name = os.path.join(dest_lib_directory, f"libhallr_{timestamp}{library_extension}")
         else:
             new_name = os.path.join(dest_lib_directory,lib_file)
+        if os.path.exists(new_name):
+            os.chmod(new_name, 0o666)  # Make writable before overwrite
         shutil.copy(f"target/release/{lib_file}", new_name)
 
     file_extension = '.py'
@@ -97,8 +100,11 @@ if __name__ == "__main__":
 
     # Copy each selected file to the destination directory
     for source_file in source_files:
+        new_name = os.path.join(destination_directory, os.path.basename(source_file))
+        if os.path.exists(new_name):
+            os.chmod(new_name, 0o666)  # Make writable before overwrite
         # Use shutil.copy to copy the file
-        shutil.copy(source_file, os.path.join(destination_directory, os.path.basename(source_file)))
+        shutil.copy(source_file, new_name)
 
     base_directory = os.getcwd()  # Get the current working directory
 
@@ -123,6 +129,12 @@ if __name__ == "__main__":
 
         with open(file_path, 'w') as f:
             f.write(content)
+
+    # Set all files in the exported directory to read-only
+    for root, _, files in os.walk(addon_exported_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            os.chmod(file_path, 0o444)  # Read-only for everyone
 
     if not args.dev_mode:
         subprocess.run("mv blender_addon_exported hallr", shell=True)

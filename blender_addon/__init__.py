@@ -8,7 +8,7 @@ import sys
 
 bl_info = {
     "name": "Hallr",
-    "blender": (3, 4, 1),
+    "blender": (4, 4, 0),
     "category": "Object",
     "description": "A collection of addons written in Rust",
     "author": "EAD",

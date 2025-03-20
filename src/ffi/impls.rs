@@ -8,9 +8,9 @@ use super::FFIVector3;
 use hronn::prelude::ConvertTo;
 use std::fmt;
 use vector_traits::{
-    approx::{AbsDiffEq, UlpsEq},
-    glam::{vec3a, DVec3, Vec3, Vec3A},
     Approx, GenericScalar, HasXY, HasXYZ,
+    approx::{AbsDiffEq, UlpsEq},
+    glam::{DVec3, Vec3, Vec3A, vec3a},
 };
 
 impl fmt::Debug for FFIVector3 {
@@ -191,7 +191,7 @@ impl std::ops::Add for FFIVector3 {
     }
 }
 
-impl<'a, 'b> std::ops::Add<&'b FFIVector3> for &'a FFIVector3 {
+impl<'b> std::ops::Add<&'b FFIVector3> for &FFIVector3 {
     type Output = FFIVector3;
 
     fn add(self, rhs: &'b FFIVector3) -> Self::Output {

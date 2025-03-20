@@ -32,6 +32,7 @@ bounding_props_items = [
 class HALLR_PT_MeanderToolpath(bpy.types.Panel):
     """A CNC toolpath/mesh probe operation, work in progress"""
     bl_label = "Meander Toolpath"
+    bl_idname = "HALLR_PT_meander_toolpath"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Hallr tools"
@@ -80,7 +81,7 @@ class HALLR_PT_MeanderToolpath(bpy.types.Panel):
         # Generate tool-path button
         if (settings.bounding_shape is not None and
                 settings.mesh is not None):
-            layout.row(align=True).operator("object.hallr_mt_generate_mesh", text="Generate Mesh")
+            layout.row(align=True).operator("object.hallr_mt_generate_mesh", text="Scan")
 
 
 class OBJECT_OT_MTSelectBoundingShape(bpy.types.Operator):
@@ -270,9 +271,9 @@ class MeanderToolpathSettings(bpy.types.PropertyGroup):
     probe_angle_props: bpy.props.FloatProperty(
         name="Probe angle",
         description="Define the angle of the tapered probe (included angle).",
-        default=math.radians(45.0),
-        min=math.radians(30.0),
-        max=math.radians(75.0),
+        default=math.radians(90.0),
+        min=math.radians(50.0),
+        max=math.radians(110.0),
         subtype='ANGLE',
     )
     pattern_props: bpy.props.EnumProperty(

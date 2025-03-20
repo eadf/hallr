@@ -148,10 +148,10 @@ class Hallr_ConvexHull2D(bpy.types.Operator):
 
 
 class Hallr_SimplifyRdp(bpy.types.Operator):
-    """2D Line Simplification using the RDP Algorithm, works in the XY plane"""
+    """Line Simplification using the RDP Algorithm, for 2d and 3d lines"""
 
     bl_idname = "mesh.hallr_simplify_rdp"
-    bl_label = "Hallr 2D Simplify RDP"
+    bl_label = "Hallr Simplify RDP"
     bl_options = {'REGISTER', 'UNDO'}
 
     simplify_3d_props: bpy.props.BoolProperty(
@@ -201,6 +201,62 @@ class Hallr_SimplifyRdp(bpy.types.Operator):
         layout = self.layout
         layout.prop(self, "simplify_distance_props")
         layout.prop(self, "simplify_3d_props")
+
+
+class Hallr_TriangulateAndFlatten(bpy.types.Operator):
+    """Triangulates the mesh and moves all vertices to the XY plane (Z=0)"""
+    bl_idname = "mesh.hallr_meshtools_triangulate_and_flatten"
+    bl_label = "Triangulate and Flatten XY"
+    bl_description = "Triangulates the mesh and moves all vertices to the XY plane (Z=0)"
+    bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None and context.active_object.type == 'MESH'
+
+    def execute(self, context):
+        # Get the active object and mesh
+        obj = context.active_object
+        me = obj.data
+
+        # Check if we're in Edit Mode
+        was_in_edit_mode = context.mode == 'EDIT_MESH'
+
+        # Switch to Object Mode if in Edit Mode
+        if was_in_edit_mode:
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        # Apply the object's transformation to the mesh data
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+        # Get a BMesh representation
+        bm = bmesh.new()
+        bm.from_mesh(me)
+
+        # Triangulate the mesh
+        bmesh.ops.triangulate(bm, faces=bm.faces[:])
+
+        # Move all vertices to the XY plane in world space (set Z=0)
+        for vert in bm.verts:
+            vert.co.z = 0.0
+
+        # Update the mesh with the new data
+        bm.to_mesh(me)
+        bm.free()
+
+        # Reset the object's transformation (location, rotation, scale)
+        obj.location = (0, 0, 0)
+        obj.rotation_euler = (0, 0, 0)
+        obj.scale = (1, 1, 1)
+
+        # Switch back to Edit Mode if we were originally in Edit Mode
+        if was_in_edit_mode:
+            bpy.ops.object.mode_set(mode='EDIT')
+
+        # Show the updates in the viewport
+        bpy.context.view_layer.update()
+
+        return {'FINISHED'}
 
 
 class Hallr_SelectEndVertices(bpy.types.Operator):
@@ -427,7 +483,7 @@ class Hallr_Voronoi_Mesh(bpy.types.Operator):
     bl_idname = "mesh.hallr_meshtools_voronoi_mesh"
     bl_label = "Voronoi Mesh"
     bl_description = ("Calculate voronoi diagram and add mesh, the geometry must be flat and on a plane intersecting "
-                      "origin.")
+                      "origin. It also must be encircled by an outer continuous loop")
     bl_options = {'REGISTER', 'UNDO'}
 
     distance_props: bpy.props.FloatProperty(
@@ -925,6 +981,7 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
 
     def draw(self, context):
         layout = self.layout
+        layout.operator("mesh.hallr_meshtools_triangulate_and_flatten")
         layout.operator("mesh.hallr_2d_outline")
         layout.operator("mesh.hallr_meshtools_select_end_vertices")
         layout.operator("mesh.hallr_meshtools_select_collinear_edges")
@@ -951,6 +1008,7 @@ def menu_func(self, context):
 # define classes for registration
 classes = (
     VIEW3D_MT_edit_mesh_hallr_meshtools,
+    Hallr_TriangulateAndFlatten,
     Hallr_SelectEndVertices,
     Hallr_SelectIntersectionVertices,
     Hallr_SelectVerticesUntilIntersection,
