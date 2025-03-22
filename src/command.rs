@@ -67,7 +67,7 @@ pub struct Model<'a> {
     indices: &'a [usize],
 }
 
-impl<'a> Model<'a> {
+impl Model<'_> {
     pub fn copy_world_orientation(&self) -> Result<[f32; 16], HallrError> {
         if self.world_orientation.len() == 16 {
             let mut rv = [0.0; 16];
