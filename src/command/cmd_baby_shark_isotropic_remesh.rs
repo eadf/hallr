@@ -8,9 +8,9 @@ mod tests;
 use super::{ConfigType, Model};
 use crate::{HallrError, command::Options, prelude::FFIVector3, utils::IndexCompressor};
 use baby_shark::{
-    decimation::{edge_decimation::ConstantErrorDecimationCriteria, prelude::EdgeDecimator},
     exports::nalgebra::Vector3,
     mesh::{corner_table::prelude::CornerTableF, traits::Mesh},
+    remeshing::incremental::IncrementalRemesher,
 };
 use hronn::HronnError;
 use std::time::Instant;
@@ -39,19 +39,27 @@ pub(crate) fn process_command(
         .collect();
 
     let mut mesh = CornerTableF::from_vertices_and_indices(&vertices_owned, model.indices);
-    let decimation_criteria = ConstantErrorDecimationCriteria::new(
-        config.get_mandatory_parsed_option("ERROR_THRESHOLD", None)?,
-    );
-    let mut decimator = EdgeDecimator::new()
-        .decimation_criteria(decimation_criteria)
-        .min_faces_count(Some(
-            config.get_mandatory_parsed_option("MIN_FACES_COUNT", None)?,
-        ));
+    let target_edge_length = config.get_mandatory_parsed_option("TARGET_EDGE_LENGTH", None)?;
+
+    let remesher = IncrementalRemesher::new()
+        .with_iterations_count(config.get_mandatory_parsed_option("ITERATIONS_COUNT", None)?)
+        .with_split_edges(config.get_mandatory_parsed_option::<bool>("SPLIT_EDGES", Some(false))?)
+        .with_collapse_edges(
+            config.get_mandatory_parsed_option::<bool>("COLLAPSE_EDGES", Some(false))?,
+        )
+        .with_flip_edges(config.get_mandatory_parsed_option::<bool>("FLIP_EDGES", Some(false))?)
+        .with_shift_vertices(
+            config.get_mandatory_parsed_option::<bool>("SHIFT_VERTICES", Some(false))?,
+        )
+        .with_project_vertices(
+            config.get_mandatory_parsed_option::<bool>("PROJECT_VERTICES", Some(false))?,
+        );
+
     {
         let start = Instant::now();
-        decimator.decimate(&mut mesh);
+        remesher.remesh(&mut mesh, target_edge_length);
         let duration = start.elapsed();
-        println!("Rust: Time elapsed in decimate() was {:?}", duration);
+        println!("Rust: Time elapsed in remesh() was {:?}", duration);
     }
 
     // it would be nice with a reverse of the `CornerTableF::from_vertices_and_indices()` method here.

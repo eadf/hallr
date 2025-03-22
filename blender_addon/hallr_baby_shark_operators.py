@@ -1,3 +1,9 @@
+"""
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright (c) 2025 lacklustr@protonmail.com https://github.com/eadf
+This file is part of the hallr crate.
+"""
+
 import bpy
 import bmesh
 from . import hallr_ffi_utils
@@ -10,9 +16,10 @@ class VIEW3D_MT_edit_mesh_hallr_bs_operations(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         layout.operator("mesh.hallr_meshtools_bs_decimate")
+        layout.operator("mesh.hallr_meshtools_bs_isotropic_remesh")
 
 
-# Baby Shark Simplify mesh operator
+# Baby Shark Decimate mesh operator
 class Hallr_BS_Decimate(bpy.types.Operator):
     bl_idname = "mesh.hallr_meshtools_bs_decimate"
     bl_label = "Baby Shark Decimate"
@@ -73,6 +80,106 @@ class Hallr_BS_Decimate(bpy.types.Operator):
         return wm.invoke_props_dialog(self)
 
 
+# Baby Shark Isotropic Remeshing mesh operator
+class Hallr_BS_IsotropicRemesh(bpy.types.Operator):
+    bl_idname = "mesh.hallr_meshtools_bs_isotropic_remesh"
+    bl_label = "Baby Shark Isotropic Remesh"
+    bl_description = "Remesh the mesh isotropically using the Baby Shark algorithm"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    iterations_count: bpy.props.IntProperty(
+        name="Iterations",
+        description="Number of iterations for remeshing",
+        default=10,
+        min=1,
+        max=100
+    )
+
+    target_edge_length: bpy.props.FloatProperty(
+        name="Target Edge Length",
+        description="Target length for edges after remeshing",
+        default=0.5,
+        min=0.0001,
+        max=1.0,
+        precision=6
+    )
+
+    split_edges: bpy.props.BoolProperty(
+        name="Split Edges",
+        description="Allow edge splitting during remeshing",
+        default=True
+    )
+
+    collapse_edges: bpy.props.BoolProperty(
+        name="Collapse Edges",
+        description="Allow edge collapsing during remeshing",
+        default=True
+    )
+
+    flip_edges: bpy.props.BoolProperty(
+        name="Flip Edges",
+        description="Allow edge flipping during remeshing",
+        default=True
+    )
+
+    shift_vertices: bpy.props.BoolProperty(
+        name="Shift Vertices",
+        description="Allow vertex shifting during remeshing",
+        default=True
+    )
+
+    project_vertices: bpy.props.BoolProperty(
+        name="Project Vertices",
+        description="Project vertices back to the original surface",
+        default=True
+    )
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.active_object
+        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
+
+    def execute(self, context):
+        obj = context.active_object
+
+        if obj.type != 'MESH':
+            self.report({'ERROR'}, "Active object is not a mesh!")
+            return {'CANCELLED'}
+
+        # Ensure the object is in object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        config = {
+            "command": "baby_shark_isotropic_remesh",
+            "ITERATIONS_COUNT": str(self.iterations_count),
+            "TARGET_EDGE_LENGTH": str(self.target_edge_length),
+            "SPLIT_EDGES": str(self.split_edges),
+            "COLLAPSE_EDGES": str(self.collapse_edges),
+            "FLIP_EDGES": str(self.flip_edges),
+            "SHIFT_VERTICES": str(self.shift_vertices),
+            "PROJECT_VERTICES": str(self.project_vertices)
+        }
+
+        # Call the Rust function
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj)
+        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "iterations_count")
+        layout.prop(self, "target_edge_length")
+        layout.prop(self, "split_edges")
+        layout.prop(self, "collapse_edges")
+        layout.prop(self, "flip_edges")
+        layout.prop(self, "shift_vertices")
+        layout.prop(self, "project_vertices")
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
 # draw function for integration in menus
 def menu_func(self, context):
     self.layout.menu("VIEW3D_MT_edit_mesh_hallr_bs_operations")
@@ -82,6 +189,7 @@ def menu_func(self, context):
 # define classes for registration
 classes = (
     VIEW3D_MT_edit_mesh_hallr_bs_operations,
+    Hallr_BS_IsotropicRemesh,
     Hallr_BS_Decimate,
 )
 

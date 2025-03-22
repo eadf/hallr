@@ -15,7 +15,7 @@ impl Options for HashMap<String, String> {
         default: Option<T>,
     ) -> Result<T, HallrError> {
         match self.get(key) {
-            Some(v) => match v.parse() {
+            Some(v) => match v.to_lowercase().parse() {
                 Ok(val) => Ok(val),
                 Err(_) => Err(HallrError::InvalidParameter(format!(
                     "Invalid value for parameter {{\"{}\"}}: {{\"{}\"}}",

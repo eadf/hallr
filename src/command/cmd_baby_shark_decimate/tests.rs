@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// Copyright (c) 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
 use crate::{
@@ -78,30 +78,14 @@ fn test_baby_shark_simplify_1() -> Result<(), HallrError> {
             16, 12, 14, 2, 12, 13, 14, 13, 1, 14,
         ],
     };
-    /*println!(
-        "input vertices:{} indices:{}",
-        owned_model_0.vertices.len(),
-        owned_model_0.indices.len()
-    );*/
 
     let models = vec![owned_model_0.as_model()];
     let result = super::process_command(config, models)?;
-    /*println!(
-        "output vertices:{}, indices:{}, {:?}",
-        result.0.len(),
-        result.1.len(),
-        result.3
-    );
-    */
 
     assert_eq!(result.1.len() % 3, 0);
-    /*for v in result.0.iter() {
-        println!("v:{:?}", v);
-    }*/
 
     let number_of_vertices = result.0.len();
     for t in result.1.chunks_exact(3) {
-        //println!("t:{:},{:},{:}", t[0], t[1], t[2]);
         assert_ne!(t[0], t[1]);
         assert_ne!(t[0], t[2]);
         assert_ne!(t[1], t[2]);
