@@ -37,6 +37,7 @@ vob = "3.0.4"
 earcutr = "0.4.3"
 ilattice = { version="0.4.0", default-features = false, features = ["glam"]}
 fast-surface-nets = "0.2.1"
+baby_shark = "0.3.3"
 
 [dev-dependencies]
 rand = "0.9.0"

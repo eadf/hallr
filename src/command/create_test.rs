@@ -28,7 +28,6 @@ pub(crate) fn process_command(config: &ConfigType, models: &[Model<'_>]) -> Resu
     println!();
     println!(
         r###"
-    use vector_traits::glam::Vec3;
 use crate::command::{{ConfigType, Model, OwnedModel}};
 use crate::HallrError;
 "###
@@ -70,7 +69,7 @@ fn test_{}_1() -> Result<(),HallrError> {{"###,
             print!("owned_model_{}.as_model(), ", i);
         }
         println!("];");
-        println!("let result = super::process_command::<Vec3>(config, models)?;");
+        println!("let result = super::process_command(config, models)?;");
         //println!("assert_eq!({},result.1.chunks(2).count());", 0);
         println!("assert_eq!({},result.0.len()); // vertices", 0);
         println!("assert_eq!({},result.1.len()); // indices", 0);

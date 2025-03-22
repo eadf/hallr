@@ -146,7 +146,42 @@ impl<T: GenericVector3> VertexDeduplicator3D<T> {
     }
 }
 
-#[allow(clippy::type_complexity)]
+pub(crate) struct IndexCompressor<T> {
+    index_map: AHashMap<usize, usize>,
+    pub vertices: Vec<T>,
+}
+
+impl<T> IndexCompressor<T> {
+    #[allow(dead_code)]
+    pub fn new() -> Self {
+        Self {
+            index_map: AHashMap::new(),
+            vertices: Vec::new(),
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            index_map: AHashMap::with_capacity(capacity),
+            vertices: Vec::with_capacity(capacity),
+        }
+    }
+
+    /// Maps an old index to a new one, adding the vertex to the collection
+    /// if this is the first time we've seen this index
+    pub fn get_or_create_mapping<F>(&mut self, old_index: usize, vertex_provider: F) -> usize
+    where
+        F: FnOnce() -> T,
+    {
+        *self.index_map.entry(old_index).or_insert_with(|| {
+            let new_index = self.vertices.len();
+            self.vertices.push(vertex_provider());
+            new_index
+        })
+    }
+}
+
 pub(crate) struct IndexDeduplicator<T: HasXYZ> {
     set: AHashMap<u32, u32>,
     pub vertices: Vec<T>,

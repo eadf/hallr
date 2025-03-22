@@ -15,6 +15,7 @@ If you are on an Arm Mac you can locally rebuild your blender add-on zip file li
 ```bash
 python3 build_script.py
 ```
+Then you can just drag an drop the resulting ’hallr.zip’ into blender.
 
 ## Contributing
 

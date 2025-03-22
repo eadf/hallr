@@ -5,6 +5,7 @@
 //! This module contains the execution of the implemented commands.
 
 mod cmd_2d_outline;
+mod cmd_baby_shark_decimate;
 mod cmd_centerline;
 mod cmd_convex_hull_2d;
 mod cmd_delaunay_triangulation_2d;
@@ -244,6 +245,7 @@ pub(crate) fn process_command(
         "sdf_mesh_2_5" => cmd_sdf_mesh_2_5::process_command(config, models)?,
         "sdf_mesh" => cmd_sdf_mesh::process_command(config, models)?,
         "discretize" => cmd_discretize::process_command(config, models)?,
+        "baby_shark_decimate" => cmd_baby_shark_decimate::process_command(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(
             "Invalid command:{}",
             illegal_command

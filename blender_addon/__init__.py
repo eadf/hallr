@@ -26,15 +26,18 @@ if DEV_MODE:
 from . import hallr_ffi_utils
 from . import hallr_2d_delaunay_triangulation
 from . import hallr_mesh_operators
-# from . import hallr_cnc_engravingpanel
 from . import hallr_meander_toolpath
+from . import hallr_baby_shark_operators
+#from . import hallr_baby_shark_tools
+# from . import hallr_cnc_engravingpanel
 
 # define modules for registration
 modules = (
     hallr_mesh_operators,  # always register hallr_mesh_operators first
     hallr_2d_delaunay_triangulation,
-    # hallr_cnc_engravingpanel,
     hallr_meander_toolpath,
+    hallr_baby_shark_operators,
+    # hallr_cnc_engravingpanel,
 )
 
 
