@@ -8,6 +8,7 @@ mod tests;
 use super::{ConfigType, Model};
 use crate::{HallrError, command::Options, prelude::FFIVector3};
 use baby_shark::{
+    exports::nalgebra::Vector3,
     mesh::{polygon_soup::data_structure::PolygonSoup, traits::Mesh},
     voxel::prelude::{MarchingCubesMesher, MeshToVolume},
 };
@@ -27,14 +28,11 @@ pub(crate) fn process_command(
     // todo: actually use the matrices
     let world_matrix = model.world_orientation.to_vec();
 
-    let mut input_mesh = PolygonSoup::default();
+    let vertex_soup: Vec<Vector3<f32>> = model.indices.iter()
+        .map(|&index| model.vertices[index].into())
+        .collect();
 
-    for chunk in model.indices.chunks_exact(3) {
-        let v0 = model.vertices[chunk[0]].into();
-        let v1 = model.vertices[chunk[1]].into();
-        let v2 = model.vertices[chunk[2]].into();
-        input_mesh.add_face(v0, v1, v2);
-    }
+    let input_mesh = PolygonSoup::from_vertices(vertex_soup);
 
     let mut mesh_to_volume = MeshToVolume::default()
         .with_voxel_size(config.get_mandatory_parsed_option("VOXEL_SIZE", None)?);
@@ -54,9 +52,6 @@ pub(crate) fn process_command(
         .map(|i| (*mesh.vertex_position(&i)).into())
         .collect::<Vec<FFIVector3>>();
     let ffi_indices: Vec<usize> = (0..mesh.vertices().count()).collect();
-
-    assert_eq!(ffi_indices.len(), mesh.vertices().count());
-    assert_eq!(ffi_indices.len() % 3, 0);
 
     let mut return_config = ConfigType::new();
     let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());

@@ -77,7 +77,7 @@ fn test_{}_1() -> Result<(),HallrError> {{"###,
         let s = r##"
     let result = super::process_command(config, models)?;
     assert_eq!(result.1.len() % 3, 0);
-    assert!(result.1.len()>0);
+    assert!(!result.1.is_empty());
     let number_of_vertices = result.0.len();
     assert!(number_of_vertices>0);
 

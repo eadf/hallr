@@ -170,7 +170,18 @@ class Hallr_BS_IsotropicRemesh(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "iterations_count")
-        layout.prop(self, "target_edge_length")
+        # Add target_edge_length with a warning message
+        box = layout.box()
+        row = box.row()
+        row.prop(self, "target_edge_length")
+        # Add warning row with icon
+        warning_row = box.row()
+        warning_row.label(text="CAUTION: Small values will make the ", icon='ERROR')
+        warning_row = box.row()
+        warning_row.label(text="         operation take a long time, while ")
+        warning_row = box.row()
+        warning_row.label(text="         blender is unresponsive")
+        warning_row.scale_y = 0.7
         layout.prop(self, "split_edges")
         layout.prop(self, "collapse_edges")
         layout.prop(self, "flip_edges")

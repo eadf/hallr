@@ -33,10 +33,10 @@ from . import hallr_baby_shark_operators
 
 # define modules for registration
 modules = (
-    hallr_mesh_operators,  # always register hallr_mesh_operators first
+    hallr_baby_shark_operators,
+    hallr_mesh_operators,
     hallr_2d_delaunay_triangulation,
     hallr_meander_toolpath,
-    hallr_baby_shark_operators,
     # hallr_cnc_engravingpanel,
 )
 
