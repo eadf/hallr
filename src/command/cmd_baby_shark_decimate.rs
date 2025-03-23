@@ -30,8 +30,8 @@ pub(crate) fn process_command(
 
     // We simply have to clone the vertices here, because python still owns `model` and
     // from_vertices_and_indices() only accepts nalgebra::Vector3. We could avoid one copy
-    // if a from_vertices_and_indices() variant could accept &[[f32;3]]
-    // (&[FFIVector3] can easily be casted to &[[f32;3]]).
+    // if a from_vertices_and_indices() variant could accept &[[f32;3]].
+    // (&[FFIVector3] can easily be casted, in place, to &[[f32;3]]).
     let vertices_owned: Vec<Vector3<f32>> = model
         .vertices
         .iter()
@@ -47,11 +47,10 @@ pub(crate) fn process_command(
         .min_faces_count(Some(
             config.get_mandatory_parsed_option("MIN_FACES_COUNT", None)?,
         ));
-    {
-        let start = Instant::now();
-        decimator.decimate(&mut mesh);
-        println!("Rust: Time elapsed in decimate() was {:?}", start.elapsed());
-    }
+
+    let start = Instant::now();
+    decimator.decimate(&mut mesh);
+    println!("Rust: Time elapsed in decimate() was {:?}", start.elapsed());
 
     // it would be nice with a reverse of the `CornerTableF::from_vertices_and_indices()` method here.
 

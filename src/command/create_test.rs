@@ -28,6 +28,10 @@ pub(crate) fn process_command(config: &ConfigType, models: &[Model<'_>]) -> Resu
     println!();
     println!(
         r###"
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (c) 2025 lacklustr@protonmail.com https://github.com/eadf
+// This file is part of the hallr crate.
+
 use crate::command::{{ConfigType, Model, OwnedModel}};
 use crate::HallrError;
 "###
@@ -39,10 +43,10 @@ fn test_{}_1() -> Result<(),HallrError> {{"###,
         command
     );
 
-    println!("let mut config = ConfigType::default();");
+    println!("    let mut config = ConfigType::default();");
     for (k, v) in config.iter() {
         println!(
-            r##"let _= config.insert("{}".to_string(),"{}".to_string());"##,
+            r##"    let _= config.insert("{}".to_string(),"{}".to_string());"##,
             k, v
         );
     }
@@ -64,19 +68,49 @@ fn test_{}_1() -> Result<(),HallrError> {{"###,
             println!("]}};");
         }
         println!();
-        print!("let models = vec![");
+        print!("    let models = vec![");
         for i in 0..models.len() {
             print!("owned_model_{}.as_model(), ", i);
         }
         println!("];");
-        println!("let result = super::process_command(config, models)?;");
         //println!("assert_eq!({},result.1.chunks(2).count());", 0);
-        println!("assert_eq!({},result.0.len()); // vertices", 0);
-        println!("assert_eq!({},result.1.len()); // indices", 0);
+        let s = r##"
+    let result = super::process_command(config, models)?;
+    assert_eq!(result.1.len() % 3, 0);
+    assert!(result.1.len()>0);
+    let number_of_vertices = result.0.len();
+    assert!(number_of_vertices>0);
 
-        println!("Ok(())");
-        println!("}}");
-        println!();
+    for t in result.1.chunks_exact(3) {
+        assert_ne!(t[0], t[1]);
+        assert_ne!(t[0], t[2]);
+        assert_ne!(t[1], t[2]);
+
+        assert!(
+            t[0] < number_of_vertices,
+            "{:?} >= {}",
+            t[2],
+            number_of_vertices
+        );
+        assert!(
+            t[1] < number_of_vertices,
+            "{:?} >= {}",
+            t[2],
+            number_of_vertices
+        );
+        assert!(
+            t[2] < number_of_vertices,
+            "{:?} >= {}",
+            t[2],
+            number_of_vertices
+        )
+    }
+    //assert_eq!(0,result.0.len()); // vertices
+    //assert_eq!(0,result.1.len()); // indices
+    Ok(())
+}
+"##;
+        println!("{}", s);
     }
     Ok(())
 }

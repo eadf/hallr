@@ -2,8 +2,8 @@
 // Copyright (c) 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
-//#[cfg(test)]
-//mod tests;
+#[cfg(test)]
+mod tests;
 
 use super::{ConfigType, Model};
 use crate::{HallrError, command::Options, prelude::FFIVector3};
@@ -51,11 +51,8 @@ pub(crate) fn process_command(
 
     let ffi_vertices = mesh
         .vertices()
-        .map(|i| {
-            let v = mesh.vertex_position(&i);
-            FFIVector3::new(v.x, v.y, v.z)
-        })
-        .collect::<Vec<_>>();
+        .map(|i| (*mesh.vertex_position(&i)).into())
+        .collect::<Vec<FFIVector3>>();
     let ffi_indices: Vec<usize> = (0..mesh.vertices().count()).collect();
 
     assert_eq!(ffi_indices.len(), mesh.vertices().count());

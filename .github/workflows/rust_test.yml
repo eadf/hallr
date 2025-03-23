@@ -34,3 +34,7 @@ jobs:
 
       - name: Run tests
         run: cargo test --all
+
+      - name: Run build script
+        run: python3 build_script.py
+

@@ -306,3 +306,9 @@ impl From<FFIVector3> for nalgebra::Vector3<f32> {
         nalgebra::Vector3::new(v.x, v.y, v.z)
     }
 }
+
+impl From<nalgebra::Vector3<f32>> for FFIVector3 {
+    fn from(v: nalgebra::Vector3<f32>) -> Self {
+        FFIVector3::new(v.x, v.y, v.z)
+    }
+}

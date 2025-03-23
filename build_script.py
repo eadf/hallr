@@ -26,6 +26,11 @@ if __name__ == "__main__":
         help="Enable development mode, in this mode you can open the ’__init__.py’ file in blender and run it there, directly. " +
              "You can also re-run it without having to recreate the zip file every time."
     )
+    parser.add_argument(
+        "--release",
+        action="store_true",
+        help="Build in release mode when --dev_mode is active."
+    )
     args = parser.parse_args()
 
     # Check if the current directory is a Rust project
@@ -41,8 +46,11 @@ if __name__ == "__main__":
             exit(1)
 
     # Run the cargo build command
-    # Run the command
-    result = subprocess.run(["cargo", "build", "--release"])
+    if args.dev_mode and not args.release:
+        build_command = ["cargo", "build"]
+    else:
+        build_command = ["cargo", "build", "--release"]
+    result = subprocess.run(build_command)
     # result = subprocess.run(["cargo", "build", "--release", "--features", "display_sdf_chunks"])
 
     # Check the return status

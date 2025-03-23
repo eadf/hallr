@@ -55,11 +55,9 @@ pub(crate) fn process_command(
             config.get_mandatory_parsed_option::<bool>("PROJECT_VERTICES", Some(false))?,
         );
 
-    {
-        let start = Instant::now();
-        remesher.remesh(&mut mesh, target_edge_length);
-        println!("Rust: Time elapsed in remesh() was {:?}", start.elapsed());
-    }
+    let start = Instant::now();
+    remesher.remesh(&mut mesh, target_edge_length);
+    println!("Rust: Time elapsed in remesh() was {:?}", start.elapsed());
 
     // it would be nice with a reverse of the `CornerTableF::from_vertices_and_indices()` method here.
 

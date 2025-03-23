@@ -98,10 +98,10 @@ class Hallr_BS_IsotropicRemesh(bpy.types.Operator):
 
     target_edge_length: bpy.props.FloatProperty(
         name="Target Edge Length",
-        description="Target length for edges after remeshing",
-        default=0.5,
-        min=0.0001,
-        max=1.0,
+        description="Target edge length after remeshing. Warning: Setting this too small will significantly increase processing time",
+        default=1.0,
+        min=0.001,
+        max=2.0,
         precision=6
     )
 
