@@ -173,8 +173,10 @@ fn process_command_error_handler(
             (vec![], vec![], vec![], config)
         }
     };
-    let duration = start.elapsed();
-    println!("Rust: Time elapsed in process_command() was {:?}", duration);
+    println!(
+        "Rust: Time elapsed in process_command() was {:?}",
+        start.elapsed()
+    );
     rv
 }
 

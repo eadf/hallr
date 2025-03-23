@@ -1,0 +1,70 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (c) 2025 lacklustr@protonmail.com https://github.com/eadf
+// This file is part of the hallr crate.
+
+//#[cfg(test)]
+//mod tests;
+
+use super::{ConfigType, Model};
+use crate::{HallrError, command::Options, prelude::FFIVector3};
+use baby_shark::{
+    mesh::{polygon_soup::data_structure::PolygonSoup, traits::Mesh},
+    voxel::prelude::{MarchingCubesMesher, MeshToVolume},
+};
+use hronn::HronnError;
+use std::time::Instant;
+
+pub(crate) fn process_command(
+    config: ConfigType,
+    models: Vec<Model<'_>>,
+) -> Result<super::CommandResult, HallrError> {
+    if models.len() != 1 {
+        Err(HronnError::InvalidParameter(
+            "Incorrect number of models selected".to_string(),
+        ))?
+    }
+    let model = &models[0];
+    // todo: actually use the matrices
+    let world_matrix = model.world_orientation.to_vec();
+
+    let mut input_mesh = PolygonSoup::default();
+
+    for chunk in model.indices.chunks_exact(3) {
+        let v0 = model.vertices[chunk[0]].into();
+        let v1 = model.vertices[chunk[1]].into();
+        let v2 = model.vertices[chunk[2]].into();
+        input_mesh.add_face(v0, v1, v2);
+    }
+
+    let mut mesh_to_volume = MeshToVolume::default()
+        .with_voxel_size(config.get_mandatory_parsed_option("VOXEL_SIZE", None)?);
+
+    let start = Instant::now();
+    let mesh_volume = mesh_to_volume.convert(&input_mesh).unwrap();
+    let offset = mesh_volume.offset(config.get_mandatory_parsed_option("OFFSET_BY", None)?);
+    let vertices = MarchingCubesMesher::default()
+        .with_voxel_size(offset.voxel_size())
+        .mesh(&offset);
+    let mesh = PolygonSoup::from_vertices(vertices);
+
+    println!("Rust: Time elapsed in offset() was {:?}", start.elapsed());
+
+    let ffi_vertices = mesh
+        .vertices()
+        .map(|i| {
+            let v = mesh.vertex_position(&i);
+            FFIVector3::new(v.x, v.y, v.z)
+        })
+        .collect::<Vec<_>>();
+    let ffi_indices: Vec<usize> = (0..mesh.vertices().count()).collect();
+
+    assert_eq!(ffi_indices.len(), mesh.vertices().count());
+    assert_eq!(ffi_indices.len() % 3, 0);
+
+    let mut return_config = ConfigType::new();
+    let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
+    // we take the easy way out here, and let blender do the de-duplication of the vertices.
+    let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
+
+    Ok((ffi_vertices, ffi_indices, world_matrix, return_config))
+}

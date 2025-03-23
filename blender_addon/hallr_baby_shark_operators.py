@@ -17,6 +17,7 @@ class VIEW3D_MT_edit_mesh_hallr_bs_operations(bpy.types.Menu):
         layout = self.layout
         layout.operator("mesh.hallr_meshtools_bs_decimate")
         layout.operator("mesh.hallr_meshtools_bs_isotropic_remesh")
+        layout.operator("mesh.hallr_meshtools_bs_offset")
 
 
 # Baby Shark Decimate mesh operator
@@ -180,6 +181,67 @@ class Hallr_BS_IsotropicRemesh(bpy.types.Operator):
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
 
+# Mesh Offset Operator
+class Hallr_BS_Mesh_Offset(bpy.types.Operator):
+    bl_idname = "mesh.hallr_meshtools_bs_offset"
+    bl_label = "Mesh Offset"
+    bl_description = "Offset mesh surface by converting to volume and back"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    voxel_size: bpy.props.FloatProperty(
+        name="Voxel Size",
+        description="Size of voxels for volume conversion",
+        default=0.2,
+        min=0.01,
+        max=5.0,
+        precision=3
+    )
+
+    offset_by: bpy.props.FloatProperty(
+        name="Offset Amount",
+        description="Distance to offset the mesh surface",
+        default=1.5,
+        min=0.01,
+        max=10.0,
+        precision=2
+    )
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.active_object
+        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
+
+    def execute(self, context):
+        obj = context.active_object
+
+        if obj.type != 'MESH':
+            self.report({'ERROR'}, "Active object is not a mesh!")
+            return {'CANCELLED'}
+
+        # Ensure we're in object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        config = {
+            "command": "baby_shark_mesh_offset",
+            "VOXEL_SIZE": str(self.voxel_size),
+            "OFFSET_BY": str(self.offset_by)
+        }
+
+        # Call the Rust function
+        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj)
+        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "voxel_size")
+        layout.prop(self, "offset_by")
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+        
 # draw function for integration in menus
 def menu_func(self, context):
     self.layout.menu("VIEW3D_MT_edit_mesh_hallr_bs_operations")
@@ -191,6 +253,7 @@ classes = (
     VIEW3D_MT_edit_mesh_hallr_bs_operations,
     Hallr_BS_IsotropicRemesh,
     Hallr_BS_Decimate,
+    Hallr_BS_Mesh_Offset,
 )
 
 

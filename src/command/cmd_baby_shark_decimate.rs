@@ -50,8 +50,7 @@ pub(crate) fn process_command(
     {
         let start = Instant::now();
         decimator.decimate(&mut mesh);
-        let duration = start.elapsed();
-        println!("Rust: Time elapsed in decimate() was {:?}", duration);
+        println!("Rust: Time elapsed in decimate() was {:?}", start.elapsed());
     }
 
     // it would be nice with a reverse of the `CornerTableF::from_vertices_and_indices()` method here.

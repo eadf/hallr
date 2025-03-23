@@ -7,6 +7,7 @@
 mod cmd_2d_outline;
 mod cmd_baby_shark_decimate;
 mod cmd_baby_shark_isotropic_remesh;
+mod cmd_baby_shark_mesh_offset;
 mod cmd_centerline;
 mod cmd_convex_hull_2d;
 mod cmd_delaunay_triangulation_2d;
@@ -250,6 +251,7 @@ pub(crate) fn process_command(
         "baby_shark_isotropic_remesh" => {
             cmd_baby_shark_isotropic_remesh::process_command(config, models)?
         }
+        "baby_shark_mesh_offset" => cmd_baby_shark_mesh_offset::process_command(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(
             "Invalid command:{}",
             illegal_command
