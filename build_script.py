@@ -5,154 +5,166 @@ Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
 This file is part of the hallr crate.
 """
 
-# This script prepares and packages the blender addon files under the
-# `blender_addon_exported` folder.
+import subprocess
+import time
+import os
+import platform
+import shutil
+import re
+import glob
+import argparse
+import sys
 
-if __name__ == "__main__":
-    import subprocess
-    import time
-    import os
-    import platform
-    import shutil
-    import re
-    import glob
-    import argparse
 
-    parser = argparse.ArgumentParser(description="A script that packages the hallr blender addon files")
+def clear_directory(dir_path, delete_root=False):
+    """Remove all files from a directory while keeping the directory itself."""
+    if not os.path.exists(dir_path):
+        return
+    for filename in os.listdir(dir_path):
+        file_path = os.path.join(dir_path, filename)
+        try:
+            if os.path.isdir(file_path):
+                clear_directory(file_path)
+            elif os.path.isfile(file_path):
+                os.chmod(file_path, 0o666)
+                os.remove(file_path)
+        except Exception as e:
+            print(f"Failed to delete {file_path}: {e}")
+    if delete_root:
+        os.chmod(dir_path, 0o666)
+        os.rmdir(dir_path)
 
-    parser.add_argument(
-        "--dev_mode",
-        action="store_true",
-        help="Enable development mode, in this mode you can open the ’__init__.py’ file in blender and run it there, directly. " +
-             "You can also re-run it without having to recreate the zip file every time."
-    )
-    parser.add_argument(
-        "--release",
-        action="store_true",
-        help="Build in release mode when --dev_mode is active."
-    )
+
+def parse_arguments():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(description="Package the hallr Blender add-on.")
+    parser.add_argument("--dev_mode", action="store_true", help="Enable development mode.")
+    parser.add_argument("--release", action="store_true", help="Build in release mode.")
+    parser.add_argument("--debug", action="store_true", help="Build in debug mode.")
     args = parser.parse_args()
+    if args.debug and args.release:
+        parser.error("--debug and --release cannot be used together.")
+    if args.release:
+        print("Warning: --release is now the default behavior. Use --debug for debug mode. "
+              "The --release flag will be deprecated in a future version.", file=sys.stderr)
 
-    # Check if the current directory is a Rust project
+    # Set defaults if neither is specified
+    if not args.debug and not args.release:
+        args.release = True
+        args.debug = False
+    else:
+        args.release = not args.debug
+
+    return args
+
+
+def validate_rust_project():
+    """Check for Cargo.toml and verify project name."""
     if not os.path.isfile("Cargo.toml"):
-        print("Error: This directory does not contain a Cargo.toml file.")
+        print("Error: Cargo.toml not found.")
         exit(1)
-
-    # Validate the Cargo.toml file to ensure it's the correct Rust project
     with open("Cargo.toml", "r") as f:
         content = f.read()
         if "name = \"hallr\"" not in content:
             print("Error: The Cargo.toml file does not specify the project name as 'hallr'. Are you in the correct cwd?")
             exit(1)
 
-    # Run the cargo build command
-    if args.dev_mode and not args.release:
-        build_command = ["cargo", "build"]
-    else:
-        build_command = ["cargo", "build", "--release"]
-    result = subprocess.run(build_command)
-    # result = subprocess.run(["cargo", "build", "--release", "--features", "display_sdf_chunks"])
 
-    # Check the return status
+def run_cargo_build(dev_mode, debug):
+    """Execute the cargo build command."""
+    command = ["cargo", "build", "--release"]
+    if not dev_mode:
+        command = ["cargo", "rustc", "--release", "--crate-type=cdylib", "--", "-C", "opt-level=3", "-C", "lto=fat"]
+    elif debug:
+        command = ["cargo", "build"]
+    result = subprocess.run(command)
     if result.returncode != 0:
-        print(f"Cargo command failed with return code {result.returncode}.")
+        print("Cargo build failed.")
         exit(1)
 
-    # Get the current timestamp
-    timestamp = str(int(time.time()))
 
-    # Determine the library extension based on the platform
-    system = platform.system()
-    library_extension = ".dylib"  # Default to macOS
+def copy_python_files(source_dir, dest_dir):
+    """Copy Python files from the source to the destination directory."""
+    clear_directory(os.path.join(dest_dir, "__pycache__"), delete_root=True)
+    py_files = glob.glob(f"{source_dir}/*.py")
+    os.makedirs(dest_dir, exist_ok=True)
+    for source_file in py_files:
+        dest_file = os.path.join(dest_dir, os.path.basename(source_file))
+        os.chmod(dest_file, 0o666)
+        shutil.copy(source_file, dest_file)
+        print(f"Copied Python file: {source_file} -> {dest_file}")
 
-    if system == "Linux":
-        library_extension = ".so"
-    elif system == "Windows":
-        library_extension = ".dll"
 
-    source_directory = 'blender_addon'
-    destination_directory = 'blender_addon_exported'
-    dest_lib_directory = os.path.join(destination_directory, "lib")
-
-    # Check if the destination directory exists, and create it if not
-    os.makedirs(destination_directory, exist_ok=True)
-    # Ensure the directory exists or create it if it doesn't
-    os.makedirs(dest_lib_directory, exist_ok=True)
-
-    # Rename and move the library file
-    if args.dev_mode and not args.release:
-        target_dir = "target/debug"
-    else:
-        target_dir = "target/release"
-
-    lib_files = [f for f in os.listdir(target_dir) if f.startswith("libhallr") and f.endswith(library_extension)]
-    if len(lib_files) == 0:
-        print(f"Could not find the libfile in ´{target_dir}´.")
-        exit(1)
-
-    if args.dev_mode:
-        old_lib_files = [f for f in os.listdir(dest_lib_directory) if
-                         f.startswith("libhallr_") and f.endswith(library_extension)]
-        for lib_file in old_lib_files:
-            old_file = os.path.join(dest_lib_directory, lib_file)
-            os.remove(old_file)
-
-    for lib_file in lib_files:
-        if args.dev_mode:
-            new_name = os.path.join(dest_lib_directory, f"libhallr_{timestamp}{library_extension}")
-        else:
-            new_name = os.path.join(dest_lib_directory,lib_file)
-        if os.path.exists(new_name):
-            os.chmod(new_name, 0o666)  # Make writable before overwrite
-        shutil.copy(f"{target_dir}/{lib_file}", new_name)
-
-    file_extension = '.py'
-
-    # Get a list of all files with the specified extension in the source directory
-    source_files = glob.glob(f"{source_directory}/*{file_extension}")
-
-    # Copy each selected file to the destination directory
-    for source_file in source_files:
-        new_name = os.path.join(destination_directory, os.path.basename(source_file))
-        if os.path.exists(new_name):
-            os.chmod(new_name, 0o666)  # Make writable before overwrite
-        # Use shutil.copy to copy the file
-        shutil.copy(source_file, new_name)
-
-    base_directory = os.getcwd()  # Get the current working directory
-
-    # Paths to be replaced
-    addon_exported_path = os.path.join(base_directory, 'blender_addon_exported')
-    target_release_path = os.path.join(base_directory, addon_exported_path, 'lib')
-
-    # List files in the directory (non-recursively)
-    file_list = [f for f in os.listdir(addon_exported_path) if
-                 os.path.isfile(os.path.join(addon_exported_path, f)) and f.endswith(".py")]
-
-    # Do find and replace on the .py files
-    for file in file_list:
-        file_path = os.path.join(addon_exported_path, file)
-        with open(file_path, 'r') as f:
+def process_python_files(addon_exported_path, dev_mode):
+    """Perform replacements in exported Python files."""
+    for file in glob.glob(f"{addon_exported_path}/*.py"):
+        os.chmod(file, 0o666)  # Make writable before overwrite
+        with open(file, 'r') as f:
             content = f.read()
         content = re.sub(r'HALLR__BLENDER_ADDON_PATH', addon_exported_path, content)
-        content = re.sub(r'HALLR__TARGET_RELEASE', target_release_path, content)
-        if args.dev_mode:
-            content = re.sub(r'DEV_MODE = False', 'DEV_MODE = True', content)
-            content = re.sub(r'from . import', 'import', content)
-
-        with open(file_path, 'w') as f:
+        content = re.sub(r'DEV_MODE = False', 'DEV_MODE = True', content) if dev_mode else content
+        with open(file, 'w') as f:
             f.write(content)
+        os.chmod(file, 0o444)  # Read-only for everyone
+        print(f"Processed Python file: {file}")
 
-    # Set all files in the exported directory to read-only
-    for root, _, files in os.walk(addon_exported_path):
-        for file in files:
-            file_path = os.path.join(root, file)
-            os.chmod(file_path, 0o444)  # Read-only for everyone
 
-    if not args.dev_mode:
-        subprocess.run("mv blender_addon_exported hallr", shell=True)
-        subprocess.run("zip -r hallr.zip hallr", shell=True)#,cwd=addon_exported_path)
-        subprocess.run("mv hallr blender_addon_exported", shell=True)
-        print("Created a new hallr.zip file in the root, install it as an addon in blender.")
+def copy_library_files(dev_mode, debug, dest_lib_directory):
+    """Copy built library files to the destination directory."""
+    timestamp = str(int(time.time()))
+    build_type = "debug" if debug else "release"
+    target_dir = os.path.join("target", build_type)
+
+    is_windows = platform.system() == "Windows"
+    library_extension = ".dll" if is_windows else ".so" if platform.system() == "Linux" else ".dylib"
+
+    # Use different prefix patterns based on platform
+    lib_prefix = "" if is_windows else "lib"
+
+    # Find library files with the correct pattern for the platform
+    lib_files = [f for f in os.listdir(target_dir)
+                if f.startswith(f"{lib_prefix}hallr") and f.endswith(library_extension)]
+
+    if not lib_files:
+        print(f"No library files found in {target_dir}.")
+        exit(1)
+
+    clear_directory(dest_lib_directory)
+
+    for lib_file in lib_files:
+        new_name = os.path.join(dest_lib_directory, lib_file)
+        if dev_mode:
+            # For consistent naming in dev mode, potentially add lib prefix on Windows
+            new_name = os.path.join(dest_lib_directory,
+                                   f"{lib_prefix}hallr_{timestamp}{library_extension}")
+        lib_file = os.path.join(target_dir, lib_file)
+        shutil.copy(lib_file, new_name)
+        os.chmod(new_name, 0o444)  # Read-only for everyone
+        print(f"Copied {lib_file} to {new_name}")
+
+
+def package_addon(dev_mode):
+    """Package the add-on into a zip file."""
+    base_dir = os.getcwd()
+    export_dir = "blender_addon_exported"
+    addon_path = os.path.join(base_dir, export_dir)
+    if dev_mode:
+        print(f"Updated the files under blender_addon_exported.")
+        print(f"Use blender to open and run the script: {export_dir}/__init__.py")
     else:
-        print(f"Updated the files under blender_addon_exported, use blender to run {addon_exported_path}/__init__.py")
+        shutil.move(export_dir, "hallr")
+        shutil.make_archive("hallr", "zip", root_dir=base_dir, base_dir="hallr")
+        shutil.move("hallr", export_dir)
+        print("Created a new hallr.zip file.")
+        print(f"Use blender to open the add-on: {os.path.join(base_dir, 'hallr.zip')}")
+
+
+if __name__ == "__main__":
+    args = parse_arguments()
+    validate_rust_project()
+    run_cargo_build(args.dev_mode, args.debug)
+    dest_lib_directory = os.path.join("blender_addon_exported", "lib")
+    copy_library_files(args.dev_mode,args.debug, dest_lib_directory)
+    copy_python_files("blender_addon", "blender_addon_exported")
+    process_python_files("blender_addon_exported", args.dev_mode)
+    package_addon(args.dev_mode)
