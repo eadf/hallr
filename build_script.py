@@ -90,19 +90,27 @@ def copy_python_files(source_dir, dest_dir):
     os.makedirs(dest_dir, exist_ok=True)
     for source_file in py_files:
         dest_file = os.path.join(dest_dir, os.path.basename(source_file))
-        os.chmod(dest_file, 0o666)
+        if os.path.isfile(dest_file):
+            os.chmod(dest_file, 0o666)
         shutil.copy(source_file, dest_file)
         print(f"Copied Python file: {source_file} -> {dest_file}")
 
 
 def process_python_files(addon_exported_path, dev_mode):
     """Perform replacements in exported Python files."""
+    addon_exported_path = os.path.join(os.getcwd(), addon_exported_path)
+    target_release_path = os.path.join(addon_exported_path, "lib")
+
     for file in glob.glob(f"{addon_exported_path}/*.py"):
         os.chmod(file, 0o666)  # Make writable before overwrite
         with open(file, 'r') as f:
             content = f.read()
         content = re.sub(r'HALLR__BLENDER_ADDON_PATH', addon_exported_path, content)
-        content = re.sub(r'DEV_MODE = False', 'DEV_MODE = True', content) if dev_mode else content
+        content = re.sub(r'HALLR__TARGET_RELEASE', target_release_path, content)
+        if args.dev_mode:
+            content = re.sub(r'DEV_MODE = False', 'DEV_MODE = True', content)
+            content = re.sub(r'from . import', 'import', content)
+
         with open(file, 'w') as f:
             f.write(content)
         os.chmod(file, 0o444)  # Read-only for everyone
@@ -130,6 +138,8 @@ def copy_library_files(dev_mode, debug, dest_lib_directory):
         exit(1)
 
     clear_directory(dest_lib_directory)
+    # Check if the destination directory exists, and create it if not
+    os.makedirs(dest_lib_directory, exist_ok=True)
 
     for lib_file in lib_files:
         new_name = os.path.join(dest_lib_directory, lib_file)
