@@ -28,11 +28,13 @@ pub(crate) fn process_command(
     // todo: actually use the matrices
     let world_matrix = model.world_orientation.to_vec();
 
-    let vertex_soup: Vec<Vector3<f32>> = model.indices.iter()
-        .map(|&index| model.vertices[index].into())
-        .collect();
+    let input_mesh = {
+        let vertex_soup: Vec<Vector3<f32>> = model.indices.iter()
+            .map(|&index| model.vertices[index].into())
+            .collect();
 
-    let input_mesh = PolygonSoup::from_vertices(vertex_soup);
+        PolygonSoup::from_vertices(vertex_soup)
+    };
 
     let mut mesh_to_volume = MeshToVolume::default()
         .with_voxel_size(config.get_mandatory_parsed_option("VOXEL_SIZE", None)?);

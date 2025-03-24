@@ -12,11 +12,11 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         rust: [stable, nightly]
-
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
 
@@ -36,5 +36,10 @@ jobs:
         run: cargo test --all
 
       - name: Run build script
-        run: python3 build_script.py
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            python build_script.py
+          else
+            python3 build_script.py
+          fi
 
