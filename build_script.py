@@ -80,9 +80,14 @@ if __name__ == "__main__":
     os.makedirs(dest_lib_directory, exist_ok=True)
 
     # Rename and move the library file
-    lib_files = [f for f in os.listdir("target/release") if f.startswith("libhallr") and f.endswith(library_extension)]
+    if args.dev_mode and not args.release:
+        target_dir = "target/debug"
+    else:
+        target_dir = "target/release"
+
+    lib_files = [f for f in os.listdir(target_dir) if f.startswith("libhallr") and f.endswith(library_extension)]
     if len(lib_files) == 0:
-        print(f"Could not find the libfile in ´target/release´.")
+        print(f"Could not find the libfile in ´{target_dir}´.")
         exit(1)
 
     if args.dev_mode:
@@ -99,7 +104,7 @@ if __name__ == "__main__":
             new_name = os.path.join(dest_lib_directory,lib_file)
         if os.path.exists(new_name):
             os.chmod(new_name, 0o666)  # Make writable before overwrite
-        shutil.copy(f"target/release/{lib_file}", new_name)
+        shutil.copy(f"{target_dir}/{lib_file}", new_name)
 
     file_extension = '.py'
 
