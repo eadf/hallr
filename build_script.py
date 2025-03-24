@@ -105,11 +105,11 @@ def process_python_files(addon_exported_path, dev_mode):
         os.chmod(file, 0o666)  # Make writable before overwrite
         with open(file, 'r') as f:
             content = f.read()
-        content = re.sub(r'HALLR__BLENDER_ADDON_PATH', addon_exported_path, content)
-        content = re.sub(r'HALLR__TARGET_RELEASE', target_release_path, content)
+        content = content.replace('HALLR__BLENDER_ADDON_PATH', addon_exported_path)
+        content = content.replace('HALLR__TARGET_RELEASE', target_release_path)
         if args.dev_mode:
-            content = re.sub(r'DEV_MODE = False', 'DEV_MODE = True', content)
-            content = re.sub(r'from . import', 'import', content)
+            content = content.replace('DEV_MODE = False', 'DEV_MODE = True')
+            content = content.replace('from . import', 'import')
 
         with open(file, 'w') as f:
             f.write(content)
