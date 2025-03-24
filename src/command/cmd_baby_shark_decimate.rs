@@ -48,9 +48,10 @@ pub(crate) fn process_command(
             config.get_mandatory_parsed_option("MIN_FACES_COUNT", None)?,
         ));
 
+    println!("Rust: Starting baby_shark::decimate()");
     let start = Instant::now();
     decimator.decimate(&mut mesh);
-    println!("Rust: Time elapsed in decimate() was {:?}", start.elapsed());
+    println!("Rust: baby_shark::decimate() execution time {:?}", start.elapsed());
 
     // it would be nice with a reverse of the `CornerTableF::from_vertices_and_indices()` method here.
 

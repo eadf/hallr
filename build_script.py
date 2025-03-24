@@ -10,7 +10,6 @@ import time
 import os
 import platform
 import shutil
-import re
 import glob
 import argparse
 import sys
@@ -74,6 +73,7 @@ def run_cargo_build(dev_mode, debug):
     """Execute the cargo build command."""
     command = ["cargo", "build", "--release"]
     if not dev_mode:
+        # do the toughest optimization for the .zip file
         command = ["cargo", "rustc", "--release", "--crate-type=cdylib", "--", "-C", "opt-level=3", "-C", "lto=fat"]
     elif debug:
         command = ["cargo", "build"]
@@ -102,17 +102,18 @@ def process_python_files(addon_exported_path, dev_mode):
     target_release_path = os.path.join(addon_exported_path, "lib")
 
     for file in glob.glob(f"{addon_exported_path}/*.py"):
-        os.chmod(file, 0o666)  # Make writable before overwrite
-        with open(file, 'r') as f:
-            content = f.read()
-        content = content.replace('HALLR__BLENDER_ADDON_PATH', addon_exported_path)
-        content = content.replace('HALLR__TARGET_RELEASE', target_release_path)
         if args.dev_mode:
+            os.chmod(file, 0o666)  # Make writable before overwrite
+            with open(file, 'r') as f:
+                content = f.read()
+
+            content = content.replace('HALLR__BLENDER_ADDON_PATH', addon_exported_path)
+            content = content.replace('HALLR__TARGET_RELEASE', target_release_path)
             content = content.replace('DEV_MODE = False', 'DEV_MODE = True')
             content = content.replace('from . import', 'import')
 
-        with open(file, 'w') as f:
-            f.write(content)
+            with open(file, 'w') as f:
+                f.write(content)
         os.chmod(file, 0o444)  # Read-only for everyone
         print(f"Processed Python file: {file}")
 
@@ -157,7 +158,6 @@ def package_addon(dev_mode):
     """Package the add-on into a zip file."""
     base_dir = os.getcwd()
     export_dir = "blender_addon_exported"
-    addon_path = os.path.join(base_dir, export_dir)
     if dev_mode:
         print(f"Updated the files under blender_addon_exported.")
         print(f"Use blender to open and run the script: {export_dir}/__init__.py")
@@ -173,8 +173,9 @@ if __name__ == "__main__":
     args = parse_arguments()
     validate_rust_project()
     run_cargo_build(args.dev_mode, args.debug)
-    dest_lib_directory = os.path.join("blender_addon_exported", "lib")
+    staging_area = "blender_addon_exported"
+    dest_lib_directory = os.path.join(staging_area, "lib")
     copy_library_files(args.dev_mode,args.debug, dest_lib_directory)
-    copy_python_files("blender_addon", "blender_addon_exported")
-    process_python_files("blender_addon_exported", args.dev_mode)
+    copy_python_files("blender_addon", staging_area)
+    process_python_files(staging_area, args.dev_mode)
     package_addon(args.dev_mode)

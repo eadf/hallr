@@ -39,6 +39,7 @@ pub(crate) fn process_command(
     let mut mesh_to_volume = MeshToVolume::default()
         .with_voxel_size(config.get_mandatory_parsed_option("VOXEL_SIZE", None)?);
 
+    println!("Rust: Starting baby_shark::offset()");
     let start = Instant::now();
     let mesh_volume = mesh_to_volume.convert(&input_mesh).unwrap();
     let offset = mesh_volume.offset(config.get_mandatory_parsed_option("OFFSET_BY", None)?);
@@ -46,8 +47,7 @@ pub(crate) fn process_command(
         .with_voxel_size(offset.voxel_size())
         .mesh(&offset);
     let mesh = PolygonSoup::from_vertices(vertices);
-
-    println!("Rust: Time elapsed in offset() was {:?}", start.elapsed());
+    println!("Rust: baby_shark::offset() execution time {:?}", start.elapsed());
 
     let ffi_vertices = mesh
         .vertices()

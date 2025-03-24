@@ -55,9 +55,10 @@ pub(crate) fn process_command(
             config.get_mandatory_parsed_option::<bool>("PROJECT_VERTICES", Some(false))?,
         );
 
+    println!("Rust: Starting baby_shark::remesh()");
     let start = Instant::now();
     remesher.remesh(&mut mesh, target_edge_length);
-    println!("Rust: Time elapsed in remesh() was {:?}", start.elapsed());
+    println!("Rust: baby_shark::remesh() execution time {:?}", start.elapsed());
 
     // it would be nice with a reverse of the `CornerTableF::from_vertices_and_indices()` method here.
 
