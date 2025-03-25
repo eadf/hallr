@@ -240,7 +240,6 @@ pub(crate) fn process_command(
             cmd_create_test::process_command(&config, &models)?
         }
     }
-    }
     Ok(match config.get_mandatory_option("command")? {
         "surface_scan" => cmd_surface_scan::process_command::<T>(config, models)?,
         "convex_hull_2d" => cmd_convex_hull_2d::process_command::<T>(config, models)?,
