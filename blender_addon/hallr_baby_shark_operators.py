@@ -73,6 +73,15 @@ class Hallr_BS_Decimate(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
+        box = layout.box()
+        row = box.row()
+        warning_row = box.row()
+        warning_row.label(text="CAUTION: This operation will panic!", icon='ERROR')
+        warning_row = box.row()
+        warning_row.label(text="         on non-manifold meshes and ")
+        warning_row = box.row()
+        warning_row.label(text="         bring blender down with it")
+        warning_row.scale_y = 0.7
         layout.prop(self, "error_threshold")
         layout.prop(self, "min_faces_count")
 

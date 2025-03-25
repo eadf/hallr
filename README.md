@@ -1,26 +1,38 @@
+# Hallr
+
 [![crates.io](https://img.shields.io/crates/v/hallr.svg)](https://crates.io/crates/hallr)
 [![Workflow](https://github.com/eadf/hallr/workflows/Rust/badge.svg)](https://github.com/eadf/hallr.rs/workflows/Rust/badge.svg)
-![license](https://img.shields.io/crates/l/hallr)
-[![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/eadf)
+![License](https://img.shields.io/crates/l/hallr)
+[![Sponsor](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/eadf)
 
-Blender add-on written in Rust. Work in progress, expect wildly fluctuating functionality and API:s.
+Hallr is a Blender add-on written in Rust. **This project is a work in progress**, so expect frequent changes to its functionality and API.
 
 ## Usage
-Read the [wiki](https://github.com/eadf/hallr/wiki) for some blender instructions. 
+For detailed Blender instructions, refer to the [wiki](https://github.com/eadf/hallr/wiki).
 
-You should be able to find CI generated zip files under the [Actions->workflows](https://github.com/eadf/hallr/actions) tab for the releases.
-These ZIP files artifacts contains the Hallr addon that Blender can install. 
-There are ([financial](https://github.blog/2023-10-02-introducing-the-new-apple-silicon-powered-m1-macos-larger-runner-for-github-actions/#new-macos-runner-pricing)) issues with building for macOS Arm with the GitHub workflows. 
-If you are on an Arm Mac you can locally rebuild your blender add-on zip file like this (must be in the project root dir):
+### Installing Hallr
+You can download pre-built ZIP files from the GitHub Releases section. These ZIP files are the Hallr add-on, which can be installed directly in Blender.
+
+To build the add-on locally, use the following command:
+
 ```bash
 python3 build_script.py
 ```
-Then you can just drag an drop the resulting ’hallr.zip’ into blender.
+
+Once the build is complete, simply drag and drop the generated `hallr.zip` file into Blender to install it.
+
+### Developer Mode
+For a faster development workflow, you can enable developer mode:
+
+```bash
+python3 build_script.py --dev_mode
+```
+
+Then, open and run the `blender_addon_exported/__init__.py` file inside Blender.
 
 ## Contributing
-
-We welcome contributions from the community. 
-Feel free to submit pull requests or report issues on our GitHub repository.
+We welcome contributions from the community! Feel free to submit pull requests or report issues on our [GitHub repository](https://github.com/eadf/hallr).
 
 ## License
-AGPL-3.0-or-later
+Hallr is licensed under **AGPL-3.0-or-later**.
+

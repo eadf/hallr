@@ -29,7 +29,9 @@ pub(crate) fn process_command(
     let world_matrix = model.world_orientation.to_vec();
 
     let input_mesh = {
-        let vertex_soup: Vec<Vector3<f32>> = model.indices.iter()
+        let vertex_soup: Vec<Vector3<f32>> = model
+            .indices
+            .iter()
             .map(|&index| model.vertices[index].into())
             .collect();
 
@@ -47,7 +49,10 @@ pub(crate) fn process_command(
         .with_voxel_size(offset.voxel_size())
         .mesh(&offset);
     let mesh = PolygonSoup::from_vertices(vertices);
-    println!("Rust: baby_shark::offset() execution time {:?}", start.elapsed());
+    println!(
+        "Rust: baby_shark::offset() execution time {:?}",
+        start.elapsed()
+    );
 
     let ffi_vertices = mesh
         .vertices()
