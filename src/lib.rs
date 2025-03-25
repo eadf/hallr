@@ -52,6 +52,9 @@ pub enum HallrError {
     CenterlineError(#[from] CenterlineError),
 
     #[error(transparent)]
+    IoError(#[from] std::io::Error),
+
+    #[error(transparent)]
     HronnErr(#[from] HronnError),
 
     #[error(transparent)]

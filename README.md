@@ -13,6 +13,13 @@ For detailed Blender instructions, refer to the [wiki](https://github.com/eadf/h
 ### Installing Hallr
 You can download pre-built ZIP files from the GitHub Releases section. These ZIP files are the Hallr add-on, which can be installed directly in Blender.
 
+The ZIP file contains dynamic libraries compiled for multiple platforms:
+- macOS (amd64 & ARM)
+- Linux (amd64)
+- Windows (amd64)
+
+All releases are built automatically by GitHub workflows.
+
 To build the add-on locally, use the following command:
 
 ```bash
@@ -28,7 +35,9 @@ For a faster development workflow, you can enable developer mode:
 python3 build_script.py --dev_mode
 ```
 
-Then, open and run the `blender_addon_exported/__init__.py` file inside Blender.
+Then, open and run the `blender_addon_exported/__init__.py` file inside Blender. In this mode, Blender will automatically use the latest compiled Rust library, so you only need to recompile your Rust code to see changes take effect the next time you run an operation.
+
+For this purpose, the Rust tool watchexec works exceptionally well for automatically recompiling when source files change.
 
 ## Contributing
 We welcome contributions from the community! Feel free to submit pull requests or report issues on our [GitHub repository](https://github.com/eadf/hallr).
