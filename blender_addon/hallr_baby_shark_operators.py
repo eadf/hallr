@@ -56,6 +56,27 @@ class Hallr_BS_Decimate(bpy.types.Operator):
             self.report({'ERROR'}, "Active object is not a mesh!")
             return {'CANCELLED'}
 
+        # no need to check for non-manifold mesh more than once.
+        if bpy.context.active_operator != self:
+            # Switch to edit mode and select non-manifold geometry
+            bpy.ops.object.mode_set(mode='EDIT')
+            original_select_mode = context.tool_settings.mesh_select_mode[:]
+            bpy.ops.mesh.select_mode(type='VERT')
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.mesh.select_non_manifold()
+
+            # Get the selected elements count
+            bm = bmesh.from_edit_mesh(obj.data)
+            non_manifold_count = sum(1 for v in bm.verts if v.select)
+            bm.free()
+
+            if non_manifold_count > 0:
+                self.report({'ERROR'},
+                            f"Mesh is not manifold! Found {non_manifold_count} problem areas. Problem areas have been selected.")
+                return {'CANCELLED'}
+            else:
+                context.tool_settings.mesh_select_mode = original_select_mode
+
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -73,15 +94,6 @@ class Hallr_BS_Decimate(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        box = layout.box()
-        row = box.row()
-        warning_row = box.row()
-        warning_row.label(text="CAUTION: This operation will panic!", icon='ERROR')
-        warning_row = box.row()
-        warning_row.label(text="         on non-manifold meshes and ")
-        warning_row = box.row()
-        warning_row.label(text="         bring blender down with it")
-        warning_row.scale_y = 0.7
         layout.prop(self, "error_threshold")
         layout.prop(self, "min_faces_count")
 
@@ -156,6 +168,27 @@ class Hallr_BS_IsotropicRemesh(bpy.types.Operator):
             self.report({'ERROR'}, "Active object is not a mesh!")
             return {'CANCELLED'}
 
+        # no need to check for non-manifold mesh more than once.
+        if bpy.context.active_operator != self:
+            # Switch to edit mode and select non-manifold geometry
+            bpy.ops.object.mode_set(mode='EDIT')
+            original_select_mode = context.tool_settings.mesh_select_mode[:]
+            bpy.ops.mesh.select_mode(type='VERT')
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.mesh.select_non_manifold()
+
+            # Get the selected elements count
+            bm = bmesh.from_edit_mesh(obj.data)
+            non_manifold_count = sum(1 for v in bm.verts if v.select)
+            bm.free()
+
+            if non_manifold_count > 0:
+                self.report({'ERROR'},
+                            f"Mesh is not manifold! Found {non_manifold_count} problem areas. Problem areas have been selected.")
+                return {'CANCELLED'}
+            else:
+                context.tool_settings.mesh_select_mode = original_select_mode
+
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -201,10 +234,11 @@ class Hallr_BS_IsotropicRemesh(bpy.types.Operator):
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
 
+
 # Mesh Offset Operator
 class Hallr_BS_Mesh_Offset(bpy.types.Operator):
     bl_idname = "mesh.hallr_meshtools_bs_offset"
-    bl_label = "Mesh Offset"
+    bl_label = "Baby Shark Mesh Offset"
     bl_description = "Offset mesh surface by converting to volume and back"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -261,7 +295,8 @@ class Hallr_BS_Mesh_Offset(bpy.types.Operator):
     def invoke(self, context, event):
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
-        
+
+
 # draw function for integration in menus
 def menu_func(self, context):
     self.layout.menu("VIEW3D_MT_edit_mesh_hallr_bs_operations")

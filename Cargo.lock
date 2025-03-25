@@ -448,8 +448,7 @@ checksum = "fbd780fe5cc30f81464441920d82ac8740e2e46b29a6fad543ddd075229ce37e"
 [[package]]
 name = "hronn"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c17b868bd47a2da3dadb0eeeeccc9790f94898bfe4d83b18c8d37fa06aa9ef17"
+source = "git+https://codeberg.org/eadf/hronn_rs.git#d759f23dc0387c2527c97accec9d39daa5dbc383"
 dependencies = [
  "krakel",
  "linestring",

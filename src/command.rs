@@ -14,6 +14,7 @@ mod cmd_create_test;
 mod cmd_delaunay_triangulation_2d;
 mod cmd_discretize;
 mod cmd_knife_intersect;
+mod cmd_logger;
 mod cmd_sdf_mesh;
 mod cmd_sdf_mesh_2_5;
 mod cmd_simplify_rdp;
@@ -238,6 +239,15 @@ pub(crate) fn process_command(
             // Used for debugging - records input data to help reproduce, and build tests cases from,
             // tricky edge cases
             cmd_create_test::process_command(&config, &models)?
+        }
+    }
+    #[cfg(not(test))]
+    {
+        const ENABLE_DATA_LOGGING: bool = true;
+        if ENABLE_DATA_LOGGING && std::env::var("HALLR_DATA_LOGGER_PATH").is_ok() {
+            // Used for debugging - records input data to help reproduce tricky edge cases
+            // This time the data is saved as .obj files
+            cmd_logger::process_command(&config, &models)?;
         }
     }
     Ok(match config.get_mandatory_option("command")? {
