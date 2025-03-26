@@ -243,7 +243,7 @@ pub(crate) fn process_command(
     }
     #[cfg(not(test))]
     {
-        const ENABLE_DATA_LOGGING: bool = true;
+        const ENABLE_DATA_LOGGING: bool = false;
         if ENABLE_DATA_LOGGING && std::env::var("HALLR_DATA_LOGGER_PATH").is_ok() {
             // Used for debugging - records input data to help reproduce tricky edge cases
             // This time the data is saved as .obj files
