@@ -448,7 +448,7 @@ checksum = "fbd780fe5cc30f81464441920d82ac8740e2e46b29a6fad543ddd075229ce37e"
 [[package]]
 name = "hronn"
 version = "0.5.0"
-source = "git+https://codeberg.org/eadf/hronn_rs.git#d759f23dc0387c2527c97accec9d39daa5dbc383"
+source = "git+https://codeberg.org/eadf/hronn_rs.git#ca70403a06a31cb3262489c9684de6dc0cb1936d"
 dependencies = [
  "krakel",
  "linestring",

@@ -5,9 +5,15 @@ This file is part of the hallr crate.
 """
 
 import bpy
+import os
 import bmesh
 from . import hallr_ffi_utils
 
+
+import os
+
+# Cache the boolean status of HALLR_ALLOW_NON_MANIFOLD (set or not)
+_DENY_NON_MANIFOLD = os.getenv("HALLR_ALLOW_NON_MANIFOLD") is None
 
 # menu containing all tools
 class VIEW3D_MT_edit_mesh_hallr_bs_operations(bpy.types.Menu):
@@ -57,7 +63,7 @@ class Hallr_BS_Decimate(bpy.types.Operator):
             return {'CANCELLED'}
 
         # no need to check for non-manifold mesh more than once.
-        if bpy.context.active_operator != self:
+        if _DENY_NON_MANIFOLD and bpy.context.active_operator != self:
             # Switch to edit mode and select non-manifold geometry
             bpy.ops.object.mode_set(mode='EDIT')
             original_select_mode = context.tool_settings.mesh_select_mode[:]
@@ -169,7 +175,7 @@ class Hallr_BS_IsotropicRemesh(bpy.types.Operator):
             return {'CANCELLED'}
 
         # no need to check for non-manifold mesh more than once.
-        if bpy.context.active_operator != self:
+        if _DENY_NON_MANIFOLD and bpy.context.active_operator != self:
             # Switch to edit mode and select non-manifold geometry
             bpy.ops.object.mode_set(mode='EDIT')
             original_select_mode = context.tool_settings.mesh_select_mode[:]
