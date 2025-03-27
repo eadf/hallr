@@ -16,22 +16,25 @@ bounding_props_items = [
 
 class HALLR_PT_DelaunayTriangulation2D(bpy.types.Panel):
     """2½D Delaunay Triangulation, will use the XY plane to stitch together point clouds"""
-    bl_label = "Delaunay triangulation 2D"
+    bl_idname = "HALLR_PT_delaunay_triangulation_2d"
+    bl_label = "Delaunay triangulation 2½D"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Hallr tools"
-    bl_context = "object"
 
     def draw(self, context):
+        if context.mode != 'OBJECT':
+            return
+
         layout = self.layout
 
         row = layout.row(align=True)
         # Bounding shape selection
         # row.label(text="Bounding Shape:")
         if context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None:
-            row.operator("object.hallr_dt2_select_bounding_shape", text="De-Select Bounding Shape", icon='X')
+            row.operator(HALLR_OT_D2TSelectBoundingShape.bl_idname, text="De-Select Bounding Shape", icon='X')
         else:
-            row.operator("object.hallr_dt2_select_bounding_shape", text="Select Bounding Shape", icon='EYEDROPPER')
+            row.operator(HALLR_OT_D2TSelectBoundingShape.bl_idname, text="Select Bounding Shape", icon='EYEDROPPER')
         if context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None:
             row.label(text=context.scene.hallr_dt2_delaunay_settings.bounding_shape.name, icon='CHECKMARK')
 
@@ -42,25 +45,23 @@ class HALLR_PT_DelaunayTriangulation2D(bpy.types.Panel):
         row = layout.row(align=True)
         # 3D mesh/point cloud for height offsets
         if context.scene.hallr_dt2_delaunay_settings.point_cloud is not None:
-            row.operator("object.hallr_dt2_select_point_cloud", text="De-Select Point cloud", icon='X')
+            row.operator(HALLR_OT_D2TSelectPointCloud.bl_idname, text="De-Select Point cloud", icon='X')
         else:
-            row.operator("object.hallr_dt2_select_point_cloud", text="Select Point cloud", icon='EYEDROPPER')
+            row.operator(HALLR_OT_D2TSelectPointCloud.bl_idname, text="Select Point cloud", icon='EYEDROPPER')
 
         if context.scene.hallr_dt2_delaunay_settings.point_cloud:
             row.label(text=context.scene.hallr_dt2_delaunay_settings.point_cloud.name, icon='CHECKMARK')
 
         # Generate toolpath button
         if (context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None and
-                context.scene.hallr_dt2_delaunay_settings.point_cloud is not None):
-            layout.operator("object.hallr_d2t_generate_mesh", text="Generate Mesh")
+                context.scene.hallr_dt2_delaunay_settings.point_cloud is not None ):
+            layout.operator(HALLR_OT_DT2GenerateMesh.bl_idname, text="Generate Mesh")
 
 
-class OBJECT_OT_SelectBoundingShape(bpy.types.Operator):
-    bl_idname = "object.hallr_dt2_select_bounding_shape"
+class HALLR_OT_D2TSelectBoundingShape(bpy.types.Operator):
+    bl_idname = "hallr.dt2_select_bounding_shape"
     bl_label = "Select Bounding Shape"
-    bl_description = (
-        "Select the bounding shape"
-    )
+    bl_description = "Select or deselect the bounding shape for triangulation"
     bl_context = "object"
 
     def execute(self, context):
@@ -87,12 +88,10 @@ class OBJECT_OT_SelectBoundingShape(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OT_SelectPointCloud(bpy.types.Operator):
-    bl_idname = "object.hallr_dt2_select_point_cloud"
+class HALLR_OT_D2TSelectPointCloud(bpy.types.Operator):
+    bl_idname = "hallr.dt2_select_point_cloud"
     bl_label = "Select Height Mesh"
-    bl_description = (
-        "Select the point cloud"
-    )
+    bl_description = "Select or deselect the point cloud object for triangulation"
     bl_context = "object"
 
     def execute(self, context):
@@ -108,10 +107,11 @@ class OBJECT_OT_SelectPointCloud(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OT_GenerateMesh(bpy.types.Operator):
-    bl_idname = "object.hallr_d2t_generate_mesh"
+class HALLR_OT_DT2GenerateMesh(bpy.types.Operator):
+    bl_idname = "hallr.d2t_generate_mesh"
     bl_label = "Generate Toolpath"
     bl_context = "object"
+    bl_description = "Create a 2½D Delaunay triangulation from the selected point cloud within the bounding shape"
 
     def execute(self, context):
         # Check if all objects are selected
@@ -169,9 +169,9 @@ class DelaunaySettings(bpy.types.PropertyGroup):
 classes = (
     DelaunaySettings,
     HALLR_PT_DelaunayTriangulation2D,
-    OBJECT_OT_SelectBoundingShape,
-    OBJECT_OT_SelectPointCloud,
-    OBJECT_OT_GenerateMesh,
+    HALLR_OT_D2TSelectBoundingShape,
+    HALLR_OT_D2TSelectPointCloud,
+    HALLR_OT_DT2GenerateMesh,
 )
 
 

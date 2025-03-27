@@ -38,6 +38,9 @@ class HALLR_PT_MeanderToolpath(bpy.types.Panel):
     bl_category = "Hallr tools"
 
     def draw(self, context):
+        if context.mode != 'OBJECT':
+            return
+
         layout = self.layout
         settings = context.scene.hallr_meander_settings
 
@@ -80,12 +83,11 @@ class HALLR_PT_MeanderToolpath(bpy.types.Panel):
 
         # Generate tool-path button
         if (settings.bounding_shape is not None and
-                settings.mesh is not None and
-                context.mode == 'OBJECT'):
+                settings.mesh is not None):
             layout.row(align=True).operator("object.hallr_mt_generate_mesh", text="Scan")
 
 
-class OBJECT_OT_MTSelectBoundingShape(bpy.types.Operator):
+class OBJECT_OT_MT_SelectBoundingShape(bpy.types.Operator):
     """ Select the object that contains the bounding shape """
     bl_idname = "object.hallr_mt_select_bounding_shape"
     bl_label = "Select Bounding Shape"
@@ -118,7 +120,7 @@ class OBJECT_OT_MTSelectBoundingShape(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OT_MTSelectMesh(bpy.types.Operator):
+class OBJECT_OT_MT_SelectMesh(bpy.types.Operator):
     """ Select the object that contains the mesh """
     bl_idname = "object.hallr_mt_select_mesh"
     bl_label = "Select Height Mesh"
@@ -148,7 +150,7 @@ class OBJECT_OT_MTSelectMesh(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OT_GenerateMesh(bpy.types.Operator):
+class OBJECT_OT_MT_GenerateMesh(bpy.types.Operator):
     """ Execute the toolpath generation"""
     bl_idname = "object.hallr_mt_generate_mesh"
     bl_label = "Generate Toolpath (why are these read-only?)"
@@ -289,9 +291,9 @@ class MeanderToolpathSettings(bpy.types.PropertyGroup):
 classes = (
     MeanderToolpathSettings,
     HALLR_PT_MeanderToolpath,
-    OBJECT_OT_MTSelectBoundingShape,
-    OBJECT_OT_MTSelectMesh,
-    OBJECT_OT_GenerateMesh,
+    OBJECT_OT_MT_SelectBoundingShape,
+    OBJECT_OT_MT_SelectMesh,
+    OBJECT_OT_MT_GenerateMesh,
 )
 
 

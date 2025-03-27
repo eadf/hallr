@@ -12,7 +12,7 @@ bl_info = {
     "category": "Object",
     "description": "A collection of addons written in Rust",
     "author": "EAD",
-    "version": (0, 1, 3),
+    "version": (0, 1, 6),
     "warning": "This executes compiled rust code on your computer",
 }
 
@@ -28,7 +28,6 @@ from . import hallr_2d_delaunay_triangulation
 from . import hallr_mesh_operators
 from . import hallr_meander_toolpath
 from . import hallr_baby_shark_operators
-#from . import hallr_baby_shark_tools
 # from . import hallr_cnc_engravingpanel
 
 # define modules for registration

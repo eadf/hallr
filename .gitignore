@@ -34,3 +34,5 @@ Icon
 *.blend*
 *.pyc
 blender_addon_exported
+hallr_cnc_engravingpanel.py
+sync_versions.py
