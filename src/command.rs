@@ -14,13 +14,13 @@ mod cmd_create_test;
 mod cmd_delaunay_triangulation_2d;
 mod cmd_discretize;
 mod cmd_knife_intersect;
-mod cmd_logger;
 mod cmd_sdf_mesh;
 mod cmd_sdf_mesh_2_5;
 mod cmd_simplify_rdp;
 pub mod cmd_surface_scan;
 mod cmd_voronoi_diagram;
 mod cmd_voronoi_mesh;
+mod cmd_wavefront_obj_logger;
 mod impls;
 
 use crate::{ffi::FFIVector3, prelude::*};
@@ -39,6 +39,20 @@ type ConfigType = HashMap<String, String>;
 const IDENTITY_MATRIX: [f32; 16] = [
     1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
 ];
+
+#[cfg(feature = "generate_test_case_from_input")]
+static TEST_CODE_GENERATION_ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+#[cfg(feature = "generate_test_case_from_input")]
+pub fn is_test_code_generation_enabled() -> bool {
+    *TEST_CODE_GENERATION_ENABLED
+        .get_or_init(|| std::env::var("HALLR_ENABLE_TEST_CODE_GENERATION").is_ok())
+}
+#[cfg(feature = "generate_test_case_from_input")]
+static HALLR_DATA_LOGGER_ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+#[cfg(feature = "generate_test_case_from_input")]
+pub fn is_data_logger_enabled() -> bool {
+    *HALLR_DATA_LOGGER_ENABLED.get_or_init(|| std::env::var("HALLR_DATA_LOGGER_PATH").is_ok())
+}
 
 type CommandResult = (Vec<FFIVector3>, Vec<usize>, Vec<f32>, ConfigType);
 
@@ -230,24 +244,19 @@ pub(crate) fn process_command(
     validate_input_data::<T>(vertices, indices, &config)?;
     let models = collect_models::<T>(vertices, indices, matrix, &config)?;
 
+    #[cfg(feature = "generate_test_case_from_input")]
     #[cfg(not(test))]
     {
-        // a lazy man's feature gate
-        const ENABLE_TEST_CODE_GENERATION: bool = false;
-        if ENABLE_TEST_CODE_GENERATION && std::env::var("HALLR_ENABLE_TEST_CODE_GENERATION").is_ok()
-        {
+        // We are placing these "fetures" behind an extra ENV feature gate to prevent accidental spam
+        if is_test_code_generation_enabled() {
             // Used for debugging - records input data to help reproduce, and build tests cases from,
             // tricky edge cases
             cmd_create_test::process_command(&config, &models)?
         }
-    }
-    #[cfg(not(test))]
-    {
-        const ENABLE_DATA_LOGGING: bool = false;
-        if ENABLE_DATA_LOGGING && std::env::var("HALLR_DATA_LOGGER_PATH").is_ok() {
+        if is_data_logger_enabled() {
             // Used for debugging - records input data to help reproduce tricky edge cases
             // This time the data is saved as .obj files
-            cmd_logger::process_command(&config, &models)?;
+            cmd_wavefront_obj_logger::process_command(&config, &models)?;
         }
     }
     Ok(match config.get_mandatory_option("command")? {

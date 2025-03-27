@@ -80,7 +80,8 @@ class HALLR_PT_MeanderToolpath(bpy.types.Panel):
 
         # Generate tool-path button
         if (settings.bounding_shape is not None and
-                settings.mesh is not None):
+                settings.mesh is not None and
+                context.mode == 'OBJECT'):
             layout.row(align=True).operator("object.hallr_mt_generate_mesh", text="Scan")
 
 

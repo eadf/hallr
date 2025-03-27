@@ -40,6 +40,8 @@ def parse_arguments():
     parser.add_argument("--dev_mode", action="store_true", help="Enable development mode.")
     parser.add_argument("--release", action="store_true", help="Build in release mode.")
     parser.add_argument("--debug", action="store_true", help="Build in debug mode.")
+    parser.add_argument("--generate_tests", action="store_true", help="enable the ’generate_test_case_from_input’ feature")
+
     args = parser.parse_args()
     if args.debug and args.release:
         parser.error("--debug and --release cannot be used together.")
@@ -69,14 +71,37 @@ def validate_rust_project():
             exit(1)
 
 
-def run_cargo_build(dev_mode, debug):
-    """Execute the cargo build command."""
-    command = ["cargo", "build", "--release"]
+def run_cargo_build(dev_mode, debug, generate_tests):
+    """Execute the cargo build command with appropriate flags.
+
+    Args:
+        dev_mode: Whether to build in development mode
+        debug: Whether to build with debug symbols (implies dev_mode)
+        generate_tests: Whether to generate test cases (only works in dev_mode)
+    """
+    feature_args = []
+    if generate_tests:
+        if not dev_mode:
+            print("Warning: Test generation is only available in dev_mode. Ignoring generate_tests.")
+        else:
+            feature_args = ["--features", "generate_test_case_from_input"]
+
+    # Build base command
     if not dev_mode:
-        # do the toughest optimization for the .zip file
-        command = ["cargo", "rustc", "--release", "--crate-type=cdylib", "--", "-C", "opt-level=3", "-C", "lto=fat"]
+        # Production build with maximum optimizations
+        command = ["cargo", "rustc", "--release", "--crate-type=cdylib"]
+        command.extend(feature_args)  # Will be empty in production
+        command.extend(["--", "-C", "opt-level=3", "-C", "lto=fat"])
     elif debug:
+        # Debug build (implies dev_mode)
         command = ["cargo", "build"]
+        command.extend(feature_args)
+    else:
+        # Dev release build
+        command = ["cargo", "build", "--release"]
+        command.extend(feature_args)
+
+    print(f"running : {command}")
     result = subprocess.run(command)
     if result.returncode != 0:
         print("Cargo build failed.")
@@ -172,7 +197,7 @@ def package_addon(dev_mode):
 if __name__ == "__main__":
     args = parse_arguments()
     validate_rust_project()
-    run_cargo_build(args.dev_mode, args.debug)
+    run_cargo_build(args.dev_mode, args.debug, args.generate_tests)
     staging_area = "blender_addon_exported"
     dest_lib_directory = os.path.join(staging_area, "lib")
     copy_library_files(args.dev_mode,args.debug, dest_lib_directory)

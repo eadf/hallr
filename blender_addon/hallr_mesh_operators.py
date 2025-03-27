@@ -35,10 +35,11 @@ def angle_between_edges(p0, p1, p2):
     return angle
 
 
-class Hallr_2DOutline(bpy.types.Operator):
+class MESH_OT_hallr_2d_outline(bpy.types.Operator):
     """Generates the 2d outline from 2D mesh objects"""
 
     bl_idname = "mesh.hallr_2d_outline"
+    bl_icon = "MOD_OUTLINE"
     bl_label = "Hallr 2D Outline"
     bl_description = ("Outline 2d geometry into a wire frame, the geometry must be flat and on a plane intersecting "
                       "origin")
@@ -67,11 +68,12 @@ class Hallr_2DOutline(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class Hallr_KnifeIntersect(bpy.types.Operator):
+class MESH_OT_hallr_knife_intersect(bpy.types.Operator):
     """A knife intersect operator that works in the XY plane, remember to apply any transformations"""
 
     bl_idname = "mesh.hallr_meshtools_knife_intersect_2d"
     bl_label = "Hallr Knife Intersect 2d"
+    bl_icon = "INTERNET_OFFLINE"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -107,11 +109,12 @@ class Hallr_KnifeIntersect(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class Hallr_ConvexHull2D(bpy.types.Operator):
+class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
     """A 2D convex hull operator that works in the XY plane, remember to apply any transformations"""
 
     bl_idname = "mesh.hallr_convex_hull_2d"
     bl_label = "Hallr Convex Hull 2d"
+    bl_icon = "MESH_CAPSULE"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -147,10 +150,11 @@ class Hallr_ConvexHull2D(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class Hallr_SimplifyRdp(bpy.types.Operator):
+class MESH_OT_hallr_simplify_rdp(bpy.types.Operator):
     """Line Simplification using the RDP Algorithm, for 2d and 3d lines"""
 
     bl_idname = "mesh.hallr_simplify_rdp"
+    bl_icon = 'OUTLINER_DATA_CURVE'
     bl_label = "Hallr Simplify RDP"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -203,9 +207,10 @@ class Hallr_SimplifyRdp(bpy.types.Operator):
         layout.prop(self, "simplify_3d_props")
 
 
-class Hallr_TriangulateAndFlatten(bpy.types.Operator):
+class MESH_OT_hallr_triangulate_and_flatten(bpy.types.Operator):
     """Triangulates the mesh and moves all vertices to the XY plane (Z=0)"""
     bl_idname = "mesh.hallr_meshtools_triangulate_and_flatten"
+    bl_icon = "MOD_TRIANGULATE"
     bl_label = "Triangulate and Flatten XY"
     bl_description = "Triangulates the mesh and moves all vertices to the XY plane (Z=0)"
     bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
@@ -259,10 +264,11 @@ class Hallr_TriangulateAndFlatten(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class Hallr_SelectEndVertices(bpy.types.Operator):
+class MESH_OT_hallr_select_end_vertices(bpy.types.Operator):
     """Selects all vertices that are only connected to one other vertex or none (offline plugin)"""
     bl_idname = "mesh.hallr_meshtools_select_end_vertices"
     bl_label = "Select end vertices"
+    bl_icon = "EVENT_END"
     bl_description = "Selects all vertices that are only connected to one other vertex (offline plugin)"
     bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
 
@@ -299,10 +305,11 @@ class Hallr_SelectEndVertices(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class Hallr_SelectCollinearEdges(bpy.types.Operator):
+class MESH_OT_hallr_select_collinear_edges(bpy.types.Operator):
     """Selects edges that are connected to the selected edges, but limit by an angle constraint.
        You must select at least one edge to get this operation going"""
     bl_idname = "mesh.hallr_meshtools_select_collinear_edges"
+    bl_icon = "SNAP_EDGE"
     bl_label = "Select collinear edges"
     bl_description = ("Selects edges that are connected to the selected edges, but limit by an angle constraint ("
                       "offline plugin)")
@@ -383,9 +390,10 @@ class Hallr_SelectCollinearEdges(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class Hallr_SelectIntersectionVertices(bpy.types.Operator):
+class MESH_OT_hallr_select_intersection_vertices(bpy.types.Operator):
     """Selects all vertices that are connected to more than two other vertices"""
     bl_idname = "mesh.hallr_meshtools_select_intersection_vertices"
+    bl_icon = "SELECT_INTERSECT"
     bl_label = "Select intersection vertices"
     bl_description = "Selects all vertices that are connected to more than two other vertices"
     bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
@@ -423,10 +431,11 @@ class Hallr_SelectIntersectionVertices(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class Hallr_SelectVerticesUntilIntersection(bpy.types.Operator):
+class MESH_OT_hallr_select_vertices_until_intersection(bpy.types.Operator):
     """Selects all (wire-frame) vertices that are connected to already selected vertices until an intersection is
     detected. The intersection vertex will not be selected."""
     bl_idname = "mesh.hallr_meshtools_select_vertices_until_intersection"
+    bl_icon = "GP_SELECT_POINTS"
     bl_label = "Select vertices until intersection"
     bl_description = ("Selects all (wire-frame) vertices that are connected to already selected vertices until an "
                       "intersection is detected")
@@ -479,9 +488,10 @@ class Hallr_SelectVerticesUntilIntersection(bpy.types.Operator):
 
 
 # Voronoi mesh operator
-class Hallr_Voronoi_Mesh(bpy.types.Operator):
+class MESH_OT_hallr_voronli_mesh(bpy.types.Operator):
     bl_idname = "mesh.hallr_meshtools_voronoi_mesh"
     bl_label = "Voronoi Mesh"
+    bl_icon = "MESH_UVSPHERE"
     bl_description = ("Calculate voronoi diagram and add mesh, the geometry must be flat and on a plane intersecting "
                       "origin. It also must be encircled by an outer continuous loop")
     bl_options = {'REGISTER', 'UNDO'}
@@ -539,9 +549,10 @@ class Hallr_Voronoi_Mesh(bpy.types.Operator):
 
 
 # Voronoi operator
-class Hallr_Voronoi_Diagram(bpy.types.Operator):
+class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator):
     bl_idname = "mesh.hallr_meshtools_voronoi_diagram"
     bl_label = "Voronoi Diagram"
+    bl_icon = "CURVE_NCURVE"
     bl_description = ("Calculate voronoi diagram, the geometry must be flat and on a plane intersecting "
                       "origin.")
     bl_options = {'REGISTER', 'UNDO'}
@@ -599,10 +610,11 @@ class Hallr_Voronoi_Diagram(bpy.types.Operator):
 
 
 # SDF mesh 2½D operator
-class Hallr_SdfMesh25D(bpy.types.Operator):
+class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator):
     """Tooltip: Generate a 3D SDF mesh from 2½D edges."""
     bl_idname = "mesh.hallr_meshtools_sdf_mesh_2_5"
     bl_label = "SDF Mesh 2½D"
+    bl_icon = "MESH_CONE"
     bl_description = (
         "Generate a 3D mesh from 2½D edges. The geometry should be centered on the XY plane intersecting the origin."
         "Each edge is converted into a SDF cone with its endpoint (X, Y) as the tip and Z.abs() as the radius."
@@ -654,10 +666,11 @@ class Hallr_SdfMesh25D(bpy.types.Operator):
 
 
 # SDF mesh operator
-class Hallr_SdfMesh(bpy.types.Operator):
+class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
     """Generate a 3D SDF mesh from 3d edges."""
     bl_idname = "mesh.hallr_meshtools_sdf_mesh"
     bl_label = "SDF Mesh"
+    bl_icon = "MESH_ICOSPHERE"
     bl_description = (
         "Generate a 3D mesh from 3D edges."
         "Each edge is converted into a SDF tube with a predefined radius."
@@ -725,6 +738,7 @@ class Hallr_RandomVertices(bpy.types.Operator):
     """Generate some random vertices"""
     bl_idname = "mesh.hallr_meshtools_random_vertices"
     bl_label = "Random vertices"
+    bl_icon = "OUTLINER_OB_POINTCLOUD"
     bl_description = (
         "Generate some random vertices in the XY plane"
     )
@@ -809,10 +823,11 @@ class Hallr_RandomVertices(bpy.types.Operator):
 
 
 # Discretize operator
-class Hallr_Discretize(bpy.types.Operator):
+class MESH_OT_hallr_discretize(bpy.types.Operator):
     """Subdivide edges by length"""
     bl_idname = "mesh.hallr_meshtools_discretize"
     bl_label = "Subdivide by length"
+    bl_icon = "CENTER_ONLY"
     bl_description = (
         "Subdivides edges by length."
     )
@@ -863,10 +878,11 @@ class Hallr_Discretize(bpy.types.Operator):
         return wm.invoke_props_dialog(self)
 
 
-class Hallr_Centerline(bpy.types.Operator):
+class MESH_OT_hallr_centerline(bpy.types.Operator):
     """Finds the center line of closed geometry, works in the XY plane"""
 
     bl_idname = "mesh.hallr_centerline"
+    bl_icon = "CONE"
     bl_label = "Hallr 2D Centerline"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -981,22 +997,26 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator("mesh.hallr_meshtools_triangulate_and_flatten")
-        layout.operator("mesh.hallr_2d_outline")
-        layout.operator("mesh.hallr_meshtools_select_end_vertices")
-        layout.operator("mesh.hallr_meshtools_select_collinear_edges")
-        layout.operator("mesh.hallr_convex_hull_2d")
-        layout.operator("mesh.hallr_meshtools_select_vertices_until_intersection")
-        layout.operator("mesh.hallr_meshtools_select_intersection_vertices")
-        layout.operator("mesh.hallr_meshtools_knife_intersect_2d")
-        layout.operator("mesh.hallr_meshtools_voronoi_mesh")
-        layout.operator("mesh.hallr_meshtools_voronoi_diagram")
-        layout.operator("mesh.hallr_meshtools_sdf_mesh_2_5")
-        layout.operator("mesh.hallr_meshtools_sdf_mesh")
-        layout.operator("mesh.hallr_simplify_rdp")
-        layout.operator("mesh.hallr_centerline")
-        layout.operator("mesh.hallr_meshtools_discretize")
-        layout.operator("mesh.hallr_meshtools_random_vertices")
+        layout.operator(MESH_OT_hallr_triangulate_and_flatten.bl_idname,
+                        icon=MESH_OT_hallr_triangulate_and_flatten.bl_icon)
+        layout.operator(MESH_OT_hallr_2d_outline.bl_idname, icon=MESH_OT_hallr_2d_outline.bl_icon)
+        layout.operator(MESH_OT_hallr_select_end_vertices.bl_idname, icon=MESH_OT_hallr_select_end_vertices.bl_icon)
+        layout.operator(MESH_OT_hallr_select_collinear_edges.bl_idname,
+                        icon=MESH_OT_hallr_select_collinear_edges.bl_icon)
+        layout.operator(MESH_OT_hallr_convex_hull_2d.bl_idname, icon=MESH_OT_hallr_convex_hull_2d.bl_icon)
+        layout.operator(MESH_OT_hallr_select_vertices_until_intersection.bl_idname,
+                        icon=MESH_OT_hallr_select_vertices_until_intersection.bl_icon)
+        layout.operator(MESH_OT_hallr_select_intersection_vertices.bl_idname,
+                        icon=MESH_OT_hallr_select_intersection_vertices.bl_icon)
+        layout.operator(MESH_OT_hallr_knife_intersect.bl_idname, icon=MESH_OT_hallr_knife_intersect.bl_icon)
+        layout.operator(MESH_OT_hallr_voronli_mesh.bl_idname, icon=MESH_OT_hallr_voronli_mesh.bl_icon)
+        layout.operator(MESH_OT_hallr_voronoi_diagram.bl_idname, icon=MESH_OT_hallr_voronoi_diagram.bl_icon)
+        layout.operator(MESH_OT_hallr_sdf_mesh_25D.bl_idname, icon=MESH_OT_hallr_sdf_mesh_25D.bl_icon)
+        layout.operator(MESH_OT_hallr_sdf_mesh.bl_idname, icon=MESH_OT_hallr_sdf_mesh.bl_icon)
+        layout.operator(MESH_OT_hallr_simplify_rdp.bl_idname, icon=MESH_OT_hallr_simplify_rdp.bl_icon)
+        layout.operator(MESH_OT_hallr_centerline.bl_idname, icon=MESH_OT_hallr_centerline.bl_icon)
+        layout.operator(MESH_OT_hallr_discretize.bl_idname, icon=MESH_OT_hallr_discretize.bl_icon)
+        layout.operator(Hallr_RandomVertices.bl_idname, icon=Hallr_RandomVertices.bl_icon)
 
 
 # draw function for integration in menus
@@ -1008,29 +1028,33 @@ def menu_func(self, context):
 # define classes for registration
 classes = (
     VIEW3D_MT_edit_mesh_hallr_meshtools,
-    Hallr_TriangulateAndFlatten,
-    Hallr_SelectEndVertices,
-    Hallr_SelectIntersectionVertices,
-    Hallr_SelectVerticesUntilIntersection,
-    Hallr_SelectCollinearEdges,
-    Hallr_ConvexHull2D,
-    Hallr_KnifeIntersect,
-    Hallr_Voronoi_Mesh,
-    Hallr_Voronoi_Diagram,
-    Hallr_SdfMesh25D,
-    Hallr_SdfMesh,
-    Hallr_2DOutline,
-    Hallr_SimplifyRdp,
-    Hallr_Centerline,
-    Hallr_Discretize,
+    MESH_OT_hallr_triangulate_and_flatten,
+    MESH_OT_hallr_select_end_vertices,
+    MESH_OT_hallr_select_intersection_vertices,
+    MESH_OT_hallr_select_vertices_until_intersection,
+    MESH_OT_hallr_select_collinear_edges,
+    MESH_OT_hallr_convex_hull_2d,
+    MESH_OT_hallr_knife_intersect,
+    MESH_OT_hallr_voronli_mesh,
+    MESH_OT_hallr_voronoi_diagram,
+    MESH_OT_hallr_sdf_mesh_25D,
+    MESH_OT_hallr_sdf_mesh,
+    MESH_OT_hallr_2d_outline,
+    MESH_OT_hallr_simplify_rdp,
+    MESH_OT_hallr_centerline,
+    MESH_OT_hallr_discretize,
     Hallr_RandomVertices,
 )
 
 
 # registering and menu integration
 def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
+    try:
+        for cls in classes:
+            bpy.utils.register_class(cls)
+    except Exception as e:
+        print(f"Failed to register operator: {e}")
+        raise e
     bpy.types.VIEW3D_MT_edit_mesh_context_menu.prepend(menu_func)
 
 

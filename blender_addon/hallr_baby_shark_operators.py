@@ -9,27 +9,17 @@ import os
 import bmesh
 from . import hallr_ffi_utils
 
-
 import os
 
 # Cache the boolean status of HALLR_ALLOW_NON_MANIFOLD (set or not)
 _DENY_NON_MANIFOLD = os.getenv("HALLR_ALLOW_NON_MANIFOLD") is None
 
-# menu containing all tools
-class VIEW3D_MT_edit_mesh_hallr_bs_operations(bpy.types.Menu):
-    bl_label = "Baby Shark mesh operations"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.operator("mesh.hallr_meshtools_bs_decimate")
-        layout.operator("mesh.hallr_meshtools_bs_isotropic_remesh")
-        layout.operator("mesh.hallr_meshtools_bs_offset")
-
 
 # Baby Shark Decimate mesh operator
-class Hallr_BS_Decimate(bpy.types.Operator):
+class MESH_OT_baby_shark_decimate(bpy.types.Operator):
     bl_idname = "mesh.hallr_meshtools_bs_decimate"
     bl_label = "Baby Shark Decimate"
+    bl_icon = 'MOD_DECIM'
     bl_description = "Simplify mesh using the Baby Shark edge decimation algorithm"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -109,9 +99,10 @@ class Hallr_BS_Decimate(bpy.types.Operator):
 
 
 # Baby Shark Isotropic Remeshing mesh operator
-class Hallr_BS_IsotropicRemesh(bpy.types.Operator):
+class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
     bl_idname = "mesh.hallr_meshtools_bs_isotropic_remesh"
     bl_label = "Baby Shark Isotropic Remesh"
+    bl_icon = 'MOD_MESHDEFORM'
     bl_description = "Remesh the mesh isotropically using the Baby Shark algorithm"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -242,9 +233,10 @@ class Hallr_BS_IsotropicRemesh(bpy.types.Operator):
 
 
 # Mesh Offset Operator
-class Hallr_BS_Mesh_Offset(bpy.types.Operator):
+class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
     bl_idname = "mesh.hallr_meshtools_bs_offset"
     bl_label = "Baby Shark Mesh Offset"
+    bl_icon = 'MOD_SKIN'
     bl_description = "Offset mesh surface by converting to volume and back"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -303,26 +295,107 @@ class Hallr_BS_Mesh_Offset(bpy.types.Operator):
         return wm.invoke_props_dialog(self)
 
 
+class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
+    """Custom Boolean Operation"""
+    bl_idname = "object.custom_boolean"
+    bl_label = "Boolean"
+    bl_icon = 'MOD_BOOLEAN'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    operation: bpy.props.EnumProperty(
+        name="Operation",
+        items=[
+            ('UNION', "Union", "Combine objects"),
+            ('DIFFERENCE', "Difference", "Subtract from active object"),
+            ('INTERSECT', "Intersect", "Keep overlapping parts"),
+        ],
+        default='DIFFERENCE'
+    )
+
+    swap_operands: bpy.props.BoolProperty(
+        name="Swap Operands",
+        description="Reverse the operation order",
+        default=False
+    )
+
+    apply_modifier: bpy.props.BoolProperty(
+        name="Apply Immediately",
+        description="Apply the boolean modifier right away",
+        default=False
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return (context.mode == 'OBJECT' and
+                len(context.selected_objects) >= 2 and
+                context.active_object is not None)
+
+    def execute(self, context):
+        # Your boolean operation implementation would go here
+        # For now just print the settings
+        print(f"Boolean operation: {self.operation}")
+        print(f"Swap operands: {self.swap_operands}")
+        print(f"Apply immediately: {self.apply_modifier}")
+
+        self.report({'INFO'}, f"Custom boolean {self.operation.lower()} performed")
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=300)
+
+
+# Panel for redo-last (appears in F9 and Adjust Last Operation)
+def draw_panel(self, context):
+    layout = self.layout
+    op = context.active_operator
+    if op and op.bl_idname == "object.smart_boolean":
+        layout.prop(op, "operation")
+
+
+# menu containing all edit tools
+class VIEW3D_MT_edit_mesh_baby_shark_operations(bpy.types.Menu):
+    bl_label = "Baby Shark mesh operations"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(MESH_OT_baby_shark_decimate.bl_idname, icon=MESH_OT_baby_shark_decimate.bl_icon)
+        layout.operator(MESH_OT_baby_shark_isotropic_remesh.bl_idname, icon=MESH_OT_baby_shark_isotropic_remesh.bl_icon)
+        layout.operator(MESH_OT_baby_shark_mesh_offset.bl_idname, icon=MESH_OT_baby_shark_mesh_offset.bl_icon)
+
+
+# menu containing all object tools
+class VIEW3D_MT_object_mesh_baby_shark_operations(bpy.types.Menu):
+    bl_label = "Baby Shark mesh operations"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.separator()
+        layout.operator_context = 'INVOKE_DEFAULT'
+        layout.operator(OBJECT_OT_baby_shark_boolean.bl_idname, icon=OBJECT_OT_baby_shark_boolean.bl_icon)
+
+
 # draw function for integration in menus
-def menu_func(self, context):
-    self.layout.menu("VIEW3D_MT_edit_mesh_hallr_bs_operations")
+def edit_mode_menu_func(self, context):
+    self.layout.menu("VIEW3D_MT_edit_mesh_baby_shark_operations")
     self.layout.separator()
 
 
-# define classes for registration
-classes = (
-    VIEW3D_MT_edit_mesh_hallr_bs_operations,
-    Hallr_BS_IsotropicRemesh,
-    Hallr_BS_Decimate,
-    Hallr_BS_Mesh_Offset,
-)
+def object_mode_menu_func(self, context):
+    self.layout.menu("VIEW3D_MT_object_mesh_baby_shark_operations")
+    self.layout.separator()
 
 
 # registering and menu integration
 def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
-    bpy.types.VIEW3D_MT_edit_mesh_context_menu.prepend(menu_func)
+    try:
+        for cls in classes:
+            bpy.utils.register_class(cls)
+    except Exception as e:
+        print(f"Failed to register operator: {e}")
+        raise e
+    bpy.types.VIEW3D_MT_object_context_menu.prepend(object_mode_menu_func)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.prepend(edit_mode_menu_func)
 
 
 # unregistering and removing menus
@@ -332,4 +405,16 @@ def unregister():
             bpy.utils.unregister_class(cls)
         except (RuntimeError, NameError):
             pass
-    bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(menu_func)
+    bpy.types.VIEW3D_MT_object_context_menu.remove(object_mode_menu_func)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(edit_mode_menu_func)
+
+
+# define classes for registration
+classes = (
+    VIEW3D_MT_edit_mesh_baby_shark_operations,
+    VIEW3D_MT_object_mesh_baby_shark_operations,
+    OBJECT_OT_baby_shark_boolean,
+    MESH_OT_baby_shark_isotropic_remesh,
+    MESH_OT_baby_shark_decimate,
+    MESH_OT_baby_shark_mesh_offset,
+)

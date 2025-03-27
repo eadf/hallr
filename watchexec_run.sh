@@ -14,4 +14,9 @@ fi
 # Only proceed with destructive operations if validation passes
 rm -rf blender_addon_exported
 rm -f hallr.zip
-python3 build_script.py --dev_mode
+
+if [ -z "${HALLR_BUILD_TEST_FROM_INPUT+x}" ]; then
+    python3 build_script.py --dev_mode
+else
+    python3 build_script.py --dev_mode --generate_tests
+fi

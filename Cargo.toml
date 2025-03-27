@@ -44,6 +44,7 @@ rand = "0.9.0"
 criterion = "0.5.1"
 
 [features]
+generate_test_case_from_input = []
 glam-core-simd  = ["vector-traits/glam-core-simd"]
 glam-fast-math = ["vector-traits/glam-fast-math"]
 display_sdf_chunks = []
