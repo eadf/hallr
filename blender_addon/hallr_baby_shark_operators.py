@@ -122,7 +122,7 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
         min=0.001,
         max=2.0,
         precision=6,
-        unit = 'LENGTH'
+        unit='LENGTH'
     )
 
     split_edges_prop: bpy.props.BoolProperty(
@@ -302,7 +302,9 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "voxel_size_prop")
+        row = layout.row()
+        row.label(icon='MESH_CUBE')
+        row.prop(self, "voxel_size_prop")
         layout.prop(self, "offset_by_prop")
         row = layout.row()
         row.label(icon='SNAP_MIDPOINT')
@@ -367,16 +369,16 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
         mesh_2 = context.selected_objects[1]
         if mesh_1 is not None and mesh_2 is not None:
             # Print the names of the selected objects
-            #print("Mesh 1:", mesh_1.name)
-            #print("Mesh 2:", mesh_2.name)
+            # print("Mesh 1:", mesh_1.name)
+            # print("Mesh 2:", mesh_2.name)
 
             config = {"operation": str(self.operation_prop),
                       "swap": str(self.swap_operands_prop),
                       "voxel_size": str(self.voxel_size_prop),
-                      "REMOVE_DOUBLES_THRESHOLD":str(self.remove_doubles_threshold_prop),
+                      "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                       "command": "baby_shark_boolean"}
 
-            #print("config:", config)
+            # print("config:", config)
             # Call the Rust function
             vertices, indices, config = hallr_ffi_utils.call_rust(config, mesh_1, mesh_2, second_mesh_is_line=False)
 
@@ -399,7 +401,9 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "operation_prop")
-        layout.prop(self, "voxel_size_prop")
+        row = layout.row()
+        row.label(icon='MESH_CUBE')
+        row.prop(self, "voxel_size_prop")
         layout.prop(self, "swap_operands_prop")
         row = layout.row()
         row.label(icon='SNAP_MIDPOINT')

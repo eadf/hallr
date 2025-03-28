@@ -75,6 +75,11 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator):
     bl_label = "[XY] Hallr Knife Intersect 2d"
     bl_icon = "INTERNET_OFFLINE"
     bl_options = {'REGISTER', 'UNDO'}
+    bl_description = (
+        "Finds and cuts intersections between edges in the XY plane. "
+        "Creates new vertices at intersection points. "
+        "Ensure mesh transformations are applied before use."
+    )
 
     @classmethod
     def poll(cls, context):
@@ -164,7 +169,7 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator):
         default=True)
 
     simplify_distance_prop: bpy.props.FloatProperty(
-        name="Distance",
+        name="Discretization distance",
         description="Discrete distance as a percentage of the longest axis of the model. This value is used for RDP "
                     "simplification.",
         default=0.10,
@@ -203,7 +208,9 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "simplify_distance_prop")
+        row = layout.row()
+        row.label(icon='FIXED_SIZE')
+        row.prop(self, "simplify_distance_prop")
         layout.prop(self, "simplify_3d_prop")
 
 
@@ -551,7 +558,9 @@ class MESH_OT_hallr_voronli_mesh(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "distance_prop")
+        row = layout.row()
+        row.label(icon='FIXED_SIZE')
+        row.prop(self, "distance_prop")
         layout.prop(self, "negative_radius_prop")
         row = layout.row()
         row.label(icon='SNAP_MIDPOINT')
@@ -624,15 +633,15 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator):
 
         return {'FINISHED'}
 
-
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "distance_prop")
+        row = layout.row()
+        row.label(icon='FIXED_SIZE')
+        row.prop(self, "distance_prop")
         layout.prop(self, "keep_input_prop")
         row = layout.row()
         row.label(icon='SNAP_MIDPOINT')
         row.prop(self, "remove_doubles_threshold_prop")
-
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -646,7 +655,8 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator):
     bl_label = "SDF Mesh 2½D"
     bl_icon = "MESH_CONE"
     bl_description = (
-        "Generate a 3D mesh from 2½D edges. The geometry should be centered on the XY plane intersecting the origin."
+        "Generate a 3D mesh from 2½D edges. Typically this operation works on the data generated from the centerline operation."
+        "The geometry should placed on the XY plane intersecting the origin."
         "Each edge is converted into a SDF cone with its endpoint (X, Y) as the tip and Z.abs() as the radius."
         "The resulting mesh will preserve the 2D outline while inflating it based on the median-axis distance."
     )
@@ -699,7 +709,9 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "sdf_divisions_property")
+        row = layout.row()
+        row.label(icon='DRIVER_DISTANCE')
+        row.prop(self, "sdf_divisions_prop")
         row = layout.row()
         row.label(icon='SNAP_MIDPOINT')
         row.prop(self, "remove_doubles_threshold_prop")
@@ -780,7 +792,9 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "sdf_divisions_prop")
+        row = layout.row()
+        row.label(icon='DRIVER_DISTANCE')
+        row.prop(self, "sdf_divisions_prop")
         layout.prop(self, "sdf_radius_prop")
         row = layout.row()
         row.label(icon='SNAP_MIDPOINT')
@@ -935,7 +949,9 @@ class MESH_OT_hallr_discretize(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "discretize_length_prop")
+        row = layout.row()
+        row.label(icon='FIXED_SIZE')
+        row.prop(self, "discretize_length_prop")
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -986,7 +1002,7 @@ class MESH_OT_hallr_centerline(bpy.types.Operator):
     )
 
     distance_prop: bpy.props.FloatProperty(
-        name="Distance",
+        name="Discretization distance",
         description="Discrete distance as a percentage of the AABB. This value is used when sampling parabolic arc "
                     "edges. It is also used for RDP simplification.",
         default=0.05,
@@ -998,7 +1014,7 @@ class MESH_OT_hallr_centerline(bpy.types.Operator):
 
     simplify_prop: bpy.props.BoolProperty(
         name="Simplify line strings",
-        description="Simplify voronoi edges connected as in a line string. The 'distance' property is used.",
+        description="RDP Simplify voronoi edges connected as in a line string. The 'distance' property is used.",
         default=True
     )
 
@@ -1055,15 +1071,21 @@ class MESH_OT_hallr_centerline(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "angle_prop")
+        row = layout.row()
+        row.label(icon='FILTER')
+        row.prop(self, "angle_prop")
         if self.keep_input_prop:
             layout.prop(self, "weld_prop")
         layout.prop(self, "keep_input_prop")
         layout.prop(self, "negative_radius_prop")
         layout.prop(self, "remove_internals_prop")
-        if self.simplify_prop:
-            layout.prop(self, "distance_prop")
+        row = layout.row()
+        row.label(icon='FIXED_SIZE')
+        row.prop(self, "distance_prop")
         layout.prop(self, "simplify_prop")
+        row = layout.row()
+        row.label(icon='SNAP_MIDPOINT')
+        row.prop(self, "remove_doubles_threshold_prop")
 
 
 # menu containing all tools
@@ -1072,18 +1094,8 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator(MESH_OT_hallr_triangulate_and_flatten.bl_idname,
-                        icon=MESH_OT_hallr_triangulate_and_flatten.bl_icon)
         layout.operator(MESH_OT_hallr_2d_outline.bl_idname, icon=MESH_OT_hallr_2d_outline.bl_icon)
-        layout.operator(MESH_OT_hallr_select_end_vertices.bl_idname, icon=MESH_OT_hallr_select_end_vertices.bl_icon)
-        layout.operator(MESH_OT_hallr_select_collinear_edges.bl_idname,
-                        icon=MESH_OT_hallr_select_collinear_edges.bl_icon)
         layout.operator(MESH_OT_hallr_convex_hull_2d.bl_idname, icon=MESH_OT_hallr_convex_hull_2d.bl_icon)
-        layout.operator(MESH_OT_hallr_select_vertices_until_intersection.bl_idname,
-                        icon=MESH_OT_hallr_select_vertices_until_intersection.bl_icon)
-        layout.operator(MESH_OT_hallr_select_intersection_vertices.bl_idname,
-                        icon=MESH_OT_hallr_select_intersection_vertices.bl_icon)
-        layout.operator(MESH_OT_hallr_knife_intersect.bl_idname, icon=MESH_OT_hallr_knife_intersect.bl_icon)
         layout.operator(MESH_OT_hallr_voronli_mesh.bl_idname, icon=MESH_OT_hallr_voronli_mesh.bl_icon)
         layout.operator(MESH_OT_hallr_voronoi_diagram.bl_idname, icon=MESH_OT_hallr_voronoi_diagram.bl_icon)
         layout.operator(MESH_OT_hallr_sdf_mesh_25D.bl_idname, icon=MESH_OT_hallr_sdf_mesh_25D.bl_icon)
@@ -1091,7 +1103,19 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
         layout.operator(MESH_OT_hallr_simplify_rdp.bl_idname, icon=MESH_OT_hallr_simplify_rdp.bl_icon)
         layout.operator(MESH_OT_hallr_centerline.bl_idname, icon=MESH_OT_hallr_centerline.bl_icon)
         layout.operator(MESH_OT_hallr_discretize.bl_idname, icon=MESH_OT_hallr_discretize.bl_icon)
+        layout.separator()
+        layout.operator(MESH_OT_hallr_select_vertices_until_intersection.bl_idname,
+                        icon=MESH_OT_hallr_select_vertices_until_intersection.bl_icon)
+        layout.operator(MESH_OT_hallr_select_intersection_vertices.bl_idname,
+                        icon=MESH_OT_hallr_select_intersection_vertices.bl_icon)
+        layout.operator(MESH_OT_hallr_select_end_vertices.bl_idname, icon=MESH_OT_hallr_select_end_vertices.bl_icon)
+        layout.operator(MESH_OT_hallr_select_collinear_edges.bl_idname,
+                        icon=MESH_OT_hallr_select_collinear_edges.bl_icon)
+        layout.operator(MESH_OT_hallr_knife_intersect.bl_idname, icon=MESH_OT_hallr_knife_intersect.bl_icon)
+        layout.separator()
         layout.operator(MESH_OT_hallr_random_vertices.bl_idname, icon=MESH_OT_hallr_random_vertices.bl_icon)
+        layout.operator(MESH_OT_hallr_triangulate_and_flatten.bl_idname,
+                        icon=MESH_OT_hallr_triangulate_and_flatten.bl_icon)
 
 
 # draw function for integration in menus
