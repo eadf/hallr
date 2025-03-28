@@ -195,10 +195,10 @@ class OBJECT_OT_MT_GenerateMesh(bpy.types.Operator):
                 return {'CANCELLED'}
             # Check if the returned mesh format is triangulated
             if config.get("mesh.format") == "triangulated":
-                hallr_ffi_utils.handle_triangle_mesh(vertices, indices)
+                hallr_ffi_utils.handle_triangle_mesh(config, vertices, indices)
             # Handle line format
             elif config.get("mesh.format") == "line":
-                hallr_ffi_utils.handle_windows_line_new_object(vertices, indices)
+                hallr_ffi_utils.handle_windows_line_new_object(config, vertices, indices)
             else:
                 self.report({'ERROR'}, "Unknown mesh format:" + config.get("mesh.format", "None"))
                 return {'CANCELLED'}

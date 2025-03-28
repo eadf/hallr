@@ -140,8 +140,11 @@ pub(crate) fn process_command(
     let mut return_config = ConfigType::new();
     let _ = return_config.insert("mesh.format".to_string(), "line_chunks".to_string());
     //let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
+    //if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {
+    //    return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());
+    //}
     println!(
-        "SDF mesh operation returning {} vertices, {} indices",
+        "cmd discretize returning {} vertices, {} indices",
         output_model.vertices.len(),
         output_model.indices.len()
     );

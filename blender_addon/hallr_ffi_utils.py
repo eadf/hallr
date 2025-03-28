@@ -106,23 +106,46 @@ def ctypes_close_library(lib):
         dlclose_func(lib._handle)
 
 
-def handle_new_object(mesh_obj):
+def handle_new_object(return_options, mesh_obj, select_new_mesh=True):
     bpy.context.collection.objects.link(mesh_obj)
 
-    # Optionally make the new object active
-    bpy.context.view_layer.objects.active = mesh_obj
+    if select_new_mesh:
+        # Optionally make the new object active
+        bpy.context.view_layer.objects.active = mesh_obj
 
-    # Ensure that we are in object mode
-    bpy.ops.object.mode_set(mode='OBJECT')
+        # Ensure that we are in object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
 
-    # Deselect all objects
-    bpy.ops.object.select_all(action='DESELECT')
+        # Deselect all objects
+        bpy.ops.object.select_all(action='DESELECT')
 
-    # Select the newly created object
-    mesh_obj.select_set(True)
+        # Select the newly created object
+        mesh_obj.select_set(True)
+
+    remove_doubles = False
+    remove_doubles_threshold = 0.00001
+    for key, value in return_options.items():
+        if key == "ERROR":
+            raise HallrException(str(value))
+        if key == "REMOVE_DOUBLES" and value.lower() == "true":
+            remove_doubles = True
+        if key == "REMOVE_DOUBLES_THRESHOLD":
+            try:
+                new_value = float(value)
+                remove_doubles_threshold = new_value
+            except ValueError:
+                pass
+    if remove_doubles:
+        # sometimes 'mode_set' does not take right away  :/
+        # bpy.ops.object.editmode_toggle()
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.remove_doubles(threshold=remove_doubles_threshold)
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.mode_set(mode='EDIT')
 
 
-def handle_triangle_mesh(vertices, indices):
+def handle_triangle_mesh(return_options, vertices, indices):
     # Convert the indices to Blender's polygon format
     # Assuming indices are [0, 1, 2, 2, 3, 4, ...], where each set of 3 is a triangle
     polygons = [tuple(indices[i:i + 3]) for i in range(0, len(indices), 3)]
@@ -135,7 +158,7 @@ def handle_triangle_mesh(vertices, indices):
 
         # Create a new object using the mesh and link it to the current collection
         mesh_obj = bpy.data.objects.new("New_Object", mesh)
-        handle_new_object(mesh_obj)
+        handle_new_object(return_options, mesh_obj)
 
 
 """"
@@ -160,7 +183,7 @@ def handle_line_mesh(vertices, indices):
 
 
 # TODO: unify all "new" object handlers
-def handle_windows_line_new_object(vertices, indices):
+def handle_windows_line_new_object(return_options, vertices, indices):
     """"
     Convert the indices to Blender's edge format
     Slide over each vertex pair and create a new object.
@@ -179,11 +202,11 @@ def handle_windows_line_new_object(vertices, indices):
 
         # Create a new object using the mesh and link it to the current collection
         mesh_obj = bpy.data.objects.new("New_Line_Object", mesh)
-        handle_new_object(mesh_obj)
+        handle_new_object(return_options, mesh_obj)
 
 
 # TODO: unify all "new" object handlers
-def handle_chunks_line_new_object(vertices, indices):
+def handle_chunks_line_new_object(return_options, vertices, indices):
     """
     Convert the indices to Blender's edge format
     Slide over each vertex pair and create a new object.
@@ -209,7 +232,7 @@ def handle_chunks_line_new_object(vertices, indices):
 
         # Create a new object using the mesh and link it to the current collection
         mesh_obj = bpy.data.objects.new("New_Line_Object", mesh)
-        handle_new_object(mesh_obj)
+        handle_new_object(return_options, mesh_obj)
 
 
 def handle_windows_line_modify_active_object(vertices, indices):
@@ -279,11 +302,10 @@ def unpack_model(options, raw_indices):
     return rv_edges, rv_faces, mathutils.Matrix.Identity(4)
 
 
-def handle_received_object_replace_active(active_object, options, ffi_vertices, ffi_indices):
+def handle_received_object_replace_active(active_object, options, ffi_vertices, ffi_indices, remove_doubles_threshold = 0.0001):
     """Takes care of the raw ffi data received from rust, and create a blender mesh out of them"""
 
     remove_doubles = False
-    remove_doubles_threshold = 0.0001
 
     for key, value in options.items():
         if key == "ERROR":
@@ -469,7 +491,8 @@ def prepare_object_for_processing_direct(obj):
     return obj
 
 
-def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_selected_vertices=False):
+def call_rust(config: dict[str, str], active_obj, second_mesh=None, second_mesh_is_line=True,
+              only_selected_vertices=False):
     # Load the Rust library
     # We load the .dylib and define argtypes for every invocation just to be able to update the lib without
     # restarting blender. This does not seem to work anymore, though
@@ -479,10 +502,10 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
     active_obj_to_process, active_obj_is_duplicated = prepare_object_for_processing(active_obj, "TempDuplicateActive")
     if not active_obj_to_process:
         raise RuntimeError("Error in finding the active mesh.")
-    if bounding_shape:
-        bounding_obj_to_process, bounding_obj_is_duplicated = prepare_object_for_processing(bounding_shape,
-                                                                                            "TempDuplicateBounding")
-        if not bounding_obj_to_process:
+    if second_mesh:
+        second_obj_to_process, second_obj_is_duplicated = prepare_object_for_processing(second_mesh,
+                                                                                        "TempDuplicateBounding")
+        if not second_obj_to_process:
             raise RuntimeError("Error in finding the bounding shape.")
 
     if only_selected_vertices:
@@ -495,26 +518,34 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
         # 5. Convert the data to a ctypes-friendly format
         vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in active_obj_to_process.data.vertices]
 
-    if bounding_shape:
+    if second_mesh:
+        if second_mesh_is_line and len(second_obj_to_process.data.polygons) > 0:
+            raise HallrException("The second shape should only contain edges!")
 
         first_vertex_model_1 = len(vertices)
         first_index_model_1 = len(indices)
         # Appending vertices from the bounding shape
-        vertices += [Vector3(v.co.x, v.co.y, v.co.z) for v in bounding_obj_to_process.data.vertices]
+        vertices += [Vector3(v.co.x, v.co.y, v.co.z) for v in second_obj_to_process.data.vertices]
 
         config["first_vertex_model_1"] = str(first_vertex_model_1)
         config["first_index_model_1"] = str(first_index_model_1)
 
-        # Appending edge vertex indices from the bounding shape, adjusting based on the start_vertex_index
-        for edge in bounding_obj_to_process.data.edges:
-            indices.append(edge.vertices[0])
-            indices.append(edge.vertices[1])
+        if second_mesh_is_line:
+            # Appending edge vertex indices from the bounding shape, adjusting based on the start_vertex_index
+            for edge in second_obj_to_process.data.edges:
+                indices.append(edge.vertices[0])
+                indices.append(edge.vertices[1])
+        else:
+            # Treat second mesh as triangulated mesh (like active_obj)
+            indices += [vert_idx
+                        for face in second_obj_to_process.data.polygons
+                        for vert_idx in face.vertices]
 
     if active_obj_is_duplicated:
         cleanup_duplicated_object(active_obj_to_process)
 
-    if bounding_shape and bounding_obj_is_duplicated:
-        cleanup_duplicated_object(bounding_obj_to_process)
+    if second_mesh and second_obj_is_duplicated:
+        cleanup_duplicated_object(second_obj_to_process)
 
     # 6. Convert the data to a ctypes-friendly format
     vertices_ptr = (Vector3 * len(vertices))(*vertices)
@@ -522,8 +553,8 @@ def call_rust(config: dict[str, str], active_obj, bounding_shape=None, only_sele
 
     # Handle the world orientation
     matrices = get_matrices(active_obj)
-    if bounding_shape:
-        matrices.extend(get_matrices(bounding_shape))
+    if second_mesh:
+        matrices.extend(get_matrices(second_mesh))
 
     matrices_ptr = (ctypes.c_float * len(matrices))(*matrices)
 

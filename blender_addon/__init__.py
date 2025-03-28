@@ -11,7 +11,7 @@ bl_info = {
     "blender": (3, 4, 1),
     "category": "Object",
     "description": "A collection of addons written in Rust",
-    "author": "EAD",
+    "author": "EAD https://github.com/eadf",
     "version": (0, 1, 6),
     "warning": "This executes compiled rust code on your computer",
 }
@@ -24,11 +24,10 @@ if DEV_MODE:
         sys.path.append(addon_path)
 # the string "from ." will be find-and-replaced with "" if run in DEV_MODE
 from . import hallr_ffi_utils
-from . import hallr_2d_delaunay_triangulation
 from . import hallr_mesh_operators
 from . import hallr_meander_toolpath
+from . import hallr_2d_delaunay_triangulation
 from . import hallr_baby_shark_operators
-# from . import hallr_cnc_engravingpanel
 
 # define modules for registration
 modules = (
@@ -36,7 +35,6 @@ modules = (
     hallr_mesh_operators,
     hallr_2d_delaunay_triangulation,
     hallr_meander_toolpath,
-    # hallr_cnc_engravingpanel,
 )
 
 

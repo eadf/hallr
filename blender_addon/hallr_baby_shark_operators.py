@@ -29,7 +29,8 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator):
         default=0.0005,
         min=0.00001,
         max=1.0,
-        precision=6
+        precision=6,
+        unit='LENGTH'
     )
 
     min_faces_count: bpy.props.IntProperty(
@@ -106,7 +107,7 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
     bl_description = "Remesh the mesh isotropically using the Baby Shark algorithm"
     bl_options = {'REGISTER', 'UNDO'}
 
-    iterations_count: bpy.props.IntProperty(
+    iterations_count_prop: bpy.props.IntProperty(
         name="Iterations",
         description="Number of iterations for remeshing",
         default=10,
@@ -114,40 +115,41 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
         max=100
     )
 
-    target_edge_length: bpy.props.FloatProperty(
+    target_edge_length_prop: bpy.props.FloatProperty(
         name="Target Edge Length",
         description="Target edge length after remeshing. Warning: Setting this too small will significantly increase processing time",
         default=1.0,
         min=0.001,
         max=2.0,
-        precision=6
+        precision=6,
+        unit = 'LENGTH'
     )
 
-    split_edges: bpy.props.BoolProperty(
+    split_edges_prop: bpy.props.BoolProperty(
         name="Split Edges",
         description="Allow edge splitting during remeshing",
         default=True
     )
 
-    collapse_edges: bpy.props.BoolProperty(
+    collapse_edges_prop: bpy.props.BoolProperty(
         name="Collapse Edges",
         description="Allow edge collapsing during remeshing",
         default=True
     )
 
-    flip_edges: bpy.props.BoolProperty(
+    flip_edges_prop: bpy.props.BoolProperty(
         name="Flip Edges",
         description="Allow edge flipping during remeshing",
         default=True
     )
 
-    shift_vertices: bpy.props.BoolProperty(
+    shift_vertices_prop: bpy.props.BoolProperty(
         name="Shift Vertices",
         description="Allow vertex shifting during remeshing",
         default=True
     )
 
-    project_vertices: bpy.props.BoolProperty(
+    project_vertices_prop: bpy.props.BoolProperty(
         name="Project Vertices",
         description="Project vertices back to the original surface",
         default=True
@@ -191,13 +193,13 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
 
         config = {
             "command": "baby_shark_isotropic_remesh",
-            "ITERATIONS_COUNT": str(self.iterations_count),
-            "TARGET_EDGE_LENGTH": str(self.target_edge_length),
-            "SPLIT_EDGES": str(self.split_edges),
-            "COLLAPSE_EDGES": str(self.collapse_edges),
-            "FLIP_EDGES": str(self.flip_edges),
-            "SHIFT_VERTICES": str(self.shift_vertices),
-            "PROJECT_VERTICES": str(self.project_vertices)
+            "ITERATIONS_COUNT": str(self.iterations_count_prop),
+            "TARGET_EDGE_LENGTH": str(self.target_edge_length_prop),
+            "SPLIT_EDGES": str(self.split_edges_prop),
+            "COLLAPSE_EDGES": str(self.collapse_edges_prop),
+            "FLIP_EDGES": str(self.flip_edges_prop),
+            "SHIFT_VERTICES": str(self.shift_vertices_prop),
+            "PROJECT_VERTICES": str(self.project_vertices_prop)
         }
 
         # Call the Rust function
@@ -208,11 +210,11 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "iterations_count")
+        layout.prop(self, "iterations_count_prop")
         # Add target_edge_length with a warning message
         box = layout.box()
         row = box.row()
-        row.prop(self, "target_edge_length")
+        row.prop(self, "target_edge_length_prop")
         # Add warning row with icon
         warning_row = box.row()
         warning_row.label(text="CAUTION: Small values will make the ", icon='ERROR')
@@ -221,11 +223,11 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
         warning_row = box.row()
         warning_row.label(text="         blender is unresponsive")
         warning_row.scale_y = 0.7
-        layout.prop(self, "split_edges")
-        layout.prop(self, "collapse_edges")
-        layout.prop(self, "flip_edges")
-        layout.prop(self, "shift_vertices")
-        layout.prop(self, "project_vertices")
+        layout.prop(self, "split_edges_prop")
+        layout.prop(self, "collapse_edges_prop")
+        layout.prop(self, "flip_edge_prop")
+        layout.prop(self, "shift_vertices_prop")
+        layout.prop(self, "project_vertices_prop")
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -240,22 +242,34 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
     bl_description = "Offset mesh surface by converting to volume and back"
     bl_options = {'REGISTER', 'UNDO'}
 
-    voxel_size: bpy.props.FloatProperty(
+    voxel_size_prop: bpy.props.FloatProperty(
         name="Voxel Size",
         description="Size of voxels for volume conversion",
         default=0.2,
         min=0.01,
         max=5.0,
-        precision=3
+        precision=3,
+        unit='LENGTH'
     )
 
-    offset_by: bpy.props.FloatProperty(
+    offset_by_prop: bpy.props.FloatProperty(
         name="Offset Amount",
         description="Distance to offset the mesh surface",
         default=1.5,
         min=0.01,
         max=10.0,
-        precision=2
+        precision=2,
+        unit='LENGTH'
+    )
+
+    remove_doubles_threshold_prop: bpy.props.FloatProperty(
+        name="Merge Distance",
+        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
+        default=0.0001,
+        min=0.000001,
+        max=0.1,
+        precision=6,
+        unit='LENGTH',
     )
 
     @classmethod
@@ -275,8 +289,9 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
 
         config = {
             "command": "baby_shark_mesh_offset",
-            "VOXEL_SIZE": str(self.voxel_size),
-            "OFFSET_BY": str(self.offset_by)
+            "VOXEL_SIZE": str(self.voxel_size_prop),
+            "OFFSET_BY": str(self.offset_by_prop),
+            "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
         }
 
         # Call the Rust function
@@ -287,8 +302,11 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "voxel_size")
-        layout.prop(self, "offset_by")
+        layout.prop(self, "voxel_size_prop")
+        layout.prop(self, "offset_by_prop")
+        row = layout.row()
+        row.label(icon='SNAP_MIDPOINT')
+        row.prop(self, "remove_doubles_threshold_prop")
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -298,11 +316,11 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
 class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
     """Custom Boolean Operation"""
     bl_idname = "object.custom_boolean"
-    bl_label = "Boolean"
+    bl_label = "Baby Shark Boolean operation"
     bl_icon = 'MOD_BOOLEAN'
     bl_options = {'REGISTER', 'UNDO'}
 
-    operation: bpy.props.EnumProperty(
+    operation_prop: bpy.props.EnumProperty(
         name="Operation",
         items=[
             ('UNION', "Union", "Combine objects"),
@@ -312,37 +330,80 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
         default='DIFFERENCE'
     )
 
-    swap_operands: bpy.props.BoolProperty(
+    voxel_size_prop: bpy.props.FloatProperty(
+        name="Voxel Size",
+        description="Size of voxels for volume conversion",
+        default=0.2,
+        min=0.01,
+        max=5.0,
+        precision=3,
+        unit='LENGTH'
+    )
+
+    swap_operands_prop: bpy.props.BoolProperty(
         name="Swap Operands",
-        description="Reverse the operation order",
+        description="Reverse the operation order, only meaningful for 'Difference'",
         default=False
     )
 
-    apply_modifier: bpy.props.BoolProperty(
-        name="Apply Immediately",
-        description="Apply the boolean modifier right away",
-        default=False
+    remove_doubles_threshold_prop: bpy.props.FloatProperty(
+        name="Merge Distance",
+        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
+        default=0.0001,
+        min=0.000001,
+        max=0.1,
+        precision=6,
+        unit='LENGTH'
     )
 
     @classmethod
     def poll(cls, context):
         return (context.mode == 'OBJECT' and
-                len(context.selected_objects) >= 2 and
+                len(context.selected_objects) == 2 and
                 context.active_object is not None)
 
     def execute(self, context):
-        # Your boolean operation implementation would go here
-        # For now just print the settings
-        print(f"Boolean operation: {self.operation}")
-        print(f"Swap operands: {self.swap_operands}")
-        print(f"Apply immediately: {self.apply_modifier}")
+        mesh_1 = context.selected_objects[0]
+        mesh_2 = context.selected_objects[1]
+        if mesh_1 is not None and mesh_2 is not None:
+            # Print the names of the selected objects
+            #print("Mesh 1:", mesh_1.name)
+            #print("Mesh 2:", mesh_2.name)
 
-        self.report({'INFO'}, f"Custom boolean {self.operation.lower()} performed")
+            config = {"operation": str(self.operation_prop),
+                      "swap": str(self.swap_operands_prop),
+                      "voxel_size": str(self.voxel_size_prop),
+                      "REMOVE_DOUBLES_THRESHOLD":str(self.remove_doubles_threshold_prop),
+                      "command": "baby_shark_boolean"}
+
+            #print("config:", config)
+            # Call the Rust function
+            vertices, indices, config = hallr_ffi_utils.call_rust(config, mesh_1, mesh_2, second_mesh_is_line=False)
+
+            # print(f"Received {config} as the result from Rust!")
+            if config.get("ERROR"):
+                self.report({'ERROR'}, "" + config.get("ERROR"))
+                return {'CANCELLED'}
+            # Check if the returned mesh format is triangulated
+            if config.get("mesh.format") == "triangulated":
+                hallr_ffi_utils.handle_triangle_mesh(config, vertices, indices)
+            else:
+                self.report({'ERROR'}, "Unknown mesh format:" + config.get("mesh.format", "None"))
+                return {'CANCELLED'}
         return {'FINISHED'}
 
     def invoke(self, context, event):
         wm = context.window_manager
         return wm.invoke_props_dialog(self, width=300)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "operation_prop")
+        layout.prop(self, "voxel_size_prop")
+        layout.prop(self, "swap_operands_prop")
+        row = layout.row()
+        row.label(icon='SNAP_MIDPOINT')
+        row.prop(self, "remove_doubles_threshold_prop")
 
 
 # Panel for redo-last (appears in F9 and Adjust Last Operation)

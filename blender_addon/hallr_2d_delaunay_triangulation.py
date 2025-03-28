@@ -54,7 +54,7 @@ class HALLR_PT_DelaunayTriangulation2D(bpy.types.Panel):
 
         # Generate toolpath button
         if (context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None and
-                context.scene.hallr_dt2_delaunay_settings.point_cloud is not None ):
+                context.scene.hallr_dt2_delaunay_settings.point_cloud is not None):
             layout.operator(HALLR_OT_DT2GenerateMesh.bl_idname, text="Generate Mesh")
 
 
@@ -90,7 +90,7 @@ class HALLR_OT_D2TSelectBoundingShape(bpy.types.Operator):
 
 class HALLR_OT_D2TSelectPointCloud(bpy.types.Operator):
     bl_idname = "hallr.dt2_select_point_cloud"
-    bl_label = "Select Height Mesh"
+    bl_label = "Select point cloud"
     bl_description = "Select or deselect the point cloud object for triangulation"
     bl_context = "object"
 
@@ -109,7 +109,7 @@ class HALLR_OT_D2TSelectPointCloud(bpy.types.Operator):
 
 class HALLR_OT_DT2GenerateMesh(bpy.types.Operator):
     bl_idname = "hallr.d2t_generate_mesh"
-    bl_label = "Generate Toolpath"
+    bl_label = "Generate 2½D Mesh"
     bl_context = "object"
     bl_description = "Create a 2½D Delaunay triangulation from the selected point cloud within the bounding shape"
 
@@ -137,10 +137,10 @@ class HALLR_OT_DT2GenerateMesh(bpy.types.Operator):
                 return {'CANCELLED'}
             # Check if the returned mesh format is triangulated
             if config.get("mesh.format") == "triangulated":
-                hallr_ffi_utils.handle_triangle_mesh(vertices, indices)
+                hallr_ffi_utils.handle_triangle_mesh(config, vertices, indices)
             # Handle line format
             elif config.get("mesh.format") == "line":
-                hallr_ffi_utils.handle_windows_line_new_object(vertices, indices)
+                hallr_ffi_utils.handle_windows_line_new_object(config, vertices, indices)
             else:
                 self.report({'ERROR'}, "Unknown mesh format:" + config.get("mesh.format", "None"))
                 return {'CANCELLED'}

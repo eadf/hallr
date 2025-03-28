@@ -100,6 +100,9 @@ pub(crate) fn process_command(
     let mut return_config = ConfigType::new();
     let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
     let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "false".to_string());
+    if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {
+        let _ = return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());
+    }
 
     Ok((ffi_vertices, ffi_indices, world_matrix, return_config))
 }

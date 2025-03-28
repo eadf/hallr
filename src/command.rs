@@ -5,6 +5,7 @@
 //! This module contains the execution of the implemented commands.
 
 mod cmd_2d_outline;
+mod cmd_baby_shark_boolean;
 mod cmd_baby_shark_decimate;
 mod cmd_baby_shark_isotropic_remesh;
 mod cmd_baby_shark_mesh_offset;
@@ -200,7 +201,7 @@ pub fn collect_models<'a, T: GenericVector3>(
                     "World matrix data missing".to_string(),
                 ));
             }
-            // Retrieve the vertex and index data as strings
+            // Retrieve the vertex and index offset data as strings
             let vertices_idx: usize =
                 config.get_mandatory_parsed_option(&vertices_key, default_vertex_index)?;
             let indices_idx: usize = config.get_mandatory_parsed_option(
@@ -279,6 +280,7 @@ pub(crate) fn process_command(
             cmd_baby_shark_isotropic_remesh::process_command(config, models)?
         }
         "baby_shark_mesh_offset" => cmd_baby_shark_mesh_offset::process_command(config, models)?,
+        "baby_shark_boolean" => cmd_baby_shark_boolean::process_command(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(
             "Invalid command:{}",
             illegal_command

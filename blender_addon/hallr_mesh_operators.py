@@ -40,7 +40,7 @@ class MESH_OT_hallr_2d_outline(bpy.types.Operator):
 
     bl_idname = "mesh.hallr_2d_outline"
     bl_icon = "MOD_OUTLINE"
-    bl_label = "Hallr 2D Outline"
+    bl_label = "[XY] Hallr 2D Outline"
     bl_description = ("Outline 2d geometry into a wire frame, the geometry must be flat and on a plane intersecting "
                       "origin")
     bl_options = {'REGISTER', 'UNDO'}
@@ -72,7 +72,7 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator):
     """A knife intersect operator that works in the XY plane, remember to apply any transformations"""
 
     bl_idname = "mesh.hallr_meshtools_knife_intersect_2d"
-    bl_label = "Hallr Knife Intersect 2d"
+    bl_label = "[XY] Hallr Knife Intersect 2d"
     bl_icon = "INTERNET_OFFLINE"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -113,7 +113,7 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
     """A 2D convex hull operator that works in the XY plane, remember to apply any transformations"""
 
     bl_idname = "mesh.hallr_convex_hull_2d"
-    bl_label = "Hallr Convex Hull 2d"
+    bl_label = "[XY] Hallr Convex Hull 2d"
     bl_icon = "MESH_CAPSULE"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -158,12 +158,12 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator):
     bl_label = "Hallr Simplify RDP"
     bl_options = {'REGISTER', 'UNDO'}
 
-    simplify_3d_props: bpy.props.BoolProperty(
+    simplify_3d_prop: bpy.props.BoolProperty(
         name="Simplify 3d",
         description="Simplification will be done in 3d if selected",
         default=True)
 
-    simplify_distance_props: bpy.props.FloatProperty(
+    simplify_distance_prop: bpy.props.FloatProperty(
         name="Distance",
         description="Discrete distance as a percentage of the longest axis of the model. This value is used for RDP "
                     "simplification.",
@@ -188,8 +188,8 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator):
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "simplify_rdp", "simplify_distance": str(self.simplify_distance_props),
-                  "simplify_3d": str(self.simplify_3d_props).lower()}
+        config = {"command": "simplify_rdp", "simplify_distance": str(self.simplify_distance_prop),
+                  "simplify_3d": str(self.simplify_3d_prop).lower()}
 
         # Call the Rust function
         vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
@@ -203,8 +203,8 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "simplify_distance_props")
-        layout.prop(self, "simplify_3d_props")
+        layout.prop(self, "simplify_distance_prop")
+        layout.prop(self, "simplify_3d_prop")
 
 
 class MESH_OT_hallr_triangulate_and_flatten(bpy.types.Operator):
@@ -315,7 +315,7 @@ class MESH_OT_hallr_select_collinear_edges(bpy.types.Operator):
                       "offline plugin)")
     bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
 
-    angle_props: bpy.props.FloatProperty(
+    angle_prop: bpy.props.FloatProperty(
         name="Angle selection constraint",
         description="selects edges with a relative angle (compared to an already selected edge) smaller than this.",
         default=math.radians(12.0),
@@ -341,7 +341,7 @@ class MESH_OT_hallr_select_collinear_edges(bpy.types.Operator):
         bm.edges.ensure_lookup_table()
         bm.faces.ensure_lookup_table()
 
-        angle_criteria = math.degrees(self.angle_props)
+        angle_criteria = math.degrees(self.angle_prop)
 
         vertex_dict = defaultdict(list)  # key by vertex.index to [edges]
         already_selected = set()  # key by edge.index
@@ -490,13 +490,13 @@ class MESH_OT_hallr_select_vertices_until_intersection(bpy.types.Operator):
 # Voronoi mesh operator
 class MESH_OT_hallr_voronli_mesh(bpy.types.Operator):
     bl_idname = "mesh.hallr_meshtools_voronoi_mesh"
-    bl_label = "Voronoi Mesh"
+    bl_label = "[XY] Voronoi Mesh"
     bl_icon = "MESH_UVSPHERE"
     bl_description = ("Calculate voronoi diagram and add mesh, the geometry must be flat and on a plane intersecting "
                       "origin. It also must be encircled by an outer continuous loop")
     bl_options = {'REGISTER', 'UNDO'}
 
-    distance_props: bpy.props.FloatProperty(
+    distance_prop: bpy.props.FloatProperty(
         name="Discretization distance",
         description="Discretization distance as a percentage of the total AABB length. This value is used when sampling"
                     "parabolic arc edges. Smaller value gives a finer step distance.",
@@ -507,10 +507,20 @@ class MESH_OT_hallr_voronli_mesh(bpy.types.Operator):
         subtype='PERCENTAGE'
     )
 
-    negative_radius_props: bpy.props.BoolProperty(
+    negative_radius_prop: bpy.props.BoolProperty(
         name="Negative radius",
         description="Represent voronoi edge distance to input geometry as a negative Z value",
         default=True
+    )
+
+    remove_doubles_threshold_prop: bpy.props.FloatProperty(
+        name="Merge Distance",
+        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
+        default=0.0001,
+        min=0.000001,
+        max=0.1,
+        precision=6,
+        unit='LENGTH'
     )
 
     @classmethod
@@ -529,8 +539,9 @@ class MESH_OT_hallr_voronli_mesh(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
 
         config = {"command": "voronoi_mesh",
-                  "DISTANCE": str(self.distance_props),
-                  "NEGATIVE_RADIUS": str(self.negative_radius_props).lower(),
+                  "DISTANCE": str(self.distance_prop),
+                  "NEGATIVE_RADIUS": str(self.negative_radius_prop).lower(),
+                  "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
         # Call the Rust function
         vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
@@ -540,8 +551,11 @@ class MESH_OT_hallr_voronli_mesh(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "distance_props")
-        layout.prop(self, "negative_radius_props")
+        layout.prop(self, "distance_prop")
+        layout.prop(self, "negative_radius_prop")
+        row = layout.row()
+        row.label(icon='SNAP_MIDPOINT')
+        row.prop(self, "remove_doubles_threshold_prop")
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -551,13 +565,13 @@ class MESH_OT_hallr_voronli_mesh(bpy.types.Operator):
 # Voronoi operator
 class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator):
     bl_idname = "mesh.hallr_meshtools_voronoi_diagram"
-    bl_label = "Voronoi Diagram"
+    bl_label = "[XY] Voronoi Diagram"
     bl_icon = "CURVE_NCURVE"
     bl_description = ("Calculate voronoi diagram, the geometry must be flat and on a plane intersecting "
                       "origin.")
     bl_options = {'REGISTER', 'UNDO'}
 
-    distance_props: bpy.props.FloatProperty(
+    distance_prop: bpy.props.FloatProperty(
         name="Discretization distance",
         description="Discretization distance as a percentage of the total AABB length. This value is used when sampling"
                     "parabolic arc edges. Smaller value gives a finer step distance.",
@@ -568,10 +582,20 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator):
         subtype='PERCENTAGE'
     )
 
-    keep_input_props: bpy.props.BoolProperty(
+    keep_input_prop: bpy.props.BoolProperty(
         name="Keep input edges",
         description="Will keep the input edges in the output",
         default=True
+    )
+
+    remove_doubles_threshold_prop: bpy.props.FloatProperty(
+        name="Merge Distance",
+        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
+        default=0.0001,
+        min=0.000001,
+        max=0.1,
+        precision=6,
+        unit='LENGTH'
     )
 
     @classmethod
@@ -590,8 +614,9 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
 
         config = {"command": "voronoi_diagram",
-                  "DISTANCE": str(self.distance_props),
-                  "KEEP_INPUT": str(self.keep_input_props).lower(),
+                  "DISTANCE": str(self.distance_prop),
+                  "KEEP_INPUT": str(self.keep_input_prop).lower(),
+                  "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
         # Call the Rust function
         vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
@@ -599,10 +624,15 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "distance_props")
-        layout.prop(self, "keep_input_props")
+        layout.prop(self, "distance_prop")
+        layout.prop(self, "keep_input_prop")
+        row = layout.row()
+        row.label(icon='SNAP_MIDPOINT')
+        row.prop(self, "remove_doubles_threshold_prop")
+
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -622,14 +652,24 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator):
     )
     bl_options = {'REGISTER', 'UNDO'}
 
-    sdf_divisions_property: bpy.props.IntProperty(
+    sdf_divisions_prop: bpy.props.IntProperty(
         name="Voxel Divisions",
         description="The longest axis of the model will be divided into this number of voxels; the other axes "
                     "will have a proportionally equal number of voxels.",
         default=100,
         min=50,
         max=600,
-        subtype='FACTOR'
+        subtype='UNSIGNED'
+    )
+
+    remove_doubles_threshold_prop: bpy.props.FloatProperty(
+        name="Merge Distance",
+        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
+        default=0.0001,
+        min=0.000001,
+        max=0.1,
+        precision=6,
+        unit='LENGTH'
     )
 
     @classmethod
@@ -648,7 +688,8 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
 
         config = {"command": "sdf_mesh_2_5",
-                  "SDF_DIVISIONS": str(self.sdf_divisions_property),
+                  "SDF_DIVISIONS": str(self.sdf_divisions_prop),
+                  "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
         # Call the Rust function
         vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
@@ -659,6 +700,9 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "sdf_divisions_property")
+        row = layout.row()
+        row.label(icon='SNAP_MIDPOINT')
+        row.prop(self, "remove_doubles_threshold_prop")
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -684,7 +728,7 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
         default=100,
         min=50,
         max=600,
-        subtype='FACTOR'
+        subtype='UNSIGNED'
     )
 
     sdf_radius_prop: bpy.props.FloatProperty(
@@ -695,6 +739,16 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
         max=19.9999,
         precision=6,
         subtype='PERCENTAGE'
+    )
+
+    remove_doubles_threshold_prop: bpy.props.FloatProperty(
+        name="Merge Distance",
+        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
+        default=0.0001,
+        min=0.000001,
+        max=0.1,
+        precision=6,
+        unit='LENGTH'
     )
 
     @classmethod
@@ -714,7 +768,8 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
 
         config = {"command": "sdf_mesh",
                   "SDF_DIVISIONS": str(self.sdf_divisions_prop),
-                  "SDF_RADIUS_MULTIPLIER": str(self.sdf_radius_prop)
+                  "SDF_RADIUS_MULTIPLIER": str(self.sdf_radius_prop),
+                  "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
 
         # Call the Rust function
@@ -727,6 +782,9 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
         layout = self.layout
         layout.prop(self, "sdf_divisions_prop")
         layout.prop(self, "sdf_radius_prop")
+        row = layout.row()
+        row.label(icon='SNAP_MIDPOINT')
+        row.prop(self, "remove_doubles_threshold_prop")
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -734,10 +792,10 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
 
 
 # Random vertices operation
-class Hallr_RandomVertices(bpy.types.Operator):
-    """Generate some random vertices"""
+class MESH_OT_hallr_random_vertices(bpy.types.Operator):
+    """Generate some random vertices in the XY plane"""
     bl_idname = "mesh.hallr_meshtools_random_vertices"
-    bl_label = "Random vertices"
+    bl_label = "[XY] Random vertices"
     bl_icon = "OUTLINER_OB_POINTCLOUD"
     bl_description = (
         "Generate some random vertices in the XY plane"
@@ -750,6 +808,7 @@ class Hallr_RandomVertices(bpy.types.Operator):
         default=10,
         min=1,
         max=100,
+        subtype='UNSIGNED'
     )
 
     std_deviation_prop: bpy.props.FloatProperty(
@@ -759,15 +818,17 @@ class Hallr_RandomVertices(bpy.types.Operator):
         min=0.01,
         max=19.9999,
         precision=6,
+        subtype='UNSIGNED'
     )
 
-    merge_distance_prop: bpy.props.FloatProperty(
+    remove_doubles_threshold_prop: bpy.props.FloatProperty(
         name="Merge Distance",
-        description="Merge vertices that are closer than this distance",
-        default=0.01,
-        min=0.0,
-        max=2.0,
+        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
+        default=0.0001,
+        min=0.000001,
+        max=0.1,
         precision=6,
+        unit='LENGTH'
     )
 
     @classmethod
@@ -805,7 +866,7 @@ class Hallr_RandomVertices(bpy.types.Operator):
                 vert.select = True
 
         # Merge vertices based on distance
-        bpy.ops.mesh.remove_doubles(threshold=self.merge_distance_prop)
+        bpy.ops.mesh.remove_doubles(threshold=self.remove_doubles_threshold_prop)
 
         # Update the mesh
         bmesh.update_edit_mesh(mesh)
@@ -816,6 +877,9 @@ class Hallr_RandomVertices(bpy.types.Operator):
         layout.prop(self, "number_of_vertices_prop")
         layout.prop(self, "std_deviation_prop")
         layout.prop(self, "merge_distance_prop")
+        row = layout.row()
+        row.label(icon='SNAP_MIDPOINT')
+        row.prop(self, "remove_doubles_threshold_prop")
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -883,10 +947,10 @@ class MESH_OT_hallr_centerline(bpy.types.Operator):
 
     bl_idname = "mesh.hallr_centerline"
     bl_icon = "CONE"
-    bl_label = "Hallr 2D Centerline"
+    bl_label = "[XY] Hallr 2D Centerline"
     bl_options = {'REGISTER', 'UNDO'}
 
-    angle_props: bpy.props.FloatProperty(
+    angle_prop: bpy.props.FloatProperty(
         name="Angle",
         description="Edge rejection angle, edges with edge-to-segment angles larger than this will be rejected",
         default=math.radians(89.0),
@@ -896,32 +960,32 @@ class MESH_OT_hallr_centerline(bpy.types.Operator):
         subtype='ANGLE',
     )
 
-    weld_props: bpy.props.BoolProperty(
+    weld_prop: bpy.props.BoolProperty(
         name="Weld the centerline to outline",
         description="Centerline and outline will share vertices if they intersect",
         default=True
     )
 
-    keep_input_props: bpy.props.BoolProperty(
+    keep_input_prop: bpy.props.BoolProperty(
         name="Keep input edges",
         description="Will keep the input edges in the output, will override the weld property if inactive",
         default=True
     )
 
-    negative_radius_props: bpy.props.BoolProperty(
+    negative_radius_prop: bpy.props.BoolProperty(
         name="Negative radius",
         description="Represent voronoi edge distance to input geometry as a negative Z value",
         default=True
     )
 
-    remove_internals_props: bpy.props.BoolProperty(
+    remove_internals_prop: bpy.props.BoolProperty(
         name="Remove internal edges",
         description="Remove edges internal to islands for the geometry. I.e. it will remove geometry generated from "
                     "closed loops inside closed loops",
         default=True
     )
 
-    distance_props: bpy.props.FloatProperty(
+    distance_prop: bpy.props.FloatProperty(
         name="Distance",
         description="Discrete distance as a percentage of the AABB. This value is used when sampling parabolic arc "
                     "edges. It is also used for RDP simplification.",
@@ -932,10 +996,20 @@ class MESH_OT_hallr_centerline(bpy.types.Operator):
         subtype='PERCENTAGE'
     )
 
-    simplify_props: bpy.props.BoolProperty(
+    simplify_prop: bpy.props.BoolProperty(
         name="Simplify line strings",
         description="Simplify voronoi edges connected as in a line string. The 'distance' property is used.",
         default=True
+    )
+
+    remove_doubles_threshold_prop: bpy.props.FloatProperty(
+        name="Merge Distance",
+        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
+        default=0.0001,
+        min=0.000001,
+        max=0.1,
+        precision=6,
+        unit='LENGTH'
     )
 
     @classmethod
@@ -954,19 +1028,20 @@ class MESH_OT_hallr_centerline(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
 
         config = {"command": "centerline",
-                  "ANGLE": str(math.degrees(self.angle_props)),
+                  "ANGLE": str(math.degrees(self.angle_prop)),
                   "REMOVE_INTERNALS"
-                  : str(self.remove_internals_props).lower(),
+                  : str(self.remove_internals_prop).lower(),
                   "KEEP_INPUT"
-                  : str(self.keep_input_props).lower(),
+                  : str(self.keep_input_prop).lower(),
                   "NEGATIVE_RADIUS"
-                  : str(self.negative_radius_props).lower(),
+                  : str(self.negative_radius_prop).lower(),
                   "DISTANCE"
-                  : str(self.distance_props),
+                  : str(self.distance_prop),
                   "SIMPLIFY"
-                  : str(self.simplify_props).lower(),
+                  : str(self.simplify_prop).lower(),
                   "WELD"
-                  : str(self.weld_props).lower(),
+                  : str(self.weld_prop).lower(),
+                  "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
         # Call the Rust function
         vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
@@ -980,15 +1055,15 @@ class MESH_OT_hallr_centerline(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "angle_props")
-        if self.keep_input_props:
-            layout.prop(self, "weld_props")
-        layout.prop(self, "keep_input_props")
-        layout.prop(self, "negative_radius_props")
-        layout.prop(self, "remove_internals_props")
-        if self.simplify_props:
-            layout.prop(self, "distance_props")
-        layout.prop(self, "simplify_props")
+        layout.prop(self, "angle_prop")
+        if self.keep_input_prop:
+            layout.prop(self, "weld_prop")
+        layout.prop(self, "keep_input_prop")
+        layout.prop(self, "negative_radius_prop")
+        layout.prop(self, "remove_internals_prop")
+        if self.simplify_prop:
+            layout.prop(self, "distance_prop")
+        layout.prop(self, "simplify_prop")
 
 
 # menu containing all tools
@@ -1016,7 +1091,7 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
         layout.operator(MESH_OT_hallr_simplify_rdp.bl_idname, icon=MESH_OT_hallr_simplify_rdp.bl_icon)
         layout.operator(MESH_OT_hallr_centerline.bl_idname, icon=MESH_OT_hallr_centerline.bl_icon)
         layout.operator(MESH_OT_hallr_discretize.bl_idname, icon=MESH_OT_hallr_discretize.bl_icon)
-        layout.operator(Hallr_RandomVertices.bl_idname, icon=Hallr_RandomVertices.bl_icon)
+        layout.operator(MESH_OT_hallr_random_vertices.bl_idname, icon=MESH_OT_hallr_random_vertices.bl_icon)
 
 
 # draw function for integration in menus
@@ -1043,7 +1118,7 @@ classes = (
     MESH_OT_hallr_simplify_rdp,
     MESH_OT_hallr_centerline,
     MESH_OT_hallr_discretize,
-    Hallr_RandomVertices,
+    MESH_OT_hallr_random_vertices,
 )
 
 

@@ -64,6 +64,9 @@ pub(crate) fn process_command(
     let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
     // we take the easy way out here, and let blender do the de-duplication of the vertices.
     let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
+    if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {
+        let _ = return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());
+    }
 
     Ok((ffi_vertices, ffi_indices, world_matrix, return_config))
 }
