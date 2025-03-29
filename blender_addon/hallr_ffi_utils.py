@@ -513,7 +513,12 @@ def call_rust(config: dict[str, str], active_obj, second_mesh=None, second_mesh_
         vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in active_obj.data.vertices if v.select]
     else:
         # 4. Gather triangle vertex indices
-        indices = [vert_idx for face in active_obj_to_process.data.polygons for vert_idx in face.vertices]
+        if not all(len(face.vertices) == 3 for face in active_obj_to_process.data.polygons):
+            raise HallrException(f"The '{active_obj_to_process.name}' mesh is not fully triangulated!")
+        indices = [v for face in active_obj_to_process.data.polygons for v in face.vertices]
+        if len(indices) == 0:
+            raise HallrException(
+                f"No polygons found in '{active_obj_to_process.name}', maybe the mesh is not fully triangulated?")
 
         # 5. Convert the data to a ctypes-friendly format
         vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in active_obj_to_process.data.vertices]
@@ -536,10 +541,14 @@ def call_rust(config: dict[str, str], active_obj, second_mesh=None, second_mesh_
                 indices.append(edge.vertices[0])
                 indices.append(edge.vertices[1])
         else:
+            first_indices_len = len(indices)
             # Treat second mesh as triangulated mesh (like active_obj)
-            indices += [vert_idx
-                        for face in second_obj_to_process.data.polygons
-                        for vert_idx in face.vertices]
+            if not all(len(face.vertices) == 3 for face in second_obj_to_process.data.polygons):
+                raise HallrException(f"The '{second_obj_to_process.name}' mesh is not fully triangulated!")
+            indices += [v for face in second_obj_to_process.data.polygons for v in face.vertices]
+            if len(indices)-first_indices_len == 0:
+                raise HallrException(f"No polygons found in '{second_obj_to_process.name}', maybe the mesh is not fully triangulated?")
+
 
     if active_obj_is_duplicated:
         cleanup_duplicated_object(active_obj_to_process)
@@ -627,11 +636,9 @@ def call_rust_direct(config, active_obj, use_line_chunks=False):
     else:
         config["mesh.format"] = "triangulated"
         # Collect vertices and check if the mesh is fully triangulated
-        indices = []
-        for face in active_obj_to_process.data.polygons:
-            if len(face.vertices) != 3:
-                raise HallrException("The mesh is not fully triangulated!")
-            indices.extend(face.vertices)
+        if not all(len(face.vertices) == 3 for face in active_obj_to_process.data.polygons):
+            raise HallrException("The mesh is not fully triangulated!")
+        indices = [v for face in active_obj_to_process.data.polygons for v in face.vertices]
         if len(indices) == 0:
             raise HallrException("No polygons found, maybe the mesh is not fully triangulated?")
     indices_ptr = (ctypes.c_size_t * len(indices))(*indices)

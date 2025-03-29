@@ -103,6 +103,11 @@ class OBJECT_OT_MT_SelectBoundingShape(bpy.types.Operator):
         if settings.bounding_shape is not None:
             settings.bounding_shape = None
             return {'FINISHED'}
+
+        if settings.mesh is not None and bounding_shape == settings.mesh:
+            self.report({'ERROR'}, "This object is already selected as the mesh. Please select a different object.")
+            return {'CANCELLED'}
+
         if bounding_shape.type != 'MESH':
             self.report({'ERROR'}, "The bounding shape should be of type 'MESH'.")
             settings.bounding_shape = None
@@ -134,6 +139,11 @@ class OBJECT_OT_MT_SelectMesh(bpy.types.Operator):
         if settings.mesh is not None:
             settings.mesh = None
             return {'FINISHED'}
+
+        if settings.bounding_shape is not None and active_object == settings.bounding_shape:
+            self.report({'ERROR'},
+                        "This object is already selected as the bounding shape. Please select a different object.")
+            return {'CANCELLED'}
 
         if active_object.type != 'MESH':
             self.report({'ERROR'}, "The mesh shape should be of type 'MESH'.")
