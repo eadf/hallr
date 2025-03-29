@@ -14,6 +14,14 @@ import os
 # Cache the boolean status of HALLR_ALLOW_NON_MANIFOLD (set or not)
 _DENY_NON_MANIFOLD = os.getenv("HALLR_ALLOW_NON_MANIFOLD") is None
 
+def is_mesh_non_manifold(obj):
+    if obj.type != 'MESH':
+        return False
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    is_manifold = all(edge.is_manifold for edge in bm.edges)
+    bm.free()
+    return not is_manifold
 
 # Baby Shark Decimate mesh operator
 class MESH_OT_baby_shark_decimate(bpy.types.Operator):
@@ -362,12 +370,28 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
     def poll(cls, context):
         return (context.mode == 'OBJECT' and
                 len(context.selected_objects) == 2 and
+                all(obj.type == 'MESH' for obj in context.selected_objects) and
                 context.active_object is not None)
 
     def execute(self, context):
         mesh_1 = context.selected_objects[0]
         mesh_2 = context.selected_objects[1]
         if mesh_1 is not None and mesh_2 is not None:
+
+            if _DENY_NON_MANIFOLD and is_mesh_non_manifold(mesh_1):
+                self.report(
+                    {'ERROR'},
+                    f"Object '{mesh_1.name}' is non-manifold. Fix it before proceeding."
+                )
+                return {'CANCELLED'}
+
+            if _DENY_NON_MANIFOLD and is_mesh_non_manifold(mesh_2):
+                self.report(
+                    {'ERROR'},
+                    f"Object '{mesh_2.name}' is non-manifold. Fix it before proceeding."
+                )
+                return {'CANCELLED'}
+
             # Print the names of the selected objects
             # print("Mesh 1:", mesh_1.name)
             # print("Mesh 2:", mesh_2.name)

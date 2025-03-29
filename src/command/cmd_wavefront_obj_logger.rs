@@ -46,7 +46,7 @@ pub(crate) fn process_command(config: &ConfigType, models: &[Model<'_>]) -> Resu
                 format!("Configuration: {:?}", config),
             ]);
 
-        obj.write_obj(&model_filename)?;
+        obj.write_to_file(&model_filename)?;
         println!(
             "Rust: logging input as {}",
             model_filename.to_str().unwrap()

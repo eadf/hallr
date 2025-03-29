@@ -24,7 +24,7 @@ centerline = { version="0.12.0", features = ["glam"]}
 krakel = {version = "0.3.1", features = ["vector-traits", "glam"]}
 #krakel = {path = "../krakel", features = ["vector-traits", "glam"]}
 #krakel = {git = "https://codeberg.org/eadf/krakel_rs.git"}
-hronn = { version = "0.5.1", features = ["glam"]}
+hronn = { version = "0.5.2", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
 #hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
 boostvoronoi = { version = "0.11.1" }

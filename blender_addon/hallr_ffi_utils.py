@@ -302,7 +302,8 @@ def unpack_model(options, raw_indices):
     return rv_edges, rv_faces, mathutils.Matrix.Identity(4)
 
 
-def handle_received_object_replace_active(active_object, options, ffi_vertices, ffi_indices, remove_doubles_threshold = 0.0001):
+def handle_received_object_replace_active(active_object, options, ffi_vertices, ffi_indices,
+                                          remove_doubles_threshold=0.0001):
     """Takes care of the raw ffi data received from rust, and create a blender mesh out of them"""
 
     remove_doubles = False
@@ -314,8 +315,7 @@ def handle_received_object_replace_active(active_object, options, ffi_vertices, 
             remove_doubles = True
         if key == "REMOVE_DOUBLES_THRESHOLD":
             try:
-                new_value = float(value)
-                remove_doubles_threshold = new_value
+                remove_doubles_threshold = float(value)
             except ValueError:
                 pass
 
@@ -341,9 +341,9 @@ def handle_received_object_replace_active(active_object, options, ffi_vertices, 
         # print("active_object.update_from_editmode():", active_object.update_from_editmode())
         if not (old_mesh.users or old_mesh.use_fake_user):
             bpy.data.meshes.remove(old_mesh)
-            print("removed old mesh")
-        else:
-            print("did not remove old mesh")
+#            print("removed old mesh")
+#        else:
+#            print("did not remove old mesh")
 
         if matrix:
             active_object.matrix_world = matrix

@@ -447,13 +447,14 @@ checksum = "fbd780fe5cc30f81464441920d82ac8740e2e46b29a6fad543ddd075229ce37e"
 
 [[package]]
 name = "hronn"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34283dd561b1c1f1211752f5aba026471f75d80a96c0ad566f29bcb30fe8391c"
+checksum = "50b7c2c2f16e4c674ee3ddb5270976eda5235ce30cc225fc99e612d2bf251e63"
 dependencies = [
  "krakel",
  "linestring",
  "rayon",
+ "ryu",
  "smallvec",
  "spade",
  "thiserror 2.0.12",
