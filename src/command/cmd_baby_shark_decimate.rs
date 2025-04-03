@@ -9,7 +9,6 @@ use super::{ConfigType, Model};
 use crate::{HallrError, command::Options, prelude::FFIVector3, utils::IndexCompressor};
 use baby_shark::{
     decimation::{edge_decimation::ConstantErrorDecimationCriteria, prelude::EdgeDecimator},
-    exports::nalgebra::Vector3,
     mesh::{corner_table::prelude::CornerTableF, traits::Mesh},
 };
 use hronn::HronnError;
@@ -28,17 +27,10 @@ pub(crate) fn process_command(
     // todo: actually use the matrices
     let world_matrix = model.world_orientation.to_vec();
 
-    // We simply have to clone the vertices here, because python still owns `model` and
-    // from_vertices_and_indices() only accepts nalgebra::Vector3. We could avoid one copy
-    // if a from_vertices_and_indices() variant could accept &[[f32;3]].
-    // (&[FFIVector3] can easily be casted, in place, to &[[f32;3]]).
-    let vertices_owned: Vec<Vector3<f32>> = model
-        .vertices
-        .iter()
-        .map(|v| Vector3::new(v.x, v.y, v.z))
-        .collect();
-
-    let mut mesh = CornerTableF::from_vertices_and_indices(&vertices_owned, model.indices);
+    let mut mesh = CornerTableF::from_vertex_and_face_iters(
+        model.vertices.iter().map(|v| v.into()),
+        model.indices.iter().copied(),
+    );
     let decimation_criteria = ConstantErrorDecimationCriteria::new(
         config.get_mandatory_parsed_option("ERROR_THRESHOLD", None)?,
     );

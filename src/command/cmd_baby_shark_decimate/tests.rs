@@ -114,7 +114,6 @@ fn test_baby_shark_simplify_1() -> Result<(), HallrError> {
     Ok(())
 }
 
-#[ignore]
 #[test]
 /// this test will crash inside baby_shark
 fn test_baby_shark_decimate_non_manifold_pinched_vertex() -> Result<(), HallrError> {

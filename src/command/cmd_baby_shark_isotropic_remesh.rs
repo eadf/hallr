@@ -8,7 +8,6 @@ mod tests;
 use super::{ConfigType, Model};
 use crate::{HallrError, command::Options, prelude::FFIVector3, utils::IndexCompressor};
 use baby_shark::{
-    exports::nalgebra::Vector3,
     mesh::{corner_table::prelude::CornerTableF, traits::Mesh},
     remeshing::incremental::IncrementalRemesher,
 };
@@ -28,18 +27,11 @@ pub(crate) fn process_command(
     // todo: actually use the matrices
     let world_matrix = model.world_orientation.to_vec();
 
-    // We simply have to clone the vertices here, because python still owns `model` and
-    // from_vertices_and_indices() only accepts nalgebra::Vector3. We could avoid one copy
-    // if a from_vertices_and_indices() variant could accept &[[f32;3]]
-    // (&[FFIVector3] can easily be casted to &[[f32;3]]).
-    let vertices_owned: Vec<Vector3<f32>> = model
-        .vertices
-        .iter()
-        .map(|v| Vector3::new(v.x, v.y, v.z))
-        .collect();
-
-    let mut mesh = CornerTableF::from_vertices_and_indices(&vertices_owned, model.indices);
     let target_edge_length = config.get_mandatory_parsed_option("TARGET_EDGE_LENGTH", None)?;
+    let mut mesh = CornerTableF::from_vertex_and_face_iters(
+        model.vertices.iter().map(|v| v.into()),
+        model.indices.iter().copied(),
+    );
 
     let remesher = IncrementalRemesher::new()
         .with_iterations_count(config.get_mandatory_parsed_option("ITERATIONS_COUNT", None)?)

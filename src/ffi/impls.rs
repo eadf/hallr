@@ -37,6 +37,7 @@ impl fmt::Debug for FFIVector3 {
 
 impl HasXY for FFIVector3 {
     type Scalar = f32;
+    #[inline(always)]
     fn new_2d(x: Self::Scalar, y: Self::Scalar) -> Self {
         FFIVector3::new(x, y, Self::Scalar::ZERO)
     }
@@ -48,6 +49,7 @@ impl HasXY for FFIVector3 {
     fn x_mut(&mut self) -> &mut Self::Scalar {
         &mut self.x
     }
+    #[inline(always)]
     fn set_x(&mut self, value: Self::Scalar) {
         self.x = value
     }
@@ -59,6 +61,7 @@ impl HasXY for FFIVector3 {
     fn y_mut(&mut self) -> &mut Self::Scalar {
         &mut self.y
     }
+    #[inline(always)]
     fn set_y(&mut self, value: Self::Scalar) {
         self.y = value
     }
@@ -77,6 +80,7 @@ impl HasXYZ for FFIVector3 {
     fn z_mut(&mut self) -> &mut Self::Scalar {
         &mut self.z
     }
+    #[inline(always)]
     fn set_z(&mut self, value: Self::Scalar) {
         self.z = value
     }
@@ -196,6 +200,7 @@ impl std::ops::Add for FFIVector3 {
 impl<'b> std::ops::Add<&'b FFIVector3> for &FFIVector3 {
     type Output = FFIVector3;
 
+    #[inline(always)]
     fn add(self, rhs: &'b FFIVector3) -> Self::Output {
         Self::Output {
             x: self.x + rhs.x,
@@ -221,6 +226,7 @@ impl std::ops::Div<f32> for FFIVector3 {
 impl std::ops::Sub for FFIVector3 {
     type Output = Self;
 
+    #[inline(always)]
     fn sub(self, rhs: Self) -> Self::Output {
         Self {
             x: self.x - rhs.x,
@@ -302,12 +308,21 @@ impl ConvertTo<FFIVector3> for DVec3 {
 }
 
 impl From<FFIVector3> for nalgebra::Vector3<f32> {
+    #[inline(always)]
     fn from(v: FFIVector3) -> nalgebra::Vector3<f32> {
         nalgebra::Vector3::new(v.x, v.y, v.z)
     }
 }
 
+impl From<&FFIVector3> for nalgebra::Vector3<f32> {
+    #[inline(always)]
+    fn from(v: &FFIVector3) -> nalgebra::Vector3<f32> {
+        nalgebra::Vector3::new(v.x, v.y, v.z)
+    }
+}
+
 impl From<nalgebra::Vector3<f32>> for FFIVector3 {
+    #[inline(always)]
     fn from(v: nalgebra::Vector3<f32>) -> Self {
         FFIVector3::new(v.x, v.y, v.z)
     }
