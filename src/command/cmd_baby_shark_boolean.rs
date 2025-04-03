@@ -41,7 +41,9 @@ pub(crate) fn process_command(
         MeshToVolume::default()
             .with_voxel_size(voxel_size)
             .convert(&vertex_soup)
-            .ok_or_else(|| HallrError::InternalError("Baby Shark returned no volume for model 0".to_string()))?
+            .ok_or_else(|| {
+                HallrError::InternalError("Baby Shark returned no volume for model 0".to_string())
+            })?
     };
 
     let mut mesh_1_volume = {
@@ -54,7 +56,9 @@ pub(crate) fn process_command(
         MeshToVolume::default()
             .with_voxel_size(voxel_size)
             .convert(&vertex_soup)
-            .ok_or_else(|| HallrError::InternalError("Baby Shark returned no volume for model 1".to_string()))?
+            .ok_or_else(|| {
+                HallrError::InternalError("Baby Shark returned no volume for model 1".to_string())
+            })?
     };
 
     if swap {

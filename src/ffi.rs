@@ -43,6 +43,20 @@ impl FFIVector3 {
     }
 }
 
+// Static initialization control
+static PANIC_HOOK: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+// Setup panic hook just once
+fn ensure_panic_hook_initialized() {
+    let _ = PANIC_HOOK.get_or_init(|| {
+        let original_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |panic_info| {
+            // Log the panic info somewhere if needed
+            original_hook(panic_info);
+        }));
+        true
+    });
+}
+
 /// A struct representing the geometry output for FFI (Foreign Function Interface) usage.
 ///
 /// This struct is used to return geometry-related data from Rust to other programming languages
@@ -149,6 +163,7 @@ pub struct ProcessResult {
 }
 
 /// Converts any Err object into a python side response.
+/// It also catches any panic! and encapsulates them the same way (and hence don't crash the caller)
 fn process_command_error_handler(
     vertices: &[FFIVector3],
     indices: &[usize],
@@ -160,24 +175,43 @@ fn process_command_error_handler(
     Vec<f32>,
     HashMap<String, String>,
 ) {
+    ensure_panic_hook_initialized();
+
     let start = Instant::now();
-    let rv = match crate::command::process_command(vertices, indices, matrix, config) {
-        Ok(rv) => rv,
-        Err(err) => {
-            eprintln!("{:?}", err);
-            for cause in successors(Some(&err as &(dyn std::error::Error)), |e| e.source()) {
-                eprintln!("Caused by: {:?}", cause);
+    let return_value = std::panic::catch_unwind(|| {
+        match crate::command::process_command(vertices, indices, matrix, config) {
+            Ok(rv) => rv,
+            Err(err) => {
+                eprintln!("{:?}", err);
+                for cause in successors(Some(&err as &(dyn std::error::Error)), |e| e.source()) {
+                    eprintln!("Caused by: {:?}", cause);
+                }
+                let mut config = HashMap::new();
+                let _ = config.insert("ERROR".to_string(), err.to_string());
+                (vec![], vec![], vec![], config)
             }
-            let mut config = HashMap::new();
-            let _ = config.insert("ERROR".to_string(), err.to_string());
-            (vec![], vec![], vec![], config)
         }
-    };
+    })
+    .unwrap_or_else(|panic_payload| {
+        // Convert the panic into the FFI error type
+        let err_message = if let Some(msg) = panic_payload.downcast_ref::<String>() {
+            msg.clone()
+        } else if let Some(msg) = panic_payload.downcast_ref::<&str>() {
+            msg.to_string()
+        } else {
+            "Unknown panic occurred".to_string()
+        };
+        eprintln!("{:?}", err_message);
+        let mut config = HashMap::new();
+        let _ = config.insert("ERROR".to_string(), err_message);
+        (vec![], vec![], vec![], config)
+    });
+
     println!(
         "Rust: Time elapsed in process_command() was {:?}",
         start.elapsed()
     );
-    rv
+    return_value
 }
 
 /// Processes the provided geometry (vertices and edges).
