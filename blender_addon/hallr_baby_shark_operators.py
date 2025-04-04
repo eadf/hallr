@@ -14,6 +14,7 @@ import os
 # Cache the boolean status of HALLR_ALLOW_NON_MANIFOLD (set or not)
 _DENY_NON_MANIFOLD = os.getenv("HALLR_ALLOW_NON_MANIFOLD") is None
 
+
 def is_mesh_non_manifold(obj):
     if obj.type != 'MESH':
         return False
@@ -22,6 +23,7 @@ def is_mesh_non_manifold(obj):
     is_manifold = all(edge.is_manifold for edge in bm.edges)
     bm.free()
     return not is_manifold
+
 
 # Baby Shark Decimate mesh operator
 class MESH_OT_baby_shark_decimate(bpy.types.Operator):
@@ -117,7 +119,8 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
 
     iterations_count_prop: bpy.props.IntProperty(
         name="Iterations",
-        description="Number of iterations for remeshing",
+        description="Number of iterations for remeshing. Increase this if your remeshed mesh contains irregularities."
+                    "Higher values improve mesh quality but increase computation time.",
         default=10,
         min=1,
         max=100

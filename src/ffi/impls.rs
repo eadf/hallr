@@ -35,6 +35,13 @@ impl fmt::Debug for FFIVector3 {
     }
 }
 
+impl fmt::Display for FFIVector3 {
+    #[inline(always)]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
+}
+
 impl HasXY for FFIVector3 {
     type Scalar = f32;
     #[inline(always)]

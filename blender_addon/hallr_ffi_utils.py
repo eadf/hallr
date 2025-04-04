@@ -341,9 +341,9 @@ def handle_received_object_replace_active(active_object, options, ffi_vertices, 
         # print("active_object.update_from_editmode():", active_object.update_from_editmode())
         if not (old_mesh.users or old_mesh.use_fake_user):
             bpy.data.meshes.remove(old_mesh)
-#            print("removed old mesh")
-#        else:
-#            print("did not remove old mesh")
+        #            print("removed old mesh")
+        #        else:
+        #            print("did not remove old mesh")
 
         if matrix:
             active_object.matrix_world = matrix
@@ -546,9 +546,9 @@ def call_rust(config: dict[str, str], active_obj, second_mesh=None, second_mesh_
             if not all(len(face.vertices) == 3 for face in second_obj_to_process.data.polygons):
                 raise HallrException(f"The '{second_obj_to_process.name}' mesh is not fully triangulated!")
             indices += [v for face in second_obj_to_process.data.polygons for v in face.vertices]
-            if len(indices)-first_indices_len == 0:
-                raise HallrException(f"No polygons found in '{second_obj_to_process.name}', maybe the mesh is not fully triangulated?")
-
+            if len(indices) - first_indices_len == 0:
+                raise HallrException(
+                    f"No polygons found in '{second_obj_to_process.name}', maybe the mesh is not fully triangulated?")
 
     if active_obj_is_duplicated:
         cleanup_duplicated_object(active_obj_to_process)
@@ -611,9 +611,10 @@ def get_matrices(bpy_object):
             bm[3][0], bm[3][1], bm[3][2], bm[3][3]]
 
 
-def call_rust_direct(config, active_obj, use_line_chunks=False):
+def call_rust_direct(config, active_obj=None, use_line_chunks=False):
     """
-    A simpler version of call_rust that only processes the active_object.
+    A simpler version of call_rust that processes the active_object or nothing if None is provided.
+    When `active_obj` is None, empty vertices and indices lists will be sent to Rust.
     When `expect_line_chunks` is set, the data will iterate over each edge(a,b) and use a list of
     indices in .chunks(2) format.
     If `expect_line_chunks` is not set, the code expect the mesh to be triangulated.
@@ -621,31 +622,43 @@ def call_rust_direct(config, active_obj, use_line_chunks=False):
 
     rust_lib = load_latest_dylib()
 
-    active_obj_to_process = prepare_object_for_processing_direct(active_obj)
-    # handle the vertices
-    vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in active_obj_to_process.data.vertices]
-    vertices_ptr = (Vector3 * len(vertices))(*vertices)
-
-    # Handle the indices
-    if use_line_chunks:
-        config["mesh.format"] = "line_chunks"
-        if len(active_obj_to_process.data.polygons) > 0:
-            raise HallrException("The model should not contain any polygons for this operation, only edges! Hint: use "
-                                 "the 2d_outline operation to convert a mesh to a 2d outline.")
-        indices = [v for edge in active_obj_to_process.data.edges for v in edge.vertices]
+    # Handle the case when no object is provided
+    if active_obj is None:
+        vertices = []
+        indices = []
+        matrices = [1.0, 0.0, 0.0, 0.0,
+                    0.0, 1.0, 0.0, 0.0,
+                    0.0, 0.0, 1.0, 0.0,
+                    0.0, 0.0, 0.0, 1.0]
     else:
-        config["mesh.format"] = "triangulated"
-        # Collect vertices and check if the mesh is fully triangulated
-        if not all(len(face.vertices) == 3 for face in active_obj_to_process.data.polygons):
-            raise HallrException("The mesh is not fully triangulated!")
-        indices = [v for face in active_obj_to_process.data.polygons for v in face.vertices]
-        if len(indices) == 0:
-            raise HallrException("No polygons found, maybe the mesh is not fully triangulated?")
-    indices_ptr = (ctypes.c_size_t * len(indices))(*indices)
+        active_obj_to_process = prepare_object_for_processing_direct(active_obj)
+        # handle the vertices
+        vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in active_obj_to_process.data.vertices]
 
-    # Handle the world orientation
-    matrices = get_matrices(active_obj)
-    matrices_ptr = (ctypes.c_float * len(matrices))(*matrices)
+        # Handle the indices
+        if use_line_chunks:
+            config["mesh.format"] = "line_chunks"
+            if len(active_obj_to_process.data.polygons) > 0:
+                raise HallrException(
+                    "The model should not contain any polygons for this operation, only edges! Hint: use "
+                    "the 2d_outline operation to convert a mesh to a 2d outline.")
+            indices = [v for edge in active_obj_to_process.data.edges for v in edge.vertices]
+        else:
+            config["mesh.format"] = "triangulated"
+            # Collect vertices and check if the mesh is fully triangulated
+            if not all(len(face.vertices) == 3 for face in active_obj_to_process.data.polygons):
+                raise HallrException("The mesh is not fully triangulated!")
+            indices = [v for face in active_obj_to_process.data.polygons for v in face.vertices]
+            if len(indices) == 0:
+                raise HallrException("No polygons found, maybe the mesh is not fully triangulated?")
+
+        # Handle the world orientation
+        matrices = get_matrices(active_obj)
+
+    # Convert data to ctypes pointers
+    vertices_ptr = (Vector3 * len(vertices))(*vertices) if vertices else (Vector3 * 0)()
+    indices_ptr = (ctypes.c_size_t * len(indices))(*indices) if indices else (ctypes.c_size_t * 0)()
+    matrices_ptr = (ctypes.c_float * len(matrices))(*matrices) if matrices else (ctypes.c_float * 0)()
 
     # Handle the StringMap
     keys_list = list(config.keys())

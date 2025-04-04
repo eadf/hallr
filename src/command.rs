@@ -15,6 +15,7 @@ mod cmd_create_test;
 mod cmd_delaunay_triangulation_2d;
 mod cmd_discretize;
 mod cmd_knife_intersect;
+mod cmd_lsystems;
 mod cmd_sdf_mesh;
 mod cmd_sdf_mesh_2_5;
 mod cmd_simplify_rdp;
@@ -281,6 +282,7 @@ pub(crate) fn process_command(
         }
         "baby_shark_mesh_offset" => cmd_baby_shark_mesh_offset::process_command(config, models)?,
         "baby_shark_boolean" => cmd_baby_shark_boolean::process_command(config, models)?,
+        "lsystems" => cmd_lsystems::process_command(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(
             "Invalid command:{}",
             illegal_command

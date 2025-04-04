@@ -46,7 +46,7 @@ fn test_{}_1() -> Result<(),HallrError> {{"###,
     println!("    let mut config = ConfigType::default();");
     for (k, v) in config.iter() {
         println!(
-            r##"    let _= config.insert("{}".to_string(),"{}".to_string());"##,
+            r####"    let _= config.insert("{}".to_string(),r###"{}"###.to_string());"####,
             k, v
         );
     }
@@ -73,15 +73,15 @@ fn test_{}_1() -> Result<(),HallrError> {{"###,
             print!("owned_model_{}.as_model(), ", i);
         }
         println!("];");
-        //println!("assert_eq!({},result.1.chunks(2).count());", 0);
+        //println!("assert_eq!({},_result.1.chunks(2).count());", 0);
         let s = r##"
-    let result = super::process_command(config, models)?;
-    assert_eq!(result.1.len() % 3, 0);
-    assert!(!result.1.is_empty());
-    let number_of_vertices = result.0.len();
+    let _result = super::process_command(config, models)?;
+    assert_eq!(_result.1.len() % 3, 0);
+    assert!(!_result.1.is_empty());
+    let number_of_vertices = _result.0.len();
     assert!(number_of_vertices>0);
 
-    for t in result.1.chunks_exact(3) {
+    for t in _result.1.chunks_exact(3) {
         assert_ne!(t[0], t[1]);
         assert_ne!(t[0], t[2]);
         assert_ne!(t[1], t[2]);
@@ -105,8 +105,8 @@ fn test_{}_1() -> Result<(),HallrError> {{"###,
             number_of_vertices
         )
     }
-    //assert_eq!(0,result.0.len()); // vertices
-    //assert_eq!(0,result.1.len()); // indices
+    //assert_eq!(0,_result.0.len()); // vertices
+    //assert_eq!(0,_result.1.len()); // indices
     Ok(())
 }
 "##;
