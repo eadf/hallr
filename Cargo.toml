@@ -1,5 +1,5 @@
 [package]
-version = "0.1.8"
+version = "0.1.9"
 name = "hallr"
 edition = "2024"
 readme = "README.md"
@@ -37,7 +37,7 @@ vob = "3.0.4"
 earcutr = "0.4.3"
 ilattice = { version="0.4.0", default-features = false, features = ["glam"]}
 fast-surface-nets = "0.2.1"
-baby_shark = "0.3.5"
+baby_shark = "0.3.6"
 logos = "0.15"
 
 [dev-dependencies]

@@ -59,9 +59,9 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "baby_shark"
-version = "0.3.5"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c17c89c8ec1d900cf4051460a1f7d23364cc22a98a6b5e183d981ed2f612dfc8"
+checksum = "0a054e83abb6ba38e84df110a9d07f8a9b5a3100fddcf4bc481559dbdf030fd0"
 dependencies = [
  "bitflags",
  "nalgebra",
@@ -398,7 +398,7 @@ dependencies = [
 
 [[package]]
 name = "hallr"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "ahash",
  "baby_shark",
