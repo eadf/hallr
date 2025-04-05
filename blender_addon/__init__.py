@@ -28,6 +28,7 @@ from . import hallr_mesh_operators
 from . import hallr_meander_toolpath
 from . import hallr_2d_delaunay_triangulation
 from . import hallr_baby_shark_operators
+from . import hallr_lindenmayer_systems
 
 # define modules for registration
 modules = (
@@ -35,6 +36,7 @@ modules = (
     hallr_mesh_operators,
     hallr_2d_delaunay_triangulation,
     hallr_meander_toolpath,
+    hallr_lindenmayer_systems,
 )
 
 

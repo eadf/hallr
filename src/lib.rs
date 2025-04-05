@@ -86,4 +86,10 @@ pub enum HallrError {
 
     #[error("Unknown error: {0}")]
     InternalError(String),
+
+    #[error("Unknown error: {0}")]
+    LSystems3D(String),
+
+    #[error("Could not parse L-Systems: {0}")]
+    ParseError(String),
 }
