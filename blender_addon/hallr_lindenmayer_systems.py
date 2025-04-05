@@ -320,16 +320,6 @@ round()
 def get_lsystem_presets(self, context):
     return [(key, key.replace("_", " "), f"Generate a {key.replace('_', ' ')}") for key in L_SYSTEM_PRESETS.keys()]
 
-
-# Define property correctly with default index instead of a string
-bpy.types.Scene.lsystem_preset = bpy.props.EnumProperty(
-    name="Preset",
-    description="Choose an L-System preset",
-    items=get_lsystem_presets,
-    default=0  # Must be an index, not a string!
-)
-
-
 class LoadLSystemPresetOperator(bpy.types.Operator):
     """Loads an L-System preset into a new Text Editor file"""
     bl_idname = "script.hallr_load_lsystem_preset"
@@ -423,7 +413,16 @@ def register():
     except Exception as e:
         print(f"Failed to register operator: {e}")
         raise e
-
+    try:
+        bpy.types.Scene.lsystem_preset = bpy.props.EnumProperty(
+            name="Preset",
+            description="Choose an L-System preset",
+            items=get_lsystem_presets,
+            default=0
+        )
+    except Exception as e:
+        print(f"Failed to register scene property lsystem_preset: {e}")
+        raise e
     bpy.types.TEXT_MT_editor_menus.append(draw_text_editor_button)  # Add button to Text Editor
 
 
