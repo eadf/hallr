@@ -14,7 +14,7 @@ axiom("L")
 rule("L", "L → R →")
 rule("R", "← L ← R")
 iterations(8)
-timeout(2)
+timeout(1)
 ''',
 
     "3d Dragon Curve": '''
@@ -28,7 +28,7 @@ axiom("F X")
 rule("X","X → Y F →")
 rule("Y","↑ F X ↑ Y")
 iterations(8)
-timeout(2)
+timeout(1)
 ''',
 
     "Lévy curve": '''
@@ -40,18 +40,18 @@ token("←", Turtle::Yaw(-45.0))
 axiom("F")
 rule("F", "→ F ← ← F →")
 iterations(10)
-timeout(2)
+timeout(1)
 ''',
 
     "Lévy curve 3d": '''
 # build a crooked Lévy C curve in 3d
 token("F", Turtle::Forward(1.0))
-token("→", Turtle::Rotate(45.0, 0.0, 0.15))
-token("←", Turtle::Rotate(-45.0, 0.0,-0.15))
+token("→", Turtle::Rotate(45.0, 0.0, 0.5))
+token("←", Turtle::Rotate(-45.0, 0.0, -0.5))
 axiom("F")
 rule("F", "→ F ← ← F →")
 iterations(12)
-timeout(2)
+timeout(1)
 ''',
 
     'Sierpinski triangle': '''
@@ -62,10 +62,10 @@ token("G", Turtle::Forward(1.0))
 token("→", Turtle::Yaw(120.0))
 token("←", Turtle::Yaw(-120.0))
 axiom("F←G←G")
-rule("F", " F←G→F→G←F")
-rule("G", " GG")
+rule("F", "F←G→F→G←F")
+rule("G", "GG")
 iterations(5)
-timeout(2)
+timeout(1)
 ''',
 
     'Sierpinski gasket': '''
@@ -79,7 +79,7 @@ axiom("R")
 rule("R", " L ← R ← L")
 rule("L", " R → L → R")
 iterations(6)
-timeout(2)
+timeout(1)
 ''',
 
     'Sierpinski gasket 3d': '''
@@ -89,10 +89,10 @@ token("L", Turtle::Forward(1.0))
 token("→", Turtle::Yaw(60.0))
 token("←", Turtle::Rotate(-61.0, 0.0,1.0))
 axiom("R")
-rule("R", " L ← R ← L")
-rule("L", " R → L → R")
+rule("R", "L ← R ← L")
+rule("L", "R → L → R")
 iterations(8)
-timeout(2)
+timeout(1)
 ''',
 
     "Gosper curve": '''
@@ -103,10 +103,10 @@ token("L", Turtle::Forward(1.0))
 token("→", Turtle::Yaw(60.0))
 token("←", Turtle::Yaw(-60.0))
 axiom("L")
-rule("L", " L→R→→R←L←←LL←R→")
-rule("R", " ←L→RR→→R→L←←L←R")
+rule("L", "L→R→→R←L←←LL←R→")
+rule("R", "←L→RR→→R→L←←L←R")
 iterations(3)
-timeout(2)
+timeout(1)
 ''',
 
     "Koch curve": '''
@@ -116,9 +116,21 @@ token("F", Turtle::Forward(1.0))
 token("→", Turtle::Yaw(90.0))
 token("←", Turtle::Yaw(-90.0))
 axiom("F")
-rule("F", " F → F ← F ← F → F")
+rule("F", "F → F ← F ← F → F")
 iterations(5)
-timeout(2)
+timeout(1)
+''',
+
+    "Koch snowflake": '''
+# https://en.wikipedia.org/wiki/Koch_snowflake#Representation_as_Lindenmayer_system
+token("F", Turtle::Forward(1.0))
+token("→", Turtle::Yaw(60.0))
+token("←", Turtle::Yaw(-60.0))
+axiom("F←←F←←F")
+rule("F", "F←F→F→→F←F")
+# only on even iterations
+iterations(4)
+timeout(1)
 ''',
 
     "Koch curve 3d": '''
@@ -129,7 +141,7 @@ token("←", Turtle::Rotate(4.0, -90.0, 0.0))
 axiom("F")
 rule("F", " F ↑ F ← F ← F ↑ F")
 iterations(5)
-timeout(2)
+timeout(1)
 ''',
 
     "Quadratic Koch curve island": '''
@@ -142,7 +154,7 @@ axiom("F←F←F←F")
 rule("F", " F→FF←FF←F←F→F→FF←F←F→F→FF→FF←F")
 # caution: this example increases in size really fast
 iterations(3)
-timeout(2)
+timeout(1)
 ''',
 
     "Quadratic Koch curve island 3d": '''
@@ -156,7 +168,7 @@ axiom("F←F←F←F")
 rule("F", " F→F↻F↺←F↻F↺←F←F→F→F↻F↺←F←F→F→F↻F↺→F↻F↺←F")
 # caution: this example increases in size really fast
 iterations(3)
-timeout(2)
+timeout(1)
 ''',
 
     "Fractal binary tree": '''
@@ -172,7 +184,7 @@ axiom("0")
 rule("1", " 11")
 rule("0", " 1[→0]←0")
 iterations(10)
-timeout(2)
+timeout(1)
 ''',
 
     "Fractal binary tree 3d": '''
@@ -189,7 +201,7 @@ axiom("0")
 rule("1", "11")
 rule("0", "1[→↺0]←↻0")
 iterations(10)
-timeout(2)
+timeout(1)
 ''',
 
     "Fractal plant": '''
@@ -202,10 +214,10 @@ token("←", Turtle::Yaw(-25.0))
 token("[", Turtle::Push)
 token("]", Turtle::Pop)
 axiom("X")
-rule("X"," F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
-rule("F", " F F")
+rule("X","F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
+rule("F","F F")
 iterations(6)
-timeout(2)
+timeout(1)
 ''',
 
     "Fractal plant 3d": '''
@@ -218,10 +230,10 @@ token("←", Turtle::Rotate(-25.0,0.0, -25.0))
 token("[", Turtle::Push)
 token("]", Turtle::Pop)
 axiom("X")
-rule("X"," F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
-rule("F", " F F")
+rule("X","F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
+rule("F", "F F")
 iterations(6)
-timeout(2)
+timeout(1)
 ''',
 
     "Hilbert curve": '''
@@ -236,7 +248,7 @@ axiom("A")
 rule("B", "←AF→BFB→FA←" )
 rule("A", "→BF←AFA←FB→" )
 iterations(5)
-timeout(2)
+timeout(1)
 ''',
 
     "Hilbert curve 3d": '''
@@ -258,7 +270,7 @@ rule("B", " A↑F↓CFB↓F↓D↓↓←F←D↓⇒F↓B⇒FC↓F↓A↺")
 rule("C", " ⇒D↓⇒F↓B←F→C↓F↓A↑↑FA↑F↓C→F→B↓F↓D↺")
 rule("D", " ⇒CFB←F→B⇒FA↑F↓A↑↑FB←F→B⇒FC↺")
 iterations(3)
-timeout(2)
+timeout(1)
 ''',
 
     "Hilbert curve 3d v2": '''
@@ -274,20 +286,33 @@ token("↺", Turtle::Roll(-90.0))
 axiom("X")
 rule("X", "↑↺XF↑↺XFX←F↑↻↻XFX↓F→↻↻XFX←F↻X←↻")
 iterations(3)
-timeout(2)
+timeout(1)
 ''',
 
-    "custom curve": '''
+    "Demo curve": '''
+# you can use these chars as tokens =<>^?∧\→←↑↓↻↺↕↶↷⥀⥁⇐⇒⇑⇓⇕×∘+-[]
+# and also [a-z][A-Z][0-9]
+
 token("X", Turtle::Nop))
 token("Y", Turtle::Nop))
-token("F", Turtle::Forward(1))
-token("←", Turtle::Yaw(-90))
-token("↑", Turtle::Pitch(90))
+token("F", Turtle::Forward(2))
+token("⇑", Turtle::PenUp)
+token("⇓", Turtle::PenDown)
+token("→", Turtle::Yaw(120.0))
+token("←", Turtle::Yaw(-120.0))
+token("↑", Turtle::Pitch(1))
+token("↓", Turtle::Pitch(-1.0))
+token("↻", Turtle::Roll(1.0))
+token("↺", Turtle::Roll(-1.0))
+#  Rotate(yaw, pitch, roll) in that order
+token("∘", Turtle::Rotate(-1.0, 2.0, 1.0))
 axiom("F X")
 rule("X","X ← Y F ←")
-rule("Y","↑ F X ↑ Y")
+rule("Y","↑ ⇑ ↺ F ⇓ X ∘ ↑ ↻ Y")
 iterations(3)
-timeout(2)
+timeout(1)
+# will round all float positions to the nearest integer
+round()
 '''}
 
 
@@ -324,7 +349,7 @@ class LoadLSystemPresetOperator(bpy.types.Operator):
                 area.spaces.active.text = text_data
                 break
 
-        self.report({'INFO'}, f"Loaded preset: {preset_name}")
+        self.report({'INFO'}, f"Loaded preset: {preset_name} in the scripting text editor")
         return {'FINISHED'}
 
 

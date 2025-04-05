@@ -7,7 +7,6 @@ use logos::Logos;
 use std::time::{Duration, Instant};
 use vector_traits::glam::{DMat3, DVec3};
 
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 /// A structure defining the 3D heading of a turtle
 struct Heading {
@@ -24,7 +23,6 @@ impl Default for Heading {
     }
 }
 
-#[allow(dead_code)]
 impl Heading {
     /// rotate around 'forward' or longitudinal axis
     fn roll(&self, angle: f64) -> Heading {
@@ -99,7 +97,7 @@ impl Turtle {
             }
             TurtleCommand::Forward(distance) => {
                 let p0 = self.position;
-                self.position += self.heading.heading * *distance;
+                self.position += self.heading.heading * distance;
                 if self.round {
                     self.position.x = self.position.x.round();
                     self.position.y = self.position.y.round();
@@ -109,7 +107,6 @@ impl Turtle {
                 if !self.pen_up {
                     self.result.push([p0, self.position]);
                 }
-                //println!("forward from {} to {} penup:{}", p0, self.position, self.pen_up);
             }
             TurtleCommand::PenUp => self.pen_up = true,
             TurtleCommand::PenDown => self.pen_up = false,
@@ -119,38 +116,30 @@ impl Turtle {
             }
             TurtleCommand::Pop => {
                 if let Some(pop) = self.stack.pop() {
-                    //let p0 = self.position;
-
                     // Update heading and position
                     self.heading = pop.0;
                     self.position = pop.1;
-
-                    // Restore previous pen state
-                    //println!("pop from {} to {} (no draw)", p0, self.position);
                 } else {
                     return Err(HallrError::LSystems3D("Could not pop stack".to_string()));
                 }
-            }
-            TurtleCommand::ForwardF(distance, f) => {
-                let p0 = self.position;
-                self.position += self.heading.heading * *distance;
-                if self.round {
-                    self.position.x = self.position.x.round();
-                    self.position.y = self.position.y.round();
-                    self.position.z = self.position.z.round();
-                }
-                self.position = f(self.position);
-                if !self.pen_up {
-                    self.result.push([p0, self.position]);
-                }
-                //println!("forwardf from {} to {} penup:{}", p0, self.position, self.pen_up);
-            }
+            } /*TurtleCommand::ForwardF(distance, f) => {
+                  let p0 = self.position;
+                  self.position += self.heading.heading * *distance;
+                  if self.round {
+                      self.position.x = self.position.x.round();
+                      self.position.y = self.position.y.round();
+                      self.position.z = self.position.z.round();
+                  }
+                  self.position = f(self.position);
+                  if !self.pen_up {
+                      self.result.push([p0, self.position]);
+                  }
+              }*/
         };
         Ok(())
     }
 }
 
-#[allow(dead_code)]
 pub(crate) enum TurtleCommand {
     Nop,
     Forward(f64),
@@ -163,8 +152,8 @@ pub(crate) enum TurtleCommand {
     PenDown,
     Push,
     Pop,
-    /// Move forward, and based on the current coordinate - set a new coordinate
-    ForwardF(f64, Box<dyn Fn(DVec3) -> DVec3>),
+    // Move forward, and based on the current coordinate - set a new coordinate
+    //ForwardF(f64, Box<dyn Fn(DVec3) -> DVec3>),
 }
 
 #[derive(Default)]
@@ -180,7 +169,6 @@ pub(crate) struct TurtleRules {
     timeout: Option<Duration>,
 }
 
-#[allow(dead_code)]
 impl TurtleRules {
     pub fn add_token(&mut self, token: char, ta: TurtleCommand) -> Result<&mut Self, HallrError> {
         if self.tokens.contains_key(&token) {
@@ -205,7 +193,8 @@ impl TurtleRules {
                 axiom
             )));
         }
-        self.axiom = axiom;
+        // Remove spaces when adding the axiom
+        self.axiom = axiom.chars().filter(|c| *c != ' ').collect();
         Ok(self)
     }
 
@@ -216,9 +205,11 @@ impl TurtleRules {
                 rule_id
             )));
         }
+        // Remove spaces when adding the rule
+        let cleaned_rule: String = rule.chars().filter(|c| *c != ' ').collect();
 
-        println!("Adding rule '{}' => '{}'", rule_id, &rule);
-        if self.rules.insert(rule_id, rule).is_some() {
+        //println!("Adding rule '{}' => '{}'", rule_id, &cleaned_rule);
+        if self.rules.insert(rule_id, cleaned_rule).is_some() {
             return Err(HallrError::LSystems3D(format!(
                 "Rule {} overwriting previous rule",
                 rule_id
@@ -247,26 +238,21 @@ impl TurtleRules {
         Ok(self)
     }
 
-    /// Make sure that the turtle round()s the coordinate after each move.
-    pub fn round(&mut self) -> Result<&mut Self, HallrError> {
-        self.round = true;
-        Ok(self)
-    }
-
     /// Expands the rules over the axiom 'n' times
     fn expand(&self) -> Result<Vec<char>, HallrError> {
         let start_time = Instant::now();
         let mut rv: Vec<char> = self.axiom.chars().collect();
         for i in 0..self.iterations {
-            if let Some(timeout) = self.timeout {
-                if start_time.elapsed() > timeout {
-                    return Err(HallrError::LSystems3D(format!(
-                        "Timeout after {} seconds while processing iteration {}/{}",
-                        timeout.as_secs(),
-                        i,
-                        self.iterations
-                    )));
-                }
+            if self
+                .timeout
+                .is_some_and(|timeout| start_time.elapsed() > timeout)
+            {
+                return Err(HallrError::LSystems3D(format!(
+                    "Timeout after {} seconds while processing iteration {}/{}",
+                    self.timeout.unwrap().as_secs(),
+                    i,
+                    self.iterations
+                )));
             }
 
             let mut tmp = Vec::<char>::with_capacity(rv.len() * 2);
@@ -300,7 +286,6 @@ impl TurtleRules {
             Yaw,
             Pitch,
             Roll,
-            Rotate,
             // These 'states' does not carry any value, so they can be executed directly
             //Push,
             //Pop,
@@ -339,6 +324,12 @@ impl TurtleRules {
 
             #[regex("\\.?timeout")]
             Timeout,
+
+            #[token("Turtle::PenUp")]
+            TurtleActionPenUp,
+
+            #[token("Turtle::PenDown")]
+            TurtleActionPenDown,
 
             #[token("Turtle::Forward")]
             TurtleActionForward,
@@ -542,6 +533,32 @@ impl TurtleRules {
                         )));
                     }
                 },
+                ParseToken::TurtleActionPenDown => match state {
+                    ParseState::Token(Some(text), None) => {
+                        println!("Got .add_token(\"{}\", TurtleAction::PenDown)", text);
+                        let _ = self.add_token(text, TurtleCommand::PenDown);
+                        state = ParseState::Start;
+                    }
+                    _ => {
+                        return Err(HallrError::ParseError(format!(
+                            "Bad state for TurtleActionPenDown:{:?} at line {}",
+                            state, line
+                        )));
+                    }
+                },
+                ParseToken::TurtleActionPenUp => match state {
+                    ParseState::Token(Some(text), None) => {
+                        println!("Got .add_token(\"{}\", TurtleAction::PenUp)", text);
+                        let _ = self.add_token(text, TurtleCommand::PenUp);
+                        state = ParseState::Start;
+                    }
+                    _ => {
+                        return Err(HallrError::ParseError(format!(
+                            "Bad state for TurtleActionPenUp:{:?} at line {}",
+                            state, line
+                        )));
+                    }
+                },
                 ParseToken::TurtleActionNop | ParseToken::TurtleActionNothing => match state {
                     ParseState::Token(Some(text), None) => {
                         println!("Got .add_token(\"{}\", TurtleAction::Nop)", text);
@@ -647,13 +664,6 @@ impl TurtleRules {
                                         TurtleCommand::Roll(value.to_radians())
                                     }
                                     ParseTurtleAction::Forward => TurtleCommand::Forward(value),
-                                    ParseTurtleAction::Rotate => {
-                                        // This should not be reached as we're using TokenRotate state now
-                                        return Err(HallrError::ParseError(format!(
-                                            "Unexpected ParseTurtleAction::Rotate in Token state at line {}",
-                                            line
-                                        )));
-                                    }
                                 },
                             );
                             state = ParseState::Start;
@@ -712,7 +722,7 @@ impl TurtleRules {
                         }
                         ParseState::Timeout(None) => {
                             let seconds = value as u64;
-                            println!("Got .set_timeout({})", seconds);
+                            println!("Got .timeout({})", seconds);
                             let _ = self.set_timeout(seconds);
                             state = ParseState::Start;
                         }
@@ -758,21 +768,23 @@ impl TurtleRules {
 
         for (i, step) in path.iter().enumerate() {
             // Check for timeout periodically (e.g., every 1000 steps)
-            if i % 1000 == 0 {
-                if let Some(timeout) = self.timeout {
-                    if start_time.elapsed() > timeout {
-                        return Err(HallrError::LSystems3D(format!(
-                            "Timeout after {} seconds while processing step {}/{}",
-                            timeout.as_secs(),
-                            i,
-                            path.len()
-                        )));
-                    }
-                }
+            if i % 1000 == 0
+                && self
+                    .timeout
+                    .is_some_and(|timeout| start_time.elapsed() > timeout)
+            {
+                return Err(HallrError::LSystems3D(format!(
+                    "Timeout after {} seconds while processing step {}/{}",
+                    self.timeout.unwrap().as_secs(),
+                    i,
+                    path.len()
+                )));
             }
-            if step == &' ' {
-                continue;
-            }
+            // ’ ’ should already have been filtered out
+            debug_assert_ne!(step,&' ');
+            //if step == &' ' {
+            //    continue;
+            //}
             let action = self.tokens.get(step).ok_or_else(|| {
                 eprintln!("tokens: {:?}", self.tokens.keys());
                 eprintln!("rules: {:?}", self.rules.keys());
