@@ -12,7 +12,7 @@ bl_info = {
     "category": "Object",
     "description": "A collection of addons written in Rust",
     "author": "EAD https://github.com/eadf",
-    "version": (0, 1, 9),
+    "version": (0, 1, 10),
     "warning": "This executes compiled rust code on your computer",
 }
 

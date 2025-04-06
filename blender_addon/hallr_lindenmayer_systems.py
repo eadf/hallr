@@ -151,10 +151,25 @@ token("F", Turtle::Forward(1.0))
 token("→", Turtle::Yaw(90.0))
 token("←", Turtle::Yaw(-90.0))
 axiom("F←F←F←F")
-rule("F", " F→FF←FF←F←F→F→FF←F←F→F→FF→FF←F")
+rule("F", "F←F→F→FF←F←F→F")
+#rule("F", " F→FF←FF←F←F→F→FF←F←F→F→FF→FF←F")
 # caution: this example increases in size really fast
 iterations(3)
 timeout(1)
+''',
+
+    "Quadratic Koch curve island on a sphere": '''
+# Quadratic Koch curve island on a sphere
+token("F", Turtle::GeodesicForward(0.1))
+# angle specially selected for tiling in iterations(3)
+token("→", Turtle::GeodesicYaw(90.1175))
+token("←", Turtle::GeodesicYaw(-90.0))
+axiom("F←F←F←F")
+rule("F", "F←F→F→FF←F←F→F")
+# caution: this example increases in size really fast
+iterations(3)
+timeout(1)
+geodesic_radius(5.0)
 ''',
 
     "Quadratic Koch curve island 3d": '''
@@ -216,7 +231,25 @@ token("]", Turtle::Pop)
 axiom("X")
 rule("X","F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
 rule("F","F F")
+# initial rotation 5° off Y axis
+rotate(5.0,0.0,0.0)
 iterations(6)
+timeout(1)
+''',
+
+    "Fractal plant on a sphere": '''
+# build a geodesic fractal plant
+token("X", Turtle::Nop)
+token("F", Turtle::GeodesicForward(0.05))
+token("→", Turtle::GeodesicYaw(25.0))
+token("←", Turtle::GeodesicYaw(-25.0))
+token("[", Turtle::Push)
+token("]", Turtle::Pop)
+axiom("X")
+rule("X","F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
+rule("F","F F")
+iterations(7)
+geodesic_radius(5.0)
 timeout(1)
 ''',
 
@@ -225,13 +258,15 @@ timeout(1)
 # build a fractal plant
 token("X", Turtle::Nop)
 token("F", Turtle::Forward(1.0))
-token("→", Turtle::Rotate(25.0,0.0,25.0))
-token("←", Turtle::Rotate(-25.0,0.0, -25.0))
+token("→", Turtle::Rotate(25.0,0.0,-15.0))
+token("←", Turtle::Rotate(-25.0,0.0,5.0))
 token("[", Turtle::Push)
 token("]", Turtle::Pop)
 axiom("X")
 rule("X","F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
 rule("F", "F F")
+# initial rotation 5° off Y axis
+rotate(5.0,0.0,0.0)
 iterations(6)
 timeout(1)
 ''',

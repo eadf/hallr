@@ -5,99 +5,153 @@
 use crate::HallrError;
 use logos::Logos;
 use std::time::{Duration, Instant};
-use vector_traits::glam::{DMat3, DVec3};
-
-#[derive(Debug, Clone)]
-/// A structure defining the 3D heading of a turtle
-struct Heading {
-    heading: DVec3,
-    up: DVec3,
-}
-
-impl Default for Heading {
-    fn default() -> Self {
-        Self {
-            heading: DVec3::Y,
-            up: DVec3::Z,
-        }
-    }
-}
-
-impl Heading {
-    /// rotate around 'forward' or longitudinal axis
-    fn roll(&self, angle: f64) -> Heading {
-        let axis = self.heading.normalize();
-        let rot = DMat3::from_axis_angle(axis, angle);
-        Self {
-            heading: self.heading,
-            up: (rot * self.up).normalize(),
-        }
-    }
-
-    /// rotate around 'up' or vertical axis
-    fn yaw(&self, angle: f64) -> Heading {
-        let axis = self.up.normalize();
-        let rot = DMat3::from_axis_angle(axis, angle);
-        Self {
-            heading: (rot * self.heading).normalize(),
-            up: self.up,
-        }
-    }
-
-    /// rotate around axis perpendicular to 'up' and 'forward' - i.e. lateral/traverse axis
-    fn pitch(&self, angle: f64) -> Heading {
-        let pitch_v = self.heading.cross(self.up).normalize();
-        let rot = DMat3::from_axis_angle(pitch_v, angle);
-        Self {
-            heading: (rot * self.heading).normalize(),
-            up: (rot * self.up).normalize(),
-        }
-    }
-
-    /// Perform yaw, pitch and roll in that order
-    fn rotate(&self, yaw: f64, pitch: f64, roll: f64) -> Heading {
-        self.yaw(yaw).pitch(pitch).roll(roll)
-    }
-}
+use vector_traits::glam::{DQuat, DVec3};
 
 pub(crate) struct Turtle {
-    heading: Heading,
+    orientation: DQuat,
     position: DVec3,
-    stack: Vec<(Heading, DVec3)>,
+    stack: Vec<(DQuat, DVec3)>,
     result: Vec<[DVec3; 2]>,
     /// Should the turtle draw while moving?
     pen_up: bool,
     /// should coordinates be rounded to int after each move?
     round: bool,
+    sphere_radius: f64,
+    //normalize_cnt:u16
 }
 
 impl Default for Turtle {
     fn default() -> Self {
         Self {
-            heading: Heading::default(),
+            orientation: DQuat::IDENTITY,
             position: DVec3::ZERO,
             result: Vec::new(),
             stack: Vec::new(),
             pen_up: false,
             round: false,
+            sphere_radius: 1.0,
+            //normalize_cnt:0,
         }
     }
 }
 
 impl Turtle {
+    #[inline(always)]
+    fn normalize_quaternion(&mut self) {
+        //self.normalize_cnt += 1;
+        //if self.normalize_cnt % 3   == 0 {
+        self.orientation = self.orientation.normalize();
+        //}
+    }
+
+    // Current methods reimplemented with quaternions
+    fn yaw(&mut self, angle: f64) {
+        let up = self.up_vector();
+        let rotation = DQuat::from_axis_angle(up, angle);
+        self.orientation = rotation * self.orientation;
+        self.normalize_quaternion()
+    }
+
+    // Yaw: rotate heading within local tangent plane (around surface normal)
+    fn geodesic_yaw(&mut self, angle: f64) {
+        // self.position is normalized in each geodesic_forward()
+        let normal = self.position / self.sphere_radius;
+        let rotation = DQuat::from_axis_angle(normal, angle);
+        self.orientation = rotation * self.orientation;
+    }
+
+    fn pitch(&mut self, angle: f64) {
+        let right = self.right_vector();
+        let rotation = DQuat::from_axis_angle(right, angle);
+        self.orientation = rotation * self.orientation;
+        self.normalize_quaternion()
+    }
+
+    fn roll(&mut self, angle: f64) {
+        let forward = self.forward_vector();
+        let rotation = DQuat::from_axis_angle(forward, angle);
+        self.orientation = rotation * self.orientation;
+        self.normalize_quaternion()
+    }
+
+    /// Rotate by yaw, pitch, roll (applied in that order) using quaternions
+    fn rotate(&mut self, yaw: f64, pitch: f64, roll: f64) {
+        // Create individual rotation quaternions
+        let yaw_rot = DQuat::from_axis_angle(self.up_vector(), yaw);
+        let pitch_rot = DQuat::from_axis_angle(self.right_vector(), pitch);
+        let roll_rot = DQuat::from_axis_angle(self.forward_vector(), roll);
+
+        // Combine rotations (note: multiplication order is right-to-left)
+        self.orientation = roll_rot * pitch_rot * yaw_rot * self.orientation;
+        self.normalize_quaternion()
+    }
+
+    // Euclidean forward movement
+    #[inline(always)]
+    fn forward(&mut self, distance: f64) {
+        self.position += self.forward_vector() * distance;
+    }
+
+    // geodesic forward, hug the sphere and re-orient after move so "forward" tangents the surface
+    // and "up" is the sphere radial direction.
+    fn geodesic_forward(&mut self, distance: f64) {
+        let angular_disp = distance / self.sphere_radius;
+
+        let up = self.position / self.sphere_radius; // true "up"
+        let forward = self.forward_vector();
+        let right = up.cross(forward).normalize(); // guaranteed tangent + perpendicular
+        let rotation = DQuat::from_axis_angle(right, angular_disp);
+
+        // Rotate position around sphere center
+        // self.position/sphere_radius is now normalized once per forward()
+        self.position = (rotation * self.position).normalize() * self.sphere_radius;
+
+        // Adjust orientation to maintain tangent plane
+        // normalize self.orientation once per forward()
+        self.orientation = (rotation * self.orientation).normalize();
+    }
+
+    #[inline(always)]
+    fn forward_vector(&self) -> DVec3 {
+        self.orientation * DVec3::Y
+    }
+
+    #[inline(always)]
+    fn up_vector(&self) -> DVec3 {
+        self.orientation * DVec3::Z
+    }
+
+    #[inline(always)]
+    fn right_vector(&self) -> DVec3 {
+        self.orientation * DVec3::X
+    }
+
     /// Apply a turtle command
     fn apply(&mut self, action: &TurtleCommand) -> Result<(), HallrError> {
         match action {
             TurtleCommand::Nop => {}
-            TurtleCommand::Yaw(angle) => self.heading = self.heading.yaw(*angle),
-            TurtleCommand::Pitch(angle) => self.heading = self.heading.pitch(*angle),
-            TurtleCommand::Roll(angle) => self.heading = self.heading.roll(*angle),
-            TurtleCommand::Rotate(yaw, pitch, roll) => {
-                self.heading = self.heading.rotate(*yaw, *pitch, *roll)
-            }
+            TurtleCommand::Yaw(angle) => self.yaw(*angle),
+            TurtleCommand::GeodesicYaw(angle) => self.geodesic_yaw(*angle),
+            TurtleCommand::Pitch(angle) => self.pitch(*angle),
+            TurtleCommand::Roll(angle) => self.roll(*angle),
+            TurtleCommand::Rotate(yaw, pitch, roll) => self.rotate(*yaw, *pitch, *roll),
             TurtleCommand::Forward(distance) => {
                 let p0 = self.position;
-                self.position += self.heading.heading * distance;
+                self.forward(*distance);
+                if self.round {
+                    self.position.x = self.position.x.round();
+                    self.position.y = self.position.y.round();
+                    self.position.z = self.position.z.round();
+                }
+
+                if !self.pen_up {
+                    self.result.push([p0, self.position]);
+                }
+            }
+            TurtleCommand::GeodesicForward(distance) => {
+                let p0 = self.position;
+                self.geodesic_forward(*distance);
+
                 if self.round {
                     self.position.x = self.position.x.round();
                     self.position.y = self.position.y.round();
@@ -112,29 +166,17 @@ impl Turtle {
             TurtleCommand::PenDown => self.pen_up = false,
             TurtleCommand::Push => {
                 //println!("pushing {}", self.position);
-                self.stack.push((self.heading.clone(), self.position))
+                self.stack.push((self.orientation, self.position))
             }
             TurtleCommand::Pop => {
                 if let Some(pop) = self.stack.pop() {
                     // Update heading and position
-                    self.heading = pop.0;
+                    self.orientation = pop.0;
                     self.position = pop.1;
                 } else {
                     return Err(HallrError::LSystems3D("Could not pop stack".to_string()));
                 }
-            } /*TurtleCommand::ForwardF(distance, f) => {
-                  let p0 = self.position;
-                  self.position += self.heading.heading * *distance;
-                  if self.round {
-                      self.position.x = self.position.x.round();
-                      self.position.y = self.position.y.round();
-                      self.position.z = self.position.z.round();
-                  }
-                  self.position = f(self.position);
-                  if !self.pen_up {
-                      self.result.push([p0, self.position]);
-                  }
-              }*/
+            }
         };
         Ok(())
     }
@@ -143,17 +185,17 @@ impl Turtle {
 pub(crate) enum TurtleCommand {
     Nop,
     Forward(f64),
+    GeodesicForward(f64),
     Roll(f64),
     Pitch(f64),
     Yaw(f64),
+    GeodesicYaw(f64),
     /// yaw, pitch, roll
     Rotate(f64, f64, f64),
     PenUp,
     PenDown,
     Push,
     Pop,
-    // Move forward, and based on the current coordinate - set a new coordinate
-    //ForwardF(f64, Box<dyn Fn(DVec3) -> DVec3>),
 }
 
 #[derive(Default)]
@@ -167,6 +209,7 @@ pub(crate) struct TurtleRules {
     round: bool,
     iterations: u32,
     timeout: Option<Duration>,
+    geodesic_radius: Option<f64>,
 }
 
 impl TurtleRules {
@@ -237,6 +280,10 @@ impl TurtleRules {
         }
         Ok(self)
     }
+    pub fn set_geodesic_radius(&mut self, radius: f64) -> Result<&mut Self, HallrError> {
+        self.geodesic_radius = Some(radius);
+        Ok(self)
+    }
 
     /// Expands the rules over the axiom 'n' times
     fn expand(&self) -> Result<Vec<char>, HallrError> {
@@ -283,6 +330,8 @@ impl TurtleRules {
         #[derive(Debug, PartialEq, Eq)]
         enum ParseTurtleAction {
             Forward,
+            GeodesicForward,
+            GeodesicYaw,
             Yaw,
             Pitch,
             Roll,
@@ -310,6 +359,9 @@ impl TurtleRules {
             #[regex("\\.?yaw")]
             Yaw,
 
+            #[regex("\\.?geodesicyaw")]
+            GeodesicYaw,
+
             #[regex("\\.?pitch")]
             Pitch,
 
@@ -325,6 +377,9 @@ impl TurtleRules {
             #[regex("\\.?timeout")]
             Timeout,
 
+            #[regex("\\.?geodesic_radius")]
+            GeodesicRadius,
+
             #[token("Turtle::PenUp")]
             TurtleActionPenUp,
 
@@ -334,8 +389,14 @@ impl TurtleRules {
             #[token("Turtle::Forward")]
             TurtleActionForward,
 
+            #[token("Turtle::GeodesicForward")]
+            TurtleActionGeodesicForward,
+
             #[token("Turtle::Yaw")]
             TurtleActionYaw,
+
+            #[token("Turtle::GeodesicYaw")]
+            TurtleActionGeodesicYaw,
 
             #[token("Turtle::Pitch")]
             TurtleActionPitch,
@@ -381,6 +442,7 @@ impl TurtleRules {
             Yaw,
             Rotate(Option<f64>, Option<f64>, Option<f64>),
             Iterations(Option<i32>),
+            GeodesicRadius(Option<f64>),
             Timeout(Option<u64>),
         }
 
@@ -489,6 +551,18 @@ impl TurtleRules {
                         )));
                     }
                 },
+                ParseToken::TurtleActionGeodesicForward => match state {
+                    ParseState::Token(Some(text), None) => {
+                        state =
+                            ParseState::Token(Some(text), Some(ParseTurtleAction::GeodesicForward));
+                    }
+                    _ => {
+                        return Err(HallrError::ParseError(format!(
+                            "Bad state for TurtleActionGeodesicForward:{:?} at line {}",
+                            state, line
+                        )));
+                    }
+                },
                 ParseToken::TurtleActionYaw => match state {
                     ParseState::Token(Some(text), None) => {
                         state = ParseState::Token(Some(text), Some(ParseTurtleAction::Yaw));
@@ -496,6 +570,17 @@ impl TurtleRules {
                     _ => {
                         return Err(HallrError::ParseError(format!(
                             "Bad state for TurtleActionYaw:{:?} at line {}",
+                            state, line
+                        )));
+                    }
+                },
+                ParseToken::TurtleActionGeodesicYaw => match state {
+                    ParseState::Token(Some(text), None) => {
+                        state = ParseState::Token(Some(text), Some(ParseTurtleAction::GeodesicYaw));
+                    }
+                    _ => {
+                        return Err(HallrError::ParseError(format!(
+                            "Bad state for TurtleActionGeodesicYaw:{:?} at line {}",
                             state, line
                         )));
                     }
@@ -603,6 +688,17 @@ impl TurtleRules {
                     self.round = true;
                     state = ParseState::Start;
                 }
+                ParseToken::GeodesicRadius => {
+                    if state != ParseState::Start {
+                        return Err(HallrError::ParseError(format!(
+                            "Expected to be in Start state, was in state:{:?} when reading:{} at line {}.",
+                            state,
+                            lex.slice(),
+                            line
+                        )));
+                    }
+                    state = ParseState::GeodesicRadius(None);
+                }
                 ParseToken::EOL => {
                     line += 1;
                     state = ParseState::Start;
@@ -654,6 +750,9 @@ impl TurtleRules {
                             let _ = self.add_token(
                                 text,
                                 match turtle {
+                                    ParseTurtleAction::GeodesicYaw => {
+                                        TurtleCommand::GeodesicYaw(value.to_radians())
+                                    }
                                     ParseTurtleAction::Yaw => {
                                         TurtleCommand::Yaw(value.to_radians())
                                     }
@@ -664,6 +763,9 @@ impl TurtleRules {
                                         TurtleCommand::Roll(value.to_radians())
                                     }
                                     ParseTurtleAction::Forward => TurtleCommand::Forward(value),
+                                    ParseTurtleAction::GeodesicForward => {
+                                        TurtleCommand::GeodesicForward(value)
+                                    }
                                 },
                             );
                             state = ParseState::Start;
@@ -720,6 +822,11 @@ impl TurtleRules {
                             let _ = self.set_iterations(iterations);
                             state = ParseState::Start;
                         }
+                        ParseState::GeodesicRadius(None) => {
+                            println!("Got .geodesic_radius({})", value);
+                            let _ = self.set_geodesic_radius(value);
+                            state = ParseState::Start;
+                        }
                         ParseState::Timeout(None) => {
                             let seconds = value as u64;
                             println!("Got .timeout({})", seconds);
@@ -748,43 +855,62 @@ impl TurtleRules {
 
     /// expands the rules and run the turtle over the result.
     pub fn exec(&self, mut turtle: Turtle) -> Result<Vec<[DVec3; 2]>, HallrError> {
-        let start_time = Instant::now();
-
-        let path = self.expand()?;
-
         if self.round {
             turtle.round = true;
         }
-        // Apply initial rotations
-        if let Some(yaw) = self.yaw {
-            turtle.apply(&TurtleCommand::Yaw(yaw))?;
-        }
-        if let Some(roll) = self.roll {
-            turtle.apply(&TurtleCommand::Roll(roll))?;
-        }
-        if let Some(pitch) = self.pitch {
-            turtle.apply(&TurtleCommand::Pitch(pitch))?;
+        if let Some(radius) = self.geodesic_radius {
+            // place turtle on the sphere
+            turtle.sphere_radius = radius;
+            for t in self.tokens.values() {
+                if matches!(
+                    t,
+                    TurtleCommand::Forward(_)
+                        | TurtleCommand::Pitch(_)
+                        | TurtleCommand::Rotate(_, _, _)
+                        | TurtleCommand::Roll(_)
+                ) {
+                    return Err(HallrError::ParseError(
+                        "No normal forward, pitch, roll, or rotate allowed with geodesic radius"
+                            .to_string(),
+                    ));
+                }
+            }
+            turtle.position = DVec3::new(0.0, 0.0, -radius);
+            turtle.orientation = DQuat::IDENTITY;
+        } else {
+            // Apply initial rotations
+            if let Some(yaw) = self.yaw {
+                turtle.apply(&TurtleCommand::Yaw(yaw))?;
+            }
+            if let Some(roll) = self.roll {
+                turtle.apply(&TurtleCommand::Roll(roll))?;
+            }
+            if let Some(pitch) = self.pitch {
+                turtle.apply(&TurtleCommand::Pitch(pitch))?;
+            }
         }
 
-        for (i, step) in path.iter().enumerate() {
+        let _start_time = Instant::now();
+
+        let path = self.expand()?;
+
+        for (_i, step) in path.iter().enumerate() {
             // Check for timeout periodically (e.g., every 1000 steps)
-            if i % 1000 == 0
+            #[cfg(not(test))]
+            if _i % 1000 == 0
                 && self
                     .timeout
-                    .is_some_and(|timeout| start_time.elapsed() > timeout)
+                    .is_some_and(|timeout| _start_time.elapsed() > timeout)
             {
                 return Err(HallrError::LSystems3D(format!(
                     "Timeout after {} seconds while processing step {}/{}",
                     self.timeout.unwrap().as_secs(),
-                    i,
+                    _i,
                     path.len()
                 )));
             }
             // ’ ’ should already have been filtered out
             debug_assert_ne!(step, &' ');
-            //if step == &' ' {
-            //    continue;
-            //}
             let action = self.tokens.get(step).ok_or_else(|| {
                 eprintln!("tokens: {:?}", self.tokens.keys());
                 eprintln!("rules: {:?}", self.rules.keys());

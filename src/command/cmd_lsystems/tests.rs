@@ -10,6 +10,70 @@ use crate::{
 #[test]
 fn test_lsystems_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
+    let _ = config.insert("command".to_string(), r###"lsystems"###.to_string());
+    let _ = config.insert(
+        "CUSTOM_TURTLE".to_string(),
+        r###"
+token("X", Turtle::Nop))
+token("F", Turtle::GeodesicForward(1.0)) # step forward along the surface
+token("→", Turtle::GeodesicYaw(120)) # turn left on the surface
+axiom("F X")
+rule("X", "→ F X → F X")
+geodesic_radius(5.0)
+iterations(5)
+"###
+        .to_string(),
+    );
+
+    let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
+        vertices: vec![],
+        indices: vec![],
+    };
+
+    let models = vec![owned_model_0.as_model()];
+
+    let _result = super::process_command(config, models)?;
+    println!("{:?}", _result.0);
+    println!("{:?}", _result.1);
+
+    /*assert_eq!(_result.1.len() % 3, 0);
+    assert!(!_result.1.is_empty());
+    let number_of_vertices = _result.0.len();
+    assert!(number_of_vertices>0);
+
+    for t in _result.1.chunks_exact(3) {
+        assert_ne!(t[0], t[1]);
+        assert_ne!(t[0], t[2]);
+        assert_ne!(t[1], t[2]);
+
+        assert!(
+            t[0] < number_of_vertices,
+            "{:?} >= {}",
+            t[2],
+            number_of_vertices
+        );
+        assert!(
+            t[1] < number_of_vertices,
+            "{:?} >= {}",
+            t[2],
+            number_of_vertices
+        );
+        assert!(
+            t[2] < number_of_vertices,
+            "{:?} >= {}",
+            t[2],
+            number_of_vertices
+        )
+    }*/
+    //assert_eq!(0,_result.0.len()); // vertices
+    //assert_eq!(0,_result.1.len()); // indices
+    Ok(())
+}
+
+#[test]
+fn test_lsystems_8() -> Result<(), HallrError> {
+    let mut config = ConfigType::default();
     let _ = config.insert(
         "CUSTOM_TURTLE".to_string(),
         r###"token("X", Turtle::Nop)
