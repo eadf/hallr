@@ -236,7 +236,7 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
         warning_row.scale_y = 0.7
         layout.prop(self, "split_edges_prop")
         layout.prop(self, "collapse_edges_prop")
-        layout.prop(self, "flip_edge_prop")
+        layout.prop(self, "flip_edges_prop")
         layout.prop(self, "shift_vertices_prop")
         layout.prop(self, "project_vertices_prop")
 
