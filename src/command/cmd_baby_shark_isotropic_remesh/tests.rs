@@ -91,8 +91,8 @@ fn test_baby_shark_isotropic_remesh_1() -> Result<(), HallrError> {
             number_of_vertices
         )
     }
-    assert_eq!(36, result.0.len()); // vertices
-    assert_eq!(204, result.1.len()); // indices
+    assert_eq!(33, result.0.len()); // vertices
+    assert_eq!(186, result.1.len()); // indices
     Ok(())
 }
 

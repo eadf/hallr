@@ -11,7 +11,7 @@ use crate::HallrError;
 use ahash::{AHashMap, AHashSet};
 use hronn::prelude::MaximumTracker;
 use smallvec::SmallVec;
-use std::cmp::Reverse;
+use std::{cmp::Reverse, hash::Hash};
 use vector_traits::{
     GenericScalar, GenericVector2, GenericVector3, HasXYZ, num_traits::float::FloatCore,
 };
@@ -146,12 +146,12 @@ impl<T: GenericVector3> VertexDeduplicator3D<T> {
     }
 }
 
-pub(crate) struct IndexCompressor<T> {
-    index_map: AHashMap<usize, usize>,
+pub(crate) struct IndexCompressor<T, I: Hash + Eq> {
+    index_map: AHashMap<I, usize>,
     pub vertices: Vec<T>,
 }
 
-impl<T> IndexCompressor<T> {
+impl<T, I: Hash + Eq> IndexCompressor<T, I> {
     #[allow(dead_code)]
     pub fn new() -> Self {
         Self {
@@ -170,7 +170,7 @@ impl<T> IndexCompressor<T> {
 
     /// Maps an old index to a new one, adding the vertex to the collection
     /// if this is the first time we've seen this index
-    pub fn get_or_create_mapping<F>(&mut self, old_index: usize, vertex_provider: F) -> usize
+    pub fn get_or_create_mapping<F>(&mut self, old_index: I, vertex_provider: F) -> usize
     where
         F: FnOnce() -> T,
     {
