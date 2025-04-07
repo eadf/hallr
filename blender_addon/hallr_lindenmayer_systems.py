@@ -355,6 +355,7 @@ round()
 def get_lsystem_presets(self, context):
     return [(key, key.replace("_", " "), f"Generate a {key.replace('_', ' ')}") for key in L_SYSTEM_PRESETS.keys()]
 
+
 class LoadLSystemPresetOperator(bpy.types.Operator):
     """Loads an L-System preset into a new Text Editor file"""
     bl_idname = "script.hallr_load_lsystem_preset"
@@ -378,8 +379,27 @@ class LoadLSystemPresetOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class LSystemPresetPopupOperator(bpy.types.Operator):
+    """Load a predefined L-System script into the Text Editor."""
+
+    bl_idname = "script.hallr_preset_popup"
+    bl_label = "Choose L-System Preset"
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=300)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(context.scene, "lsystem_preset")
+
+    def execute(self, context):
+        bpy.ops.script.hallr_load_lsystem_preset()
+        return {'FINISHED'}
+
+
 class RunLSystemScriptOperator(bpy.types.Operator):
-    """Runs the currently loaded L-System script"""
+    """Run L-System script (view result in 3D View)."""
+
     bl_idname = "script.hallr_run_lsystem"
     bl_label = "Run L-System Script"
     bl_icon = "PLAY"
@@ -414,30 +434,22 @@ class RunLSystemScriptOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class LSystemPanel(bpy.types.Panel):
-    """Creates a panel in the Sidebar (N Panel) for L-System presets"""
-    bl_label = "L-System Presets"
-    bl_idname = "VIEW3D_PT_hallr_lsystem_presets"
-    bl_space_type = 'VIEW_3D'  # 3D Viewport
-    bl_region_type = 'UI'  # Sidebar panel
-    bl_category = "Hallr tools"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(context.scene, "lsystem_preset")  # Dropdown menu
-        layout.operator(LoadLSystemPresetOperator.bl_idname)
-
-
 def draw_text_editor_button(self, context):
     layout = self.layout
-    layout.operator(RunLSystemScriptOperator.bl_idname, text="Run L-System", icon=RunLSystemScriptOperator.bl_icon)
+    row = layout.row(align=True)
+
+    # Run button
+    row.operator(RunLSystemScriptOperator.bl_idname, text="Run L-System", icon=RunLSystemScriptOperator.bl_icon)
+
+    # Preset dropdown as a small icon button (file folder icon)
+    row.operator("script.hallr_preset_popup", text="", icon='FILE_FOLDER')
 
 
 # define classes for registration
 classes = (
     LoadLSystemPresetOperator,
     RunLSystemScriptOperator,
-    LSystemPanel
+    LSystemPresetPopupOperator
 )
 
 
