@@ -57,33 +57,33 @@ pub(crate) fn process_command(
     let mut ffi_indices = Vec::with_capacity(mesh.faces().count() * 3);
 
     for face_descriptor in mesh.faces() {
-        let (v1, v2, v3) = mesh.face_vertices(&face_descriptor);
+        let (i0, i1, i2) = mesh.face_vertices(&face_descriptor);
 
         // Skip degenerate triangles
-        if v1 == v2 || v1 == v3 || v2 == v3 {
+        if i0 == i1 || i0 == i2 || i1 == i2 {
             continue;
         }
 
         // Map each vertex to a new compressed index
-        let new_v1 = compressor.get_or_create_mapping(v1, || {
-            let pos = mesh.vertex_position(&v1);
+        let v0 = compressor.get_or_create_mapping(i0, || {
+            let pos = mesh.vertex_position(&i0);
             FFIVector3::new(pos.x, pos.y, pos.z)
         });
 
-        let new_v2 = compressor.get_or_create_mapping(v2, || {
-            let pos = mesh.vertex_position(&v2);
+        let v1 = compressor.get_or_create_mapping(i1, || {
+            let pos = mesh.vertex_position(&i1);
             FFIVector3::new(pos.x, pos.y, pos.z)
         });
 
-        let new_v3 = compressor.get_or_create_mapping(v3, || {
-            let pos = mesh.vertex_position(&v3);
+        let v2 = compressor.get_or_create_mapping(i2, || {
+            let pos = mesh.vertex_position(&i2);
             FFIVector3::new(pos.x, pos.y, pos.z)
         });
 
         // Push directly to the output vector
-        ffi_indices.push(new_v1);
-        ffi_indices.push(new_v2);
-        ffi_indices.push(new_v3);
+        ffi_indices.push(v0);
+        ffi_indices.push(v1);
+        ffi_indices.push(v2);
     }
 
     // Get the final vertex array
