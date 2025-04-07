@@ -18,7 +18,7 @@ mod cmd_delaunay_triangulation_2d;
 mod cmd_discretize;
 mod cmd_knife_intersect;
 mod cmd_lsystems;
-mod cmd_sdf_mesh;
+mod cmd_sdf_mesh_fsn;
 mod cmd_sdf_mesh_2_5;
 mod cmd_simplify_rdp;
 pub mod cmd_surface_scan;
@@ -278,7 +278,7 @@ pub(crate) fn process_command(
         "voronoi_mesh" => cmd_voronoi_mesh::process_command(config, models)?,
         "voronoi_diagram" => cmd_voronoi_diagram::process_command(config, models)?,
         "sdf_mesh_2_5" => cmd_sdf_mesh_2_5::process_command(config, models)?,
-        "sdf_mesh" => cmd_sdf_mesh::process_command(config, models)?,
+        "sdf_mesh" => cmd_sdf_mesh_fsn::process_command(config, models)?,
         "discretize" => cmd_discretize::process_command(config, models)?,
         "baby_shark_decimate" => cmd_baby_shark_decimate::process_command(config, models)?,
         "baby_shark_isotropic_remesh" => {
