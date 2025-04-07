@@ -398,7 +398,7 @@ dependencies = [
 
 [[package]]
 name = "hallr"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "ahash",
  "baby_shark",
@@ -415,6 +415,7 @@ dependencies = [
  "logos",
  "rand",
  "rayon",
+ "ryu",
  "smallvec",
  "thiserror 2.0.12",
  "vector-traits",
@@ -446,9 +447,9 @@ checksum = "fbd780fe5cc30f81464441920d82ac8740e2e46b29a6fad543ddd075229ce37e"
 
 [[package]]
 name = "hronn"
-version = "0.5.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50b7c2c2f16e4c674ee3ddb5270976eda5235ce30cc225fc99e612d2bf251e63"
+checksum = "aead2e8d8716271a2b053ed050a8653ebeeffe78371a46bcb3c685a805819888"
 dependencies = [
  "krakel",
  "linestring",

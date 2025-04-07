@@ -11,7 +11,6 @@ use std::{
 };
 
 /// This is a command that peeks at incoming data and writes it to file
-#[allow(dead_code)]
 pub(crate) fn process_command(config: &ConfigType, models: &[Model<'_>]) -> Result<(), HallrError> {
     let log_dir = match env::var("HALLR_DATA_LOGGER_PATH") {
         Ok(path) => PathBuf::from(path),

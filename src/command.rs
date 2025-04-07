@@ -11,6 +11,8 @@ mod cmd_baby_shark_isotropic_remesh;
 mod cmd_baby_shark_mesh_offset;
 mod cmd_centerline;
 mod cmd_convex_hull_2d;
+#[cfg(feature = "generate_test_case_from_input")]
+#[cfg(not(test))]
 mod cmd_create_test;
 mod cmd_delaunay_triangulation_2d;
 mod cmd_discretize;
@@ -22,6 +24,8 @@ mod cmd_simplify_rdp;
 pub mod cmd_surface_scan;
 mod cmd_voronoi_diagram;
 mod cmd_voronoi_mesh;
+#[cfg(feature = "generate_test_case_from_input")]
+#[cfg(not(test))]
 mod cmd_wavefront_obj_logger;
 mod impls;
 

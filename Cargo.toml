@@ -1,5 +1,5 @@
 [package]
-version = "0.1.10"
+version = "0.1.11"
 name = "hallr"
 edition = "2024"
 readme = "README.md"
@@ -24,7 +24,7 @@ centerline = { version="0.12.0", features = ["glam"]}
 krakel = {version = "0.3.1", features = ["vector-traits", "glam"]}
 #krakel = {path = "../krakel", features = ["vector-traits", "glam"]}
 #krakel = {git = "https://codeberg.org/eadf/krakel_rs.git"}
-hronn = { version = "0.5.2", features = ["glam"]}
+hronn = { version = "0.5.3", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
 #hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
 boostvoronoi = { version = "0.11.1" }
@@ -39,13 +39,14 @@ ilattice = { version="0.4.0", default-features = false, features = ["glam"]}
 fast-surface-nets = "0.2.1"
 baby_shark = "0.3.6"
 logos = "0.15"
+ryu = { version="1.0.20", optional=true }
 
 [dev-dependencies]
 rand = "0.9.0"
 criterion = "0.5.1"
 
 [features]
-generate_test_case_from_input = []
+generate_test_case_from_input = ["dep:ryu"]
 glam-core-simd  = ["vector-traits/glam-core-simd"]
 glam-fast-math = ["vector-traits/glam-fast-math"]
 display_sdf_chunks = []

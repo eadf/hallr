@@ -12,16 +12,12 @@ trait DecimalRepresentation {
 
 impl DecimalRepresentation for f32 {
     fn dr(&self) -> String {
-        if self.fract() == 0.0 {
-            format!("{:.1}", self)
-        } else {
-            format!("{}", self)
-        }
+        use ryu;
+        ryu::Buffer::new().format::<f32>(*self).to_string()
     }
 }
 
 /// This is a command that peeks at incoming data and creates a test case out of it
-#[allow(dead_code)]
 pub(crate) fn process_command(config: &ConfigType, models: &[Model<'_>]) -> Result<(), HallrError> {
     let command = config.get_mandatory_option("command")?;
 
@@ -45,10 +41,18 @@ fn test_{}_1() -> Result<(),HallrError> {{"###,
 
     println!("    let mut config = ConfigType::default();");
     for (k, v) in config.iter() {
-        println!(
-            r####"    let _= config.insert("{}".to_string(),r###"{}"###.to_string());"####,
-            k, v
-        );
+        if k.eq("CUSTOM_TURTLE") {
+            // only use r### for multiline turtles
+            println!(
+                r####"    let _= config.insert("{}".to_string(),r###"{}"###.to_string());"####,
+                k, v
+            );
+        } else {
+            println!(
+                r#"    let _= config.insert("{}".to_string(),"{}".to_string());"#,
+                k, v
+            );
+        }
     }
     if !models.is_empty() {
         for (i, model) in models.iter().enumerate() {

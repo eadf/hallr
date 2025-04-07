@@ -21,7 +21,6 @@ mod tests;
 fn do_meander_scan<T>(
     config: ConfigType,
     bounding_vertices: &[FFIVector3],
-    _bounding_indices: &[usize],
     mesh_analyzer: &MeshAnalyzer<'_, T, FFIVector3>,
     probe: &dyn Probe<T, FFIVector3>,
     minimum_z: T::Scalar,
@@ -83,7 +82,6 @@ where
 fn do_triangulation_scan<T>(
     config: ConfigType,
     bounding_vertices: &[FFIVector3],
-    _bounding_indices: &[usize],
     mesh_analyzer: &MeshAnalyzer<'_, T, FFIVector3>,
     probe: &dyn Probe<T, FFIVector3>,
     minimum_z: T::Scalar,
@@ -160,7 +158,6 @@ where
     let mesh_analyzer = MeshAnalyzerBuilder::<T, FFIVector3>::default()
         .load_from_ref(model.vertices, model.indices)?
         .build()?;
-    let bounding_indices = bounding_shape.indices;
     let bounding_vertices = bounding_shape.vertices;
 
     let probe_radius = config.get_mandatory_parsed_option("probe_radius", None)?;
@@ -183,7 +180,6 @@ where
         "MEANDER" => do_meander_scan::<T>(
             config,
             bounding_vertices,
-            bounding_indices,
             &mesh_analyzer,
             probe.as_ref(),
             minimum_z,
@@ -192,7 +188,6 @@ where
         "TRIANGULATION" => do_triangulation_scan::<T>(
             config,
             bounding_vertices,
-            bounding_indices,
             &mesh_analyzer,
             probe.as_ref(),
             minimum_z,

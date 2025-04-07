@@ -24,8 +24,8 @@ patterns_props_items = [
 
 # Define the choices for the search pattern property
 bounding_props_items = [
+    ("CONVEX_HULL", "ConvexHull", "Convex hull bounds"),
     ("AABB", "Aabb", "Axis aligned bounding box"),
-    ("CONVEX_HULL", "ConvexHull", "Convex hull bounds")
 ]
 
 
@@ -283,7 +283,11 @@ class MeanderToolpathSettings(bpy.types.PropertyGroup):
     )
     probe_angle_props: bpy.props.FloatProperty(
         name="Probe angle",
-        description="Define the angle of the tapered probe (included angle).",
+        description=(
+            "Included angle at the tip of the tapered probe. "
+            "Defines the cone shape: 90° means 45° side angles (tan(θ/2) = height/radius). "
+            "180° results in a cylindrical tool with straight sides."
+        ),
         default=math.radians(90.0),
         min=math.radians(50.0),
         max=math.radians(110.0),

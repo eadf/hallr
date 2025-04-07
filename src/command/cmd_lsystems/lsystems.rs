@@ -894,8 +894,10 @@ impl TurtleRules {
 
         let path = self.expand()?;
 
+        #[allow(clippy::unused_enumerate_index)]
         for (_i, step) in path.iter().enumerate() {
             // Check for timeout periodically (e.g., every 1000 steps)
+            // But avoid this timeout during debugging of testcases
             #[cfg(not(test))]
             if _i % 1000 == 0
                 && self

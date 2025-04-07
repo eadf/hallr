@@ -2,14 +2,55 @@
 // Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
+use vector_traits::approx::ulps_eq;
 use crate::{
     HallrError,
     command::{ConfigType, OwnedModel},
 };
 use vector_traits::glam::Vec3;
 
+
 #[test]
-fn test_surface_scan_1() -> Result<(), HallrError> {
+fn test_surface_scan_1() -> Result<(),HallrError> {
+    // this test should report the same Z value for all samples
+    let mut config = ConfigType::default();
+    let _= config.insert("first_index_model_1".to_string(),"6".to_string());
+    let _= config.insert("probe_angle".to_string(),"1.5707963705062866".to_string());
+    let _= config.insert("first_vertex_model_1".to_string(),"4".to_string());
+    let _= config.insert("probe".to_string(),"TAPERED_END".to_string());
+    let _= config.insert("bounds".to_string(),"AABB".to_string());
+    let _= config.insert("probe_radius".to_string(),"0.5".to_string());
+    let _= config.insert("pattern".to_string(),"MEANDER".to_string());
+    let _= config.insert("minimum_z".to_string(),"0.0".to_string());
+    let _= config.insert("step".to_string(),"0.20000000298023224".to_string());
+    let _= config.insert("mesh.format".to_string(),"triangulated".to_string());
+    let _= config.insert("command".to_string(),"surface_scan".to_string());
+
+    let owned_model_0 = OwnedModel{world_orientation: OwnedModel::identity_matrix(), vertices:vec![
+        (-1.0,0.00000004371139,0.0).into(),(-0.018718276,0.94025254,0.6938799).into(),(1.0,-0.00000004371139,0.0).into(),(0.0,0.0,0.0).into(),],
+        indices:vec![
+            1,2,3,1,3,0,]};
+
+    let owned_model_1 = OwnedModel{world_orientation: OwnedModel::identity_matrix(), vertices:vec![
+        (-0.61771935,0.23340724,0.009143627).into(),(0.5940437,0.2347466,0.009143627).into(),(-0.6233133,0.5235412,0.009143627).into(),(0.5884497,0.5248806,0.009143627).into(),],
+        indices:vec![
+            2,0,0,1,1,3,3,2,]};
+
+    let models = vec![owned_model_0.as_model(), owned_model_1.as_model(), ];
+
+    let _result = super::process_command::<Vec3>(config, models)?;
+    assert!(!_result.1.is_empty());
+    for p in _result.0.iter() {
+        // all z samples should be the same
+        assert!(ulps_eq!(p.z, 0.17224793));
+    }
+    assert_eq!(7,_result.0.len()); // vertices
+    assert_eq!(7,_result.1.len()); // indices
+    Ok(())
+}
+
+#[test]
+fn test_surface_scan_10() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("bounds".to_string(), "AABB".to_string());
     let _ = config.insert("probe_radius".to_string(), "0.5".to_string());
