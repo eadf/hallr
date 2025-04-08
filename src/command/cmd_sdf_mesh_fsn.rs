@@ -26,7 +26,6 @@ const DEFAULT_SDF_VALUE: f32 = 999.0;
 type Extent3i = Extent<iglam::IVec3>;
 
 /// returns an AABB (not padded by radius)
-#[allow(clippy::type_complexity)]
 fn parse_input(model: &Model<'_>) -> Result<Extent<iglam::Vec3A>, HallrError> {
     let zero = iglam::Vec3A::default();
     let mut aabb = {
@@ -241,8 +240,6 @@ fn generate_and_process_sdf_chunk(
 
 /// Build the return model
 pub(crate) fn build_output_model(
-    //pb_model_name: String,
-    //pb_world: Option<PB_Matrix4x432>,
     voxel_size: f32,
     mesh_buffers: Vec<(iglam::Vec3A, SurfaceNetsBuffer)>,
     verbose: bool,
@@ -302,13 +299,12 @@ pub(crate) fn build_output_model(
     }
     Ok(OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
-        //name: pb_model_name,
         vertices,
         indices,
     })
 }
 
-/// Run the voronoi_mesh command
+/// Run the sdf_mesh command
 pub(crate) fn process_command(
     config: ConfigType,
     models: Vec<Model<'_>>,

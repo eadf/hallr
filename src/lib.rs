@@ -55,6 +55,9 @@ pub enum HallrError {
     IoError(#[from] std::io::Error),
 
     #[error(transparent)]
+    SaftError(#[from] saft::Error),
+
+    #[error(transparent)]
     HronnErr(#[from] HronnError),
 
     #[error(transparent)]

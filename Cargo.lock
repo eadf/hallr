@@ -369,6 +369,12 @@ checksum = "b5418c17512bdf42730f9032c74e1ae39afc408745ebb2acf72fbc4691c17945"
 
 [[package]]
 name = "glam"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "151665d9be52f9bb40fc7966565d39666f2d1e69233571b71b87791c7e0528b3"
+
+[[package]]
+name = "glam"
 version = "0.29.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc46dd3ec48fdd8e693a98d2b8bafae273a2d54c1de02a2a7e3d57d501f39677"
@@ -406,9 +412,11 @@ dependencies = [
  "krakel",
  "linestring",
  "logos",
+ "macaw",
  "rand",
  "rayon",
  "ryu",
+ "saft",
  "smallvec",
  "thiserror 2.0.12",
  "vector-traits",
@@ -434,9 +442,9 @@ checksum = "fbd780fe5cc30f81464441920d82ac8740e2e46b29a6fad543ddd075229ce37e"
 
 [[package]]
 name = "hronn"
-version = "0.5.3"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aead2e8d8716271a2b053ed050a8653ebeeffe78371a46bcb3c685a805819888"
+checksum = "380b1ed405feb161f2fdf7e997027f0934d4cada72bc4caaf27aab720ae09605"
 dependencies = [
  "krakel",
  "linestring",
@@ -456,6 +464,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "142c38a1c9ad4feaba850b1224875523ab8167ccf767ad26ce023e5e5467379b"
 dependencies = [
  "glam 0.24.2",
+]
+
+[[package]]
+name = "indexmap"
+version = "2.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cea70ddb795996207ad57735b50c5982d8844f38ba9ee5f1aedcfb708a2aa11e"
+dependencies = [
+ "equivalent",
+ "hashbrown",
 ]
 
 [[package]]
@@ -607,6 +625,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "macaw"
+version = "0.19.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78485d6ef9ef9a1cdecf4315e73623d5de2974323e70c7ff4e34d448e26bdf20"
+dependencies = [
+ "glam 0.25.0",
+ "num-traits",
+]
+
+[[package]]
 name = "matrixmultiply"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -705,6 +733,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
+ "libm",
+]
+
+[[package]]
+name = "num_enum"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e613fc340b2220f734a8595782c551f1250e969d87d3be1ae0579e8d4065179"
+dependencies = [
+ "num_enum_derive",
+]
+
+[[package]]
+name = "num_enum_derive"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af1844ef2428cc3e1cb900be36181049ef3d3193c63e43026cfe202983b27a56"
+dependencies = [
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -778,6 +828,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85eae3c4ed2f50dcfe72643da4befc30deadb458a9b590d720cde2f2b1e97da9"
 dependencies = [
  "zerocopy 0.8.24",
+]
+
+[[package]]
+name = "proc-macro-crate"
+version = "3.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edce586971a4dfaa28950c6f18ed55e0406c1ab88bbce2c6f6293a7aaba73d35"
+dependencies = [
+ "toml_edit",
 ]
 
 [[package]]
@@ -926,6 +985,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "saft"
+version = "0.34.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0eaef2678fd53b5a4247d34ea94e51d1d7479157d71b01975ebd9e2ea560f56f"
+dependencies = [
+ "ahash",
+ "macaw",
+ "num_enum",
+ "rayon",
+ "saft-sdf",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "saft-sdf"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcb5885c2de3bac747ff64e8f9d40b7010b3f8a2f924f68e2fad542237dedb71"
+dependencies = [
+ "macaw",
+ "num-traits",
+ "num_enum",
+]
+
+[[package]]
 name = "same-file"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1068,6 +1152,23 @@ checksum = "be4d6b5f19ff7664e8c98d03e2139cb510db9b0a60b55f8e8709b689d939b6bc"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "toml_datetime"
+version = "0.6.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0dd7358ecb8fc2f8d014bf86f6f638ce72ba252a2c3a2572f2a795f1d23efb41"
+
+[[package]]
+name = "toml_edit"
+version = "0.22.24"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17b4795ff5edd201c7cd6dca065ae59972ce77d1b80fa0a84d94950ece7d1474"
+dependencies = [
+ "indexmap",
+ "toml_datetime",
+ "winnow",
 ]
 
 [[package]]
@@ -1292,6 +1393,15 @@ name = "windows_x86_64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
+
+[[package]]
+name = "winnow"
+version = "0.7.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63d3fcd9bba44b03821e7d699eeee959f3126dcc4aa8e4ae18ec617c2a5cea10"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "wit-bindgen-rt"

@@ -24,7 +24,7 @@ centerline = { version="0.12.0", features = ["glam"]}
 krakel = {version = "0.3.1", features = ["vector-traits", "glam"]}
 #krakel = {path = "../krakel", features = ["vector-traits", "glam"]}
 #krakel = {git = "https://codeberg.org/eadf/krakel_rs.git"}
-hronn = { version = "0.5.3", features = ["glam"]}
+hronn = { version = "0.5.4", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
 #hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
 boostvoronoi = { version = "0.11.1" }
@@ -40,6 +40,8 @@ fast-surface-nets = "0.2.1"
 baby_shark = "0.3.7"
 logos = "0.15"
 ryu = { version="1.0.20", optional=true }
+saft = { version="0.34.1", features = ["with_rayon"]}
+macaw = { version="^0.19"} # macaw must be the same version that saft uses
 
 [dev-dependencies]
 rand = "0.9.0"

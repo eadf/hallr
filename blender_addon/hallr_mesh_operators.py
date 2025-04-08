@@ -753,6 +753,12 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
         subtype='PERCENTAGE'
     )
 
+    backend_variant_items = (
+        ("sdf_mesh", "Fast Surface Nets", "use fast_surface_nets backend"),
+        ("sdf_mesh_saft", "Saft", "use saft backend"),
+    )
+    cmd_backend_prop: bpy.props.EnumProperty(name="Backend", items=backend_variant_items, default="sdf_mesh")
+
     remove_doubles_threshold_prop: bpy.props.FloatProperty(
         name="Merge Distance",
         description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
@@ -778,7 +784,7 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "sdf_mesh",
+        config = {"command": self.cmd_backend_prop,
                   "SDF_DIVISIONS": str(self.sdf_divisions_prop),
                   "SDF_RADIUS_MULTIPLIER": str(self.sdf_radius_prop),
                   "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
@@ -796,6 +802,8 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
         row.label(icon='DRIVER_DISTANCE')
         row.prop(self, "sdf_divisions_prop")
         layout.prop(self, "sdf_radius_prop")
+        row = layout.row()
+        row.prop(self, "cmd_backend_prop")
         row = layout.row()
         row.label(icon='SNAP_MIDPOINT')
         row.prop(self, "remove_doubles_threshold_prop")
