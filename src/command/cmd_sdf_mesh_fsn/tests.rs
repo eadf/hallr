@@ -5,12 +5,16 @@
 use crate::{
     HallrError,
     command::{ConfigType, OwnedModel},
+    ffi::{MESH_FORMAT_TAG, MeshFormat},
 };
 
 #[test]
 fn test_sdf_mesh_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::LineChunks.to_string(),
+    );
     let _ = config.insert("command".to_string(), "sdf_mesh".to_string());
     let _ = config.insert("SDF_DIVISIONS".to_string(), "50".to_string());
     let _ = config.insert("SDF_RADIUS_MULTIPLIER".to_string(), "1.0".to_string());

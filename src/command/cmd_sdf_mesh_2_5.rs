@@ -8,6 +8,7 @@ mod tests;
 use crate::{
     HallrError,
     command::{ConfigType, Model, Options, OwnedModel},
+    ffi,
     ffi::FFIVector3,
 };
 use fast_surface_nets::{SurfaceNetsBuffer, ndshape::ConstShape, surface_nets};
@@ -447,7 +448,10 @@ pub(crate) fn process_command(
     let output_model = build_output_model(voxel_size, mesh, plane, true)?;
 
     let mut return_config = ConfigType::new();
-    let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let _ = return_config.insert(
+        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::Triangulated.to_string(),
+    );
     let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
     if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {
         let _ = return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());

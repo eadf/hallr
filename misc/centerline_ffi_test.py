@@ -44,7 +44,7 @@ if __name__ == "__main__":
     Vector3(0.53755563,0.093555555,0.0), Vector3(0.60400003,0.0,0.0), Vector3(0.48700002,0.0,0.0),
     Vector3(0.29636115,0.25348613,0.0), Vector3(0.17500001,0.296,0.0), Vector3(0.17500001,0.0,0.0), Vector3(0.07700001,0.0,0.0)]
     matrices = [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
-    config = {"first_index_model_0": "0", "SIMPLIFY": "false", "KEEP_INPUT": "true", "NEGATIVE_RADIUS": "true", "command": "centerline", "REMOVE_INTERNALS": "false", "ANGLE": "89.00000133828577", "DISTANCE": "0.004999999888241291", "WELD": "true", "mesh.format": "line_chunks"}
+    config = {"first_index_model_0": "0", "SIMPLIFY": "false", "KEEP_INPUT": "true", "NEGATIVE_RADIUS": "true", "command": "centerline", "REMOVE_INTERNALS": "false", "ANGLE": "89.00000133828577", "DISTANCE": "0.004999999888241291", "WELD": "true", MESH_FORMAT_TAG: "line_chunks"}
 
 
     system = platform.system()

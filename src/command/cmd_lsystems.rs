@@ -9,6 +9,7 @@ mod tests;
 use super::{ConfigType, Model, Options};
 use crate::{
     command::cmd_lsystems::lsystems::{Turtle, TurtleRules},
+    ffi::{MESH_FORMAT_TAG, MeshFormat},
     prelude::*,
 };
 use std::time;
@@ -39,7 +40,7 @@ pub(crate) fn process_command(
     _models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError> {
     let processed_text = {
-        let cmd_custom_turtle = config.get_mandatory_option("CUSTOM_TURTLE")?;
+        let cmd_custom_turtle = config.get_mandatory_option("🐢")?;
         trim_lsystem_string(cmd_custom_turtle)
     };
 
@@ -78,7 +79,10 @@ pub(crate) fn process_command(
     println!("build_custom_turtle render() duration: {:?}", now.elapsed());
 
     let mut config = ConfigType::new();
-    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::LineChunks.to_string(),
+    );
     let _ = config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
     let _ = config.insert(
         "REMOVE_DOUBLES_THRESHOLD".to_string(),

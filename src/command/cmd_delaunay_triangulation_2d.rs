@@ -6,6 +6,7 @@ use super::{ConfigType, Model, Options};
 use crate::prelude::*;
 use hronn::prelude::{ConvertTo, triangulate_vertices};
 
+use crate::ffi;
 use krakel::PointTrait;
 use linestring::linestring_2d::{Aabb2, convex_hull};
 use vector_traits::{GenericVector3, HasXY, num_traits::AsPrimitive};
@@ -46,13 +47,16 @@ where
         .collect();
 
     let results = triangulate_vertices::<T, FFIVector3>(aabb, &hull, model.vertices)?;
-    let mut config = ConfigType::new();
-    let _ = config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let mut return_config = ConfigType::new();
+    let _ = return_config.insert(
+        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::Triangulated.to_string(),
+    );
     Ok((
         results.0,
         results.1,
         model.world_orientation.to_vec(),
-        config,
+        return_config,
     ))
 }
 
@@ -88,7 +92,10 @@ where
 
     let results = triangulate_vertices::<T, FFIVector3>(aabb, &convex_hull, model.vertices)?;
     let mut return_config = ConfigType::new();
-    let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let _ = return_config.insert(
+        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::Triangulated.to_string(),
+    );
     Ok((
         results.0,
         results.1,

@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, Options, OwnedModel};
-use crate::{HallrError, ffi::FFIVector3, utils};
+use crate::{HallrError, ffi, ffi::FFIVector3, utils};
 use boostvoronoi as BV;
 use boostvoronoi::OutputType;
 use centerline::{HasMatrix4, Matrix4};
@@ -314,10 +314,14 @@ where
         .get_parsed_option::<bool>("NEGATIVE_RADIUS")?
         .unwrap_or(true);
 
-    let mesh_format = config.get_mandatory_option("mesh.format")?;
-    if mesh_format.ne("line_chunks") {
+    let mesh_format = config.get_mandatory_option(ffi::MESH_FORMAT_TAG)?;
+    if mesh_format.ne(ffi::MeshFormat::LineChunks.into()) {
         return Err(HallrError::InvalidInputData(
-            "Model mesh data must be in the 'line_chunks' format".to_string(),
+            format!(
+                "Model mesh data must be in the MeshFormat::LineChunks format :{}",
+                mesh_format
+            )
+            .to_string(),
         ));
     }
 
@@ -505,7 +509,10 @@ where
     //println!("result vertices:{:?}", obj.vertices);
     //println!("result edges:{:?}", obj.lines.first());
     let mut return_config = ConfigType::new();
-    let _ = return_config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = return_config.insert(
+        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::LineChunks.to_string(),
+    );
     if cmd_arg_weld {
         let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
         if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {

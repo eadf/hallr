@@ -5,13 +5,17 @@
 use crate::{
     HallrError,
     command::{ConfigType, Model, OwnedModel},
+    ffi::{MESH_FORMAT_TAG, MeshFormat},
 };
 use vector_traits::glam::Vec3;
 
 #[test]
 fn test_2d_outline_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string(),
+    );
     let _ = config.insert("command".to_string(), "2d_outline".to_string());
 
     let owned_model = OwnedModel {
@@ -39,7 +43,10 @@ fn test_2d_outline_1() -> Result<(), HallrError> {
 #[test]
 fn test_2d_outline_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string(),
+    );
     let _ = config.insert("command".to_string(), "2d_outline".to_string());
 
     let owned_model = OwnedModel {

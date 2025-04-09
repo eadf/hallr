@@ -5,6 +5,7 @@
 use crate::{
     HallrError,
     command::{ConfigType, Model, OwnedModel},
+    ffi,
     prelude::FFIVector3,
 };
 use centerline::HasMatrix4;
@@ -190,7 +191,10 @@ where
             model.indices.push(l.1 as usize);
         }
         let mut return_config = ConfigType::new();
-        let _ = return_config.insert("mesh.format".to_string(), "line_chunks".to_string());
+        let _ = return_config.insert(
+            ffi::MESH_FORMAT_TAG.to_string(),
+            ffi::MeshFormat::LineChunks.to_string(),
+        );
 
         Ok((
             model.vertices,

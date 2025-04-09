@@ -5,9 +5,11 @@
 //! This module contains the Rust to Python (or rather CTypes) interface
 mod impls;
 
+use crate::HallrError;
 use std::{
     collections::HashMap,
     ffi::{CStr, CString},
+    fmt,
     iter::successors,
     slice,
     time::Instant,
@@ -35,6 +37,56 @@ pub struct FFIVector3 {
     pub x: f32,
     pub y: f32,
     pub z: f32,
+}
+
+pub(crate) const MESH_FORMAT_TAG: &str = "📦";
+
+#[derive(PartialEq, Eq, Copy, Clone)]
+pub enum MeshFormat {
+    Triangulated,
+    LineWindows,
+    LineChunks,
+    PointCloud,
+}
+
+impl From<&MeshFormat> for &'static str {
+    #[inline(always)]
+    fn from(format: &MeshFormat) -> Self {
+        match format {
+            MeshFormat::Triangulated => "△",
+            MeshFormat::LineWindows => "∧",
+            MeshFormat::LineChunks => "⸗",
+            MeshFormat::PointCloud => "┅",
+        }
+    }
+}
+impl From<MeshFormat> for &'static str {
+    #[inline(always)]
+    fn from(format: MeshFormat) -> Self {
+        (&format).into()
+    }
+}
+
+impl fmt::Display for MeshFormat {
+    #[inline(always)]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", <&str>::from(self))
+    }
+}
+
+impl TryFrom<&str> for MeshFormat {
+    type Error = HallrError;
+
+    fn try_from(s: &str) -> Result<Self, HallrError> {
+        match s {
+            "t" => Ok(MeshFormat::Triangulated),
+            "l" => Ok(MeshFormat::LineWindows),
+            "e" => Ok(MeshFormat::LineChunks),
+            u => Err(HallrError::InvalidInputData(
+                format!("Invalid char for MeshFormat conversion: ’{}’", u).to_string(),
+            )),
+        }
+    }
 }
 
 impl FFIVector3 {

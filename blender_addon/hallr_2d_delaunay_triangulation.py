@@ -6,6 +6,7 @@ This file is part of the hallr crate.
 
 import bpy
 from . import hallr_ffi_utils
+from hallr_ffi_utils import MeshFormat
 
 # Define the choices for the search pattern property
 bounding_props_items = [
@@ -126,23 +127,18 @@ class HALLR_OT_DT2GenerateMesh(bpy.types.Operator):
             print("bounding type:", bounds_props)
 
             config = {"bounds": str(bounds_props),
-                      "mesh.format": "point_cloud",
                       "command": "2d_delaunay_triangulation"}
-            # Call the Rust function
-            vertices, indices, config = hallr_ffi_utils.call_rust(config, point_cloud, bounding_shape)
-
-            print(f"Received {config} as the result from Rust!")
-            if config.get("ERROR"):
-                self.report({'ERROR'}, "" + config.get("ERROR"))
-                return {'CANCELLED'}
-            # Check if the returned mesh format is triangulated
-            if config.get("mesh.format") == "triangulated":
-                hallr_ffi_utils.handle_triangle_mesh(config, vertices, indices)
-            # Handle line format
-            elif config.get("mesh.format") == "line":
-                hallr_ffi_utils.handle_windows_line_new_object(config, vertices, indices)
-            else:
-                self.report({'ERROR'}, "Unknown mesh format:" + config.get("mesh.format", "None"))
+            try:
+                # Call the Rust function
+                hallr_ffi_utils.process_mesh_with_rust(config, primary_mesh=point_cloud,
+                                                       secondary_mesh=bounding_shape,
+                                                       primary_format=MeshFormat.POINT_CLOUD,
+                                                       secondary_format=MeshFormat.POINT_CLOUD,
+                                                       create_new=True)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                self.report({'ERROR'}, f"Error: {e}")
                 return {'CANCELLED'}
 
         return {'FINISHED'}

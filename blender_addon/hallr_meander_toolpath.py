@@ -7,6 +7,7 @@ This file is part of the hallr crate.
 import bpy
 import math
 from . import hallr_ffi_utils
+from hallr_ffi_utils import MeshFormat
 
 # Define the choices for the tool/probe property
 probes_props_items = [
@@ -171,20 +172,19 @@ class OBJECT_OT_MT_GenerateMesh(bpy.types.Operator):
         # Check if all objects are selected
         settings = context.scene.hallr_meander_settings
         bounding_shape = settings.bounding_shape
-        point_cloud = settings.mesh
+        model = settings.mesh
         if (bounding_shape is not None and
-                point_cloud is not None):
+                model is not None):
             # Print the names of the selected objects
             print("Bounding Shape:", bounding_shape.name)
             print("bounding type:", settings.bounds_props)
-            print("Height Mesh:", point_cloud.name)
+            print("Model Mesh:", model.name)
 
             config = {"probe_radius": str(settings.probe_radius_props),
                       "probe": str(settings.probe_props),
                       "bounds": str(settings.bounds_props),
                       "pattern": str(settings.pattern_props),
                       "step": str(settings.step_props),
-                      "mesh.format": "triangulated",
                       "minimum_z": str(settings.minimum_z_props),
                       "command": "surface_scan"}
             if str(settings.probe_props) == "TAPERED_END":
@@ -196,22 +196,19 @@ class OBJECT_OT_MT_GenerateMesh(bpy.types.Operator):
                 config["reduce_adaptive"] = str(settings.enable_reduce_props).lower()
 
             print("config:", config)
-            # Call the Rust function
-            vertices, indices, config = hallr_ffi_utils.call_rust(config, settings.mesh, settings.bounding_shape)
+            try:
+                # Call the Rust function
+                hallr_ffi_utils.process_mesh_with_rust(config, primary_mesh=model,
+                                                       secondary_mesh=bounding_shape,
+                                                       primary_format=MeshFormat.TRIANGULATED,
+                                                       secondary_format=MeshFormat.POINT_CLOUD,
+                                                       create_new=True)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                self.report({'ERROR'}, f"Error: {e}")
+                return {'CANCELLED'}
 
-            # print(f"Received {config} as the result from Rust!")
-            if config.get("ERROR"):
-                self.report({'ERROR'}, "" + config.get("ERROR"))
-                return {'CANCELLED'}
-            # Check if the returned mesh format is triangulated
-            if config.get("mesh.format") == "triangulated":
-                hallr_ffi_utils.handle_triangle_mesh(config, vertices, indices)
-            # Handle line format
-            elif config.get("mesh.format") == "line":
-                hallr_ffi_utils.handle_windows_line_new_object(config, vertices, indices)
-            else:
-                self.report({'ERROR'}, "Unknown mesh format:" + config.get("mesh.format", "None"))
-                return {'CANCELLED'}
         return {'FINISHED'}
 
     def check(self, context):

@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, OwnedModel};
-use crate::{HallrError, ffi::FFIVector3};
+use crate::{HallrError, ffi, ffi::FFIVector3};
 use hronn::prelude::ConvertTo;
 use krakel::PointTrait;
 use linestring::linestring_2d::convex_hull;
@@ -38,8 +38,11 @@ where
         .iter()
         .for_each(|i| rv_model.push(model.vertices[*i].to().to_2d().to_3d(T::Scalar::ZERO).to()));
     rv_model.close_loop();
-    let mut config = ConfigType::new();
-    let _ = config.insert("mesh.format".to_string(), "line_windows".to_string());
+    let mut return_config = ConfigType::new();
+    let _ = return_config.insert(
+        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::LineWindows.to_string(),
+    );
     println!(
         "convex_hull_2d operation returning {} vertices",
         rv_model.indices.len()
@@ -48,6 +51,6 @@ where
         rv_model.vertices,
         rv_model.indices,
         model.world_orientation.to_vec(),
-        config,
+        return_config,
     ))
 }

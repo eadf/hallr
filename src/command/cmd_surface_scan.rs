@@ -12,7 +12,7 @@ use hronn::{
     },
 };
 
-use crate::{HallrError, command::Options, prelude::FFIVector3};
+use crate::{HallrError, command::Options, ffi, prelude::FFIVector3};
 use krakel::PointTrait;
 use vector_traits::{GenericVector3, HasXY, num_traits::AsPrimitive};
 
@@ -72,7 +72,10 @@ where
         .get_line_data()?;
     let mut return_config = ConfigType::new();
 
-    let _ = return_config.insert("mesh.format".to_string(), "line".to_string());
+    let _ = return_config.insert(
+        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::LineWindows.to_string(),
+    );
 
     let indices = results.lines.pop().unwrap_or_else(Vec::default);
 
@@ -126,7 +129,10 @@ where
         .search(mesh_analyzer, &search_config)?
         .get_mesh_data()?;
     let mut return_config = ConfigType::new();
-    let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let _ = return_config.insert(
+        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::Triangulated.to_string(),
+    );
     Ok((results.vertices, results.indices, return_config))
 }
 

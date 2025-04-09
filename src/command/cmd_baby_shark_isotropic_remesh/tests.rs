@@ -5,6 +5,7 @@
 use crate::{
     HallrError,
     command::{ConfigType, OwnedModel},
+    ffi::{MESH_FORMAT_TAG, MeshFormat},
 };
 
 #[test]
@@ -22,7 +23,10 @@ fn test_baby_shark_isotropic_remesh_1() -> Result<(), HallrError> {
         "TARGET_EDGE_LENGTH".to_string(),
         "0.10000000149011612".to_string(),
     );
-    let _ = config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string(),
+    );
     let _ = config.insert("SPLIT_EDGES".to_string(), "True".to_string());
     let _ = config.insert("ITERATIONS_COUNT".to_string(), "10".to_string());
 
@@ -110,7 +114,10 @@ fn test_baby_shark_isotropic_remesh_non_manifold_pinched_vertex() -> Result<(), 
         "command".to_string(),
         "baby_shark_isotropic_remesh".to_string(),
     );
-    let _ = config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string(),
+    );
     let _ = config.insert("PROJECT_VERTICES".to_string(), "True".to_string());
 
     let owned_model_0 = OwnedModel {

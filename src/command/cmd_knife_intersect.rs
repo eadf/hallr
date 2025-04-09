@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, OwnedModel};
-use crate::{HallrError, ffi::FFIVector3};
+use crate::{HallrError, ffi, ffi::FFIVector3};
 use hronn::prelude::ConvertTo;
 use itertools::Itertools;
 use linestring::{
@@ -207,8 +207,11 @@ where
 
     let rv_model = knife_intersect(input_model)?;
 
-    let mut config = ConfigType::new();
-    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let mut return_config = ConfigType::new();
+    let _ = return_config.insert(
+        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::LineChunks.to_string(),
+    );
     println!(
         "knife_intersect returning {} vertices, {} indices, {} edges",
         rv_model.vertices.len(),
@@ -219,6 +222,6 @@ where
         rv_model.vertices,
         rv_model.indices,
         rv_model.world_orientation.to_vec(),
-        config,
+        return_config,
     ))
 }

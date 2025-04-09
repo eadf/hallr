@@ -411,23 +411,18 @@ class RunLSystemScriptOperator(bpy.types.Operator):
             try:
                 config = {
                     "command": "lsystems",
-                    "CUSTOM_TURTLE": script_content,
+                    "🐢": script_content,
                 }
 
                 # Call the Rust function
-                vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, None)
-                print("received:" + str(config_out))
-
-                if config_out.get("ERROR"):
-                    self.report({'ERROR'}, "" + config_out.get("ERROR"))
-                    return {'CANCELLED'}
-
-                hallr_ffi_utils.handle_chunks_line_new_object(config_out, vertices, indices)
-                bpy.ops.object.mode_set(mode='OBJECT')
+                hallr_ffi_utils.process_config(config)
 
                 self.report({'INFO'}, "L-System script executed")
             except Exception as e:
+                import traceback
+                traceback.print_exc()
                 self.report({'ERROR'}, f"Error: {e}")
+                return {'CANCELLED'}
         else:
             self.report({'WARNING'}, "No script selected")
 

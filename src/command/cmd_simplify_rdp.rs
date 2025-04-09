@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, Options};
-use crate::{prelude::*, utils::IndexDeduplicator};
+use crate::{ffi, prelude::*, utils::IndexDeduplicator};
 use hronn::prelude::ConvertTo;
 use linestring::{
     linestring_3d::{Aabb3, LineString3, Plane},
@@ -111,14 +111,22 @@ where
     } else {
         output_matrix = vec![];
     }
-    let mut config = ConfigType::new();
-    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
-    let _ = config.insert("REMOVE_DOUBLES".to_string(), "false".to_string());
+    let mut return_config = ConfigType::new();
+    let _ = return_config.insert(
+        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::LineChunks.to_string(),
+    );
+    let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "false".to_string());
 
     println!(
         "simplify_rdp operation returning {} vertices, {} indices",
         output_vertices.len(),
         output_indices.len()
     );
-    Ok((output_vertices, output_indices, output_matrix, config))
+    Ok((
+        output_vertices,
+        output_indices,
+        output_matrix,
+        return_config,
+    ))
 }

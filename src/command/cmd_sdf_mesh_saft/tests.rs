@@ -5,6 +5,7 @@
 use crate::{
     HallrError,
     command::{ConfigType, OwnedModel},
+    ffi::{MESH_FORMAT_TAG, MeshFormat},
 };
 
 #[test]
@@ -15,7 +16,10 @@ fn test_sdf_mesh_saft_1() -> Result<(), HallrError> {
         "9.999999747378752e-05".to_string(),
     );
     let _ = config.insert("command".to_string(), "sdf_mesh_saft".to_string());
-    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::LineChunks.to_string(),
+    );
     let _ = config.insert("SDF_RADIUS_MULTIPLIER".to_string(), "1.0".to_string());
     let _ = config.insert("SDF_DIVISIONS".to_string(), "50".to_string());
 

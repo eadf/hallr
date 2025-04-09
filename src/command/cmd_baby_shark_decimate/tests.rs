@@ -5,6 +5,7 @@
 use crate::{
     HallrError,
     command::{ConfigType, OwnedModel},
+    ffi::{MESH_FORMAT_TAG, MeshFormat},
 };
 
 #[test]
@@ -15,7 +16,10 @@ fn test_baby_shark_simplify_1() -> Result<(), HallrError> {
         "ERROR_THRESHOLD".to_string(),
         "0.10000000149011612".to_string(),
     );
-    let _ = config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string(),
+    );
     let _ = config.insert("command".to_string(), "baby_shark_simplify".to_string());
 
     let owned_model_0 = OwnedModel {
@@ -124,7 +128,10 @@ fn test_baby_shark_decimate_non_manifold_pinched_vertex() -> Result<(), HallrErr
     );
     let _ = config.insert("command".to_string(), "baby_shark_decimate".to_string());
     let _ = config.insert("MIN_FACES_COUNT".to_string(), "10000".to_string());
-    let _ = config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string(),
+    );
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),

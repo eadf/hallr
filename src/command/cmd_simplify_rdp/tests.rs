@@ -5,13 +5,17 @@
 use crate::{
     HallrError,
     command::{ConfigType, OwnedModel},
+    ffi::{MESH_FORMAT_TAG, MeshFormat},
 };
 use vector_traits::glam::Vec3;
 
 #[test]
 fn test_simplify_rdp_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::LineChunks.to_string(),
+    );
     let _ = config.insert("command".to_string(), "simplify_rdp".to_string());
     let _ = config.insert("simplify_distance".to_string(), "6.0".to_string());
     let _ = config.insert("simplify_3d".to_string(), "false".to_string());
@@ -73,7 +77,10 @@ fn test_simplify_rdp_2() -> Result<(), HallrError> {
     let _ = config.insert("simplify_distance".to_string(), "0.1".to_string());
     let _ = config.insert("simplify_3d".to_string(), "false".to_string());
     let _ = config.insert("command".to_string(), "simplify_rdp".to_string());
-    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::LineChunks.to_string(),
+    );
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -106,7 +113,10 @@ fn test_simplify_rdp_2() -> Result<(), HallrError> {
 fn test_simplify_rdp_3() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("simplify_3d".to_string(), "true".to_string());
-    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::LineChunks.to_string(),
+    );
     let _ = config.insert("command".to_string(), "simplify_rdp".to_string());
     let _ = config.insert("simplify_distance".to_string(), "0.2".to_string());
 
@@ -144,7 +154,10 @@ fn test_simplify_rdp_4() -> Result<(), HallrError> {
         "simplify_distance".to_string(),
         "0.0010000000474974513".to_string(),
     );
-    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::LineChunks.to_string(),
+    );
     let _ = config.insert("command".to_string(), "simplify_rdp".to_string());
 
     let owned_model_0 = OwnedModel {

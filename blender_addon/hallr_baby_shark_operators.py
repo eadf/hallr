@@ -8,6 +8,7 @@ import bpy
 import os
 import bmesh
 from . import hallr_ffi_utils
+from hallr_ffi_utils import MeshFormat
 
 import os
 
@@ -59,10 +60,6 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator):
     def execute(self, context):
         obj = context.active_object
 
-        if obj.type != 'MESH':
-            self.report({'ERROR'}, "Active object is not a mesh!")
-            return {'CANCELLED'}
-
         # no need to check for non-manifold mesh more than once.
         if _DENY_NON_MANIFOLD and bpy.context.active_operator != self:
             # Switch to edit mode and select non-manifold geometry
@@ -93,9 +90,14 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator):
             "MIN_FACES_COUNT": str(self.min_faces_count)
         }
 
-        # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj)
-        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.TRIANGULATED, create_new=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
 
         return {'FINISHED'}
 
@@ -174,10 +176,6 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
     def execute(self, context):
         obj = context.active_object
 
-        if obj.type != 'MESH':
-            self.report({'ERROR'}, "Active object is not a mesh!")
-            return {'CANCELLED'}
-
         # no need to check for non-manifold mesh more than once.
         if _DENY_NON_MANIFOLD and bpy.context.active_operator != self:
             # Switch to edit mode and select non-manifold geometry
@@ -213,9 +211,14 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
             "PROJECT_VERTICES": str(self.project_vertices_prop)
         }
 
-        # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj)
-        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.TRIANGULATED, create_new=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
 
         return {'FINISHED'}
 
@@ -267,7 +270,7 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
         name="Offset Amount",
         description="Distance to offset the mesh surface",
         default=1.5,
-        min=0.01,
+        min=0.0,
         max=10.0,
         precision=2,
         unit='LENGTH'
@@ -291,10 +294,6 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
     def execute(self, context):
         obj = context.active_object
 
-        if obj.type != 'MESH':
-            self.report({'ERROR'}, "Active object is not a mesh!")
-            return {'CANCELLED'}
-
         # Ensure we're in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -305,9 +304,14 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
             "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
         }
 
-        # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj)
-        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.TRIANGULATED, create_new=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
 
         return {'FINISHED'}
 
@@ -377,27 +381,23 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
                 context.active_object is not None)
 
     def execute(self, context):
-        mesh_1 = context.selected_objects[0]
-        mesh_2 = context.selected_objects[1]
-        if mesh_1 is not None and mesh_2 is not None:
+        if len(context.selected_objects) == 2:
+            mesh_1 = context.selected_objects[0]
+            mesh_2 = context.selected_objects[1]
 
-            if _DENY_NON_MANIFOLD and is_mesh_non_manifold(mesh_1):
+            if _DENY_NON_MANIFOLD and bpy.context.active_operator != self and is_mesh_non_manifold(mesh_1):
                 self.report(
                     {'ERROR'},
                     f"Object '{mesh_1.name}' is non-manifold. Fix it before proceeding."
                 )
                 return {'CANCELLED'}
 
-            if _DENY_NON_MANIFOLD and is_mesh_non_manifold(mesh_2):
+            if _DENY_NON_MANIFOLD and bpy.context.active_operator != self and is_mesh_non_manifold(mesh_2):
                 self.report(
                     {'ERROR'},
                     f"Object '{mesh_2.name}' is non-manifold. Fix it before proceeding."
                 )
                 return {'CANCELLED'}
-
-            # Print the names of the selected objects
-            # print("Mesh 1:", mesh_1.name)
-            # print("Mesh 2:", mesh_2.name)
 
             config = {"operation": str(self.operation_prop),
                       "swap": str(self.swap_operands_prop),
@@ -405,20 +405,19 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
                       "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                       "command": "baby_shark_boolean"}
 
-            # print("config:", config)
-            # Call the Rust function
-            vertices, indices, config = hallr_ffi_utils.call_rust(config, mesh_1, mesh_2, second_mesh_is_line=False)
+            try:
+                # Call the Rust function
+                hallr_ffi_utils.process_mesh_with_rust(config, primary_mesh=mesh_1,
+                                                       secondary_mesh=mesh_2,
+                                                       primary_format=MeshFormat.TRIANGULATED,
+                                                       secondary_format=MeshFormat.TRIANGULATED,
+                                                       create_new=True)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                self.report({'ERROR'}, f"Error: {e}")
+                return {'CANCELLED'}
 
-            # print(f"Received {config} as the result from Rust!")
-            if config.get("ERROR"):
-                self.report({'ERROR'}, "" + config.get("ERROR"))
-                return {'CANCELLED'}
-            # Check if the returned mesh format is triangulated
-            if config.get("mesh.format") == "triangulated":
-                hallr_ffi_utils.handle_triangle_mesh(config, vertices, indices)
-            else:
-                self.report({'ERROR'}, "Unknown mesh format:" + config.get("mesh.format", "None"))
-                return {'CANCELLED'}
         return {'FINISHED'}
 
     def invoke(self, context, event):

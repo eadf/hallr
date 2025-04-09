@@ -12,7 +12,7 @@ fn test_lsystems_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("command".to_string(), r###"lsystems"###.to_string());
     let _ = config.insert(
-        "CUSTOM_TURTLE".to_string(),
+        "🐢".to_string(),
         r###"
 token("X", Turtle::Nop))
 token("F", Turtle::GeodesicForward(1.0)) # step forward along the surface
@@ -75,7 +75,7 @@ iterations(5)
 fn test_lsystems_8() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
-        "CUSTOM_TURTLE".to_string(),
+        "🐢".to_string(),
         r###"token("X", Turtle::Nop)
 token("F", Turtle::Forward(10.0))
 token("^", Turtle::Pitch(90.0))
@@ -139,7 +139,7 @@ iterations(1)"###
 fn test_lsystems_7() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
-        "CUSTOM_TURTLE".to_string(),
+        "🐢".to_string(),
         r###"
 token("A", Turtle::Nop)
 token("B", Turtle::Nop)
@@ -213,7 +213,7 @@ fn test_lsystems_6() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("command".to_string(), r###"lsystems"###.to_string());
     let _ = config.insert(
-        "CUSTOM_TURTLE".to_string(),
+        "🐢".to_string(),
         r###"
 # https://en.wikipedia.org/wiki/L-system#Examples_of_L-systems
 # build fractal binary tree
@@ -293,7 +293,7 @@ fn test_lsystems_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("command".to_string(), r###"lsystems"###.to_string());
     let _ = config.insert(
-        "CUSTOM_TURTLE".to_string(),
+        "🐢".to_string(),
         r###"
 # build a koch curve in 3d
 token("-", Turtle::Rotate(40.0, -90.0, 0.0))
@@ -356,7 +356,7 @@ timeout(1)
 fn test_lsystems_3() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
-        "CUSTOM_TURTLE".to_string(),
+        "🐢".to_string(),
         r###"
 token("0", Turtle::Forward(1.0)))
 token("1", Turtle::Forward(1.0)))
@@ -423,7 +423,7 @@ timeout(1)
 fn test_lsystems_4() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
-        "CUSTOM_TURTLE".to_string(),
+        "🐢".to_string(),
         r###"
 token("0", Turtle::Forward(50.0)))
 token("1", Turtle::Forward(50.0)))
@@ -491,7 +491,7 @@ timeout(1)
 fn test_lsystems_5() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
-        "CUSTOM_TURTLE".to_string(),
+        "🐢".to_string(),
         r#"
     token("X", Turtle::Nop)
     token("Y", Turtle::Nop)

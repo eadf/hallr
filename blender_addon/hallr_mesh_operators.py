@@ -11,6 +11,7 @@ import math
 import array
 from collections import defaultdict
 from . import hallr_ffi_utils
+from hallr_ffi_utils import MeshFormat
 
 
 def angle_between_edges(p0, p1, p2):
@@ -47,23 +48,26 @@ class MESH_OT_hallr_2d_outline(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None
+        ob = context.active_object
+        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
 
     def execute(self, context):
         obj = context.active_object
-
-        if obj.type != 'MESH':
-            self.report({'ERROR'}, "Active object is not a mesh!")
-            return {'CANCELLED'}
 
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
         config = {"command": "2d_outline"}
 
-        # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=False)
-        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.TRIANGULATED, create_new=False)
+        except Exception as e:
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
+
+        # Switch back to edit mode
+        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
@@ -83,17 +87,11 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None
+        ob = context.active_object
+        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
 
     def execute(self, context):
-        active_object = context.active_object
-        if active_object is None or active_object.type != 'MESH':
-            self.report({'ERROR'}, "Active object is not a mesh!")
-            return {'CANCELLED'}
-
-        if context.mode != 'EDIT_MESH':
-            self.report({'ERROR'}, "Must be in edit mode!")
-            return {'CANCELLED'}
+        obj = context.active_object
 
         # Switch to object mode to gather data without changing the user's selection
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -102,13 +100,16 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator):
 
         config = {"command": "knife_intersect"}
 
-        # Call the Rust function
-
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, active_object, use_line_chunks=True)
-        hallr_ffi_utils.handle_received_object_replace_active(active_object, config_out, vertices, indices)
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_mesh_with_rust(config, obj, line_format=MeshFormat.LINE_CHUNKS, create_new=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
 
         # Switch back to edit mode
-        bpy.context.view_layer.objects.active = active_object
         bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
@@ -124,32 +125,27 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None
+        ob = context.active_object
+        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
 
     def execute(self, context):
-        active_object = context.active_object
-        if active_object is None or active_object.type != 'MESH':
-            self.report({'ERROR'}, "Active object is not a mesh!")
-            return {'CANCELLED'}
-
-        if context.mode != 'EDIT_MESH':
-            self.report({'ERROR'}, "Must be in edit mode!")
-            return {'CANCELLED'}
+        obj = context.active_object
 
         # Switch to object mode to gather data without changing the user's selection
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        bpy.context.view_layer.update()
-
         config = {"command": "convex_hull_2d"}
 
-        # Call the Rust function
-
-        vertices, indices, config_out = hallr_ffi_utils.call_rust(config, active_object, only_selected_vertices=True)
-        hallr_ffi_utils.handle_windows_line_new_object(vertices, indices)
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.TRIANGULATED, create_new=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
 
         # Switch back to edit mode
-        bpy.context.view_layer.objects.active = active_object
         bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
@@ -181,14 +177,11 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None
+        ob = context.active_object
+        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
 
     def execute(self, context):
         obj = context.active_object
-
-        if obj.type != 'MESH':
-            self.report({'ERROR'}, "Active object is not a mesh!")
-            return {'CANCELLED'}
 
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -196,9 +189,17 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator):
         config = {"command": "simplify_rdp", "simplify_distance": str(self.simplify_distance_prop),
                   "simplify_3d": str(self.simplify_3d_prop).lower()}
 
-        # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
-        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
+
+        # Switch back to edit mode
+        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
@@ -495,7 +496,7 @@ class MESH_OT_hallr_select_vertices_until_intersection(bpy.types.Operator):
 
 
 # Voronoi mesh operator
-class MESH_OT_hallr_voronli_mesh(bpy.types.Operator):
+class MESH_OT_hallr_voroni_mesh(bpy.types.Operator):
     bl_idname = "mesh.hallr_meshtools_voronoi_mesh"
     bl_label = "[XY] Voronoi Mesh"
     bl_icon = "MESH_UVSPHERE"
@@ -538,10 +539,6 @@ class MESH_OT_hallr_voronli_mesh(bpy.types.Operator):
     def execute(self, context):
         obj = context.active_object
 
-        if obj.type != 'MESH':
-            self.report({'ERROR'}, "Active object is not a mesh!")
-            return {'CANCELLED'}
-
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -550,9 +547,17 @@ class MESH_OT_hallr_voronli_mesh(bpy.types.Operator):
                   "NEGATIVE_RADIUS": str(self.negative_radius_prop).lower(),
                   "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
-        # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
-        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
+
+        # Switch back to edit mode
+        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
@@ -627,9 +632,17 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator):
                   "KEEP_INPUT": str(self.keep_input_prop).lower(),
                   "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
-        # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
-        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
+
+        # Switch back to edit mode
+        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
@@ -690,10 +703,6 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator):
     def execute(self, context):
         obj = context.active_object
 
-        if obj.type != 'MESH':
-            self.report({'ERROR'}, "Active object is not a mesh!")
-            return {'CANCELLED'}
-
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -701,9 +710,17 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator):
                   "SDF_DIVISIONS": str(self.sdf_divisions_prop),
                   "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
-        # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
-        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
+
+        # Switch back to edit mode
+        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
@@ -777,10 +794,6 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
     def execute(self, context):
         obj = context.active_object
 
-        if obj.type != 'MESH':
-            self.report({'ERROR'}, "Active object is not a mesh!")
-            return {'CANCELLED'}
-
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -789,10 +802,17 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
                   "SDF_RADIUS_MULTIPLIER": str(self.sdf_radius_prop),
                   "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format= MeshFormat.LINE_CHUNKS, create_new=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
 
-        # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
-        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+        # Switch back to edit mode
+        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
@@ -938,10 +958,6 @@ class MESH_OT_hallr_discretize(bpy.types.Operator):
     def execute(self, context):
         obj = context.active_object
 
-        if obj.type != 'MESH':
-            self.report({'ERROR'}, "Active object is not a mesh!")
-            return {'CANCELLED'}
-
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -949,9 +965,17 @@ class MESH_OT_hallr_discretize(bpy.types.Operator):
                   "discretize_length": str(self.discretize_length_prop),
                   }
 
-        # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
-        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
+
+        # Switch back to edit mode
+        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
@@ -1039,14 +1063,10 @@ class MESH_OT_hallr_centerline(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         ob = context.active_object
-        return ob and ob.type == 'MESH'
+        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
 
     def execute(self, context):
         obj = context.active_object
-
-        if obj.type != 'MESH':
-            self.report({'ERROR'}, "Active object is not a mesh!")
-            return {'CANCELLED'}
 
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -1067,9 +1087,17 @@ class MESH_OT_hallr_centerline(bpy.types.Operator):
                   : str(self.weld_prop).lower(),
                   "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
-        # Call the Rust function
-        vertices, indices, config_out = hallr_ffi_utils.call_rust_direct(config, obj, use_line_chunks=True)
-        hallr_ffi_utils.handle_received_object_replace_active(obj, config_out, vertices, indices)
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
+
+        # Switch back to edit mode
+        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
@@ -1104,7 +1132,7 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
         layout = self.layout
         layout.operator(MESH_OT_hallr_2d_outline.bl_idname, icon=MESH_OT_hallr_2d_outline.bl_icon)
         layout.operator(MESH_OT_hallr_convex_hull_2d.bl_idname, icon=MESH_OT_hallr_convex_hull_2d.bl_icon)
-        layout.operator(MESH_OT_hallr_voronli_mesh.bl_idname, icon=MESH_OT_hallr_voronli_mesh.bl_icon)
+        layout.operator(MESH_OT_hallr_voroni_mesh.bl_idname, icon=MESH_OT_hallr_voroni_mesh.bl_icon)
         layout.operator(MESH_OT_hallr_voronoi_diagram.bl_idname, icon=MESH_OT_hallr_voronoi_diagram.bl_icon)
         layout.operator(MESH_OT_hallr_sdf_mesh_25D.bl_idname, icon=MESH_OT_hallr_sdf_mesh_25D.bl_icon)
         layout.operator(MESH_OT_hallr_sdf_mesh.bl_idname, icon=MESH_OT_hallr_sdf_mesh.bl_icon)
@@ -1142,7 +1170,7 @@ classes = (
     MESH_OT_hallr_select_collinear_edges,
     MESH_OT_hallr_convex_hull_2d,
     MESH_OT_hallr_knife_intersect,
-    MESH_OT_hallr_voronli_mesh,
+    MESH_OT_hallr_voroni_mesh,
     MESH_OT_hallr_voronoi_diagram,
     MESH_OT_hallr_sdf_mesh_25D,
     MESH_OT_hallr_sdf_mesh,

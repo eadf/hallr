@@ -6,7 +6,7 @@
 mod tests;
 
 use super::{ConfigType, Model};
-use crate::{HallrError, command::Options, prelude::FFIVector3, utils::IndexCompressor};
+use crate::{HallrError, command::Options, ffi, prelude::FFIVector3, utils::IndexCompressor};
 use baby_shark::{
     mesh::{corner_table::prelude::CornerTableF, traits::Mesh},
     remeshing::incremental::IncrementalRemesher,
@@ -97,7 +97,10 @@ pub(crate) fn process_command(
     let ffi_vertices = compressor.vertices;
 
     let mut return_config = ConfigType::new();
-    let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let _ = return_config.insert(
+        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::Triangulated.to_string(),
+    );
     let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "false".to_string());
     if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {
         let _ = return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());

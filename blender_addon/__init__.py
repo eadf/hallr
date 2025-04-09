@@ -13,7 +13,6 @@ bl_info = {
     "description": "A collection of addons written in Rust",
     "author": "EAD https://github.com/eadf",
     "version": (0, 1, 11),
-    "warning": "This executes compiled rust code on your computer",
 }
 
 DEV_MODE = False  # Set this to False for distribution
@@ -34,8 +33,8 @@ from . import hallr_lindenmayer_systems
 modules = (
     hallr_baby_shark_operators,
     hallr_mesh_operators,
-    hallr_2d_delaunay_triangulation,
     hallr_meander_toolpath,
+    hallr_2d_delaunay_triangulation,
     hallr_lindenmayer_systems,
 )
 

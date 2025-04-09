@@ -5,6 +5,7 @@
 use crate::{
     HallrError,
     command::{ConfigType, Model, Options, OwnedModel},
+    ffi,
     ffi::FFIVector3,
     utils::{GrowingVob, voronoi_utils},
 };
@@ -251,7 +252,10 @@ pub(crate) fn process_command(
     };
 
     let mut return_config = ConfigType::new();
-    let _ = return_config.insert("mesh.format".to_string(), "triangulated".to_string());
+    let _ = return_config.insert(
+        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::Triangulated.to_string(),
+    );
     // we take the easy way out here, and let blender do the de-duplication of the vertices.
     let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
     if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {

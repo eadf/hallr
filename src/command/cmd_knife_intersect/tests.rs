@@ -5,13 +5,17 @@
 use crate::{
     HallrError,
     command::{ConfigType, OwnedModel},
+    ffi::{MESH_FORMAT_TAG, MeshFormat},
 };
 use vector_traits::glam::Vec3;
 
 #[test]
 fn knife_intersect_0() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::LineChunks.to_string(),
+    );
     let _ = config.insert("command".to_string(), "knife_intersect".to_string());
 
     let owned_model = OwnedModel {
@@ -35,7 +39,10 @@ fn knife_intersect_0() -> Result<(), HallrError> {
 #[test]
 fn knife_intersect_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::LineChunks.to_string(),
+    );
     let _ = config.insert("command".to_string(), "knife_intersect".to_string());
 
     let owned_model = OwnedModel {
@@ -61,7 +68,10 @@ fn knife_intersect_1() -> Result<(), HallrError> {
 fn knife_intersect_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("command".to_string(), "knife_intersect".to_string());
-    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::LineChunks.to_string(),
+    );
 
     let owned_model = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -93,7 +103,10 @@ fn knife_intersect_2() -> Result<(), HallrError> {
 fn knife_intersect_3() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("command".to_string(), "knife_intersect".to_string());
-    let _ = config.insert("mesh.format".to_string(), "line_chunks".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::LineChunks.to_string(),
+    );
 
     let owned_model = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),

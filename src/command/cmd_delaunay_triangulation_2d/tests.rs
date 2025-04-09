@@ -5,6 +5,7 @@
 use crate::{
     HallrError,
     command::{ConfigType, OwnedModel},
+    ffi::{MESH_FORMAT_TAG, MeshFormat},
 };
 use vector_traits::glam::Vec3;
 
@@ -12,7 +13,10 @@ use vector_traits::glam::Vec3;
 fn test_2d_delaunay_triangulation_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
-    let _ = config.insert("mesh.format".to_string(), "point_cloud".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        format!("{}{}", MeshFormat::PointCloud, MeshFormat::PointCloud),
+    );
     let _ = config.insert("bounds".to_string(), "AABB".to_string());
     let _ = config.insert(
         "command".to_string(),
@@ -71,7 +75,10 @@ fn test_2d_delaunay_triangulation_2() -> Result<(), HallrError> {
     );
     let _ = config.insert("first_vertex_model_1".to_string(), "13".to_string());
     let _ = config.insert("first_index_model_1".to_string(), "0".to_string());
-    let _ = config.insert("mesh.format".to_string(), "point_cloud".to_string());
+    let _ = config.insert(
+        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::PointCloud.to_string(),
+    );
     let _ = config.insert("bounds".to_string(), "CONVEX_HULL".to_string());
 
     let owned_model_0 = OwnedModel {
