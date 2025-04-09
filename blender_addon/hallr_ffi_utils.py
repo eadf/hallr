@@ -112,7 +112,9 @@ class MeshFormat:
     LINE_CHUNKS = "⸗"
     POINT_CLOUD = "┅"
 
+
 MESH_FORMAT_TAG = "📦"
+
 
 def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.TRIANGULATED,
                       only_selected_vertices: bool = False) -> Tuple[List, List]:
@@ -205,96 +207,98 @@ def handle_new_object(return_options: Dict[str, str], mesh_obj: bpy.types.Object
         bpy.ops.object.mode_set(mode='EDIT')
 
 
-def create_mesh_object(vertices: List[Tuple[float, float, float]],
-                       edges: List[Tuple[int, int]] = None,
-                       faces: List[Tuple[int, ...]] = None,
-                       name: str = "New_Object") -> bpy.types.Object:
+def process_mesh_from_ffi(ffi_vertices_ptr, ffi_indices_ptr, vertex_count, index_count, return_options):
     """
-    Create a new mesh object from vertices, edges, and faces.
-
-    Args:
-        vertices: List of vertex coordinates
-        edges: List of edge vertex pairs
-        faces: List of face vertex indices
-        name: Name for the new object
-
-    Returns:
-        The newly created object
+    Process mesh data directly from FFI pointers before they're released
     """
-    if edges is None:
-        edges = []
-    if faces is None:
-        faces = []
+    # Create the destination mesh
+    new_mesh = bpy.data.meshes.new(return_options.get("model_0_name", "new_mesh"))
+    mesh_format = return_options.get(MESH_FORMAT_TAG, None)
+    if mesh_format is None:
+        raise HallrException("The mesh format was missing from the return data.")
 
-    # Create a new mesh
-    mesh = bpy.data.meshes.new(name=f"{name}_Mesh")
-    mesh.from_pydata(vertices, edges, faces)
-    mesh.update()
+    # print(f"Processing mesh with format: {mesh_format}, vertices: {vertex_count}, indices: {index_count}")
 
-    # Create a new object using the mesh
-    mesh_obj = bpy.data.objects.new(name, mesh)
+    # Populate vertices directly from FFI buffer
+    new_mesh.vertices.add(vertex_count)
+    for i in range(vertex_count):
+        # ffi_vertices_ptr is an array of Vector3
+        v = ffi_vertices_ptr[i]
+        new_mesh.vertices[i].co = (v.x, v.y, v.z)
 
-    return mesh_obj
-
-
-def unpack_mesh_data(indices: List[int], mesh_format: str) -> Tuple[List[Tuple[int, int]], List[Tuple[int, ...]]]:
-    """
-    Convert indices to edges and faces based on the specified format.
-
-    Args:
-        indices: List of indices
-        mesh_format: The format of the indices
-
-    Returns:
-        tuple: (edges, faces) - lists of edge and face vertex indices
-    """
-    edges = []
-    faces = []
-
+    # Handle different mesh formats
     if mesh_format == MeshFormat.TRIANGULATED:
-        print("unpacking triangles")
         # Process triangulated mesh
-        faces = [tuple(indices[i:i + 3]) for i in range(0, len(indices), 3)]
+        face_count = index_count // 3
+        new_mesh.polygons.add(face_count)
+        new_mesh.loops.add(index_count)
+
+        for f in range(face_count):
+            poly = new_mesh.polygons[f]
+            poly.loop_start = f * 3
+
+            for v in range(3):
+                idx = ffi_indices_ptr[f * 3 + v]
+                new_mesh.loops[f * 3 + v].vertex_index = idx
+
     elif mesh_format == MeshFormat.LINE_WINDOWS:
-        print("unpacking line windows")
         # Process line mesh in window format (consecutive pairs)
-        edges = [(indices[i], indices[i + 1]) for i in range(len(indices) - 1)]
+        edge_count = index_count - 1
+        if edge_count > 0:
+            new_mesh.edges.add(edge_count)
+
+            for e in range(edge_count):
+                v1 = ffi_indices_ptr[e]
+                v2 = ffi_indices_ptr[e + 1]
+                new_mesh.edges[e].vertices = (v1, v2)
+
     elif mesh_format == MeshFormat.LINE_CHUNKS:
-        print("unpacking line chunks")
         # Process line mesh in chunks format (paired indices)
-        edges = [(indices[i], indices[i + 1]) for i in range(0, len(indices) - 1, 2)]
+        edge_count = index_count // 2
+        if edge_count > 0:
+            new_mesh.edges.add(edge_count)
 
-        # Check if the length is odd and print a warning
-        if len(indices) % 2 != 0:
-            print("Warning: Length of indices is odd. The last value may not form a valid edge pair.")
+            for e in range(edge_count):
+                v1 = ffi_indices_ptr[e * 2]
+                v2 = ffi_indices_ptr[e * 2 + 1]
+                new_mesh.edges[e].vertices = (v1, v2)
+
+            # Check if the length is odd and print a warning
+            if index_count % 2 != 0:
+                print("Warning: Length of indices is odd. The last value may not form a valid edge pair.")
+
+    elif mesh_format == MeshFormat.POINT_CLOUD:
+        # Point cloud - only vertices, no edges or faces
+        # print("Processing point cloud mesh (vertices only)")
+        # No additional processing needed - vertices are already set
+        pass
     else:
-        raise HallrException(f"Mesh format not recognized:{mesh_format}")
+        raise HallrException(f"Mesh format not recognized: {mesh_format}")
 
-    return edges, faces
+    # Update the mesh to ensure proper calculation of derived data
+    new_mesh.update(calc_edges=True)
+
+    return new_mesh
 
 
 def create_object_from_mesh_data(return_options: Dict[str, str],
-                                 vertices: List[Tuple[float, float, float]],
-                                 indices: List[int],
-                                 mesh_format: str,
+                                 new_mesh,
                                  name: str = "New_Object") -> bpy.types.Object:
     """
     Create a new Blender object from vertices and indices.
 
     Args:
         return_options: Dictionary of options for post-processing
-        vertices: List of vertex coordinates
-        indices: List of indices
-        mesh_format: The format of the indices
+        new_mesh: the mesh created from the FFI data
         name: Name for the new object
 
     Returns:
         The newly created object
     """
-    edges, faces = unpack_mesh_data(indices, mesh_format)
 
     # Create mesh object
-    mesh_obj = create_mesh_object(vertices, edges, faces, name)
+    # mesh_obj = create_mesh_object(vertices, edges, faces, name)
+    mesh_obj = bpy.data.objects.new(name, new_mesh)
 
     # Handle the new object (link to scene, select, etc.)
     handle_new_object(return_options, mesh_obj)
@@ -304,64 +308,38 @@ def create_object_from_mesh_data(return_options: Dict[str, str],
 
 def update_existing_object(active_obj: bpy.types.Object,
                            return_options: Dict[str, str],
-                           vertices: List[Tuple[float, float, float]],
-                           indices: List[int],
-                           mesh_format: str) -> None:
-    """
-    Update an existing Blender object with new vertices and indices.
-
-    Args:
-        active_obj: The Blender object to update
-        return_options: Dictionary of options for post-processing
-        vertices: List of vertex coordinates
-        indices: List of indices
-        mesh_format: The format of the indices
-    """
-    # Convert indices to edges and faces
-    edges, faces = unpack_mesh_data(indices, mesh_format)
-
-    # Create new mesh
-    new_mesh = bpy.data.meshes.new(return_options.get("model_0_name", "new_mesh"))
+                           new_mesh) -> None:
+    # Store reference to old mesh
     old_mesh = active_obj.data
-
-    # Update the mesh
-    new_mesh.from_pydata(vertices, edges, faces)
-    new_mesh.update(calc_edges=True)
-
-    # Use bmesh to update the active object
-    bm = bmesh.new()
-    bm.from_mesh(new_mesh)
 
     # Switch to object mode for mesh operations
     bpy.ops.object.mode_set(mode='OBJECT')
-    bm.to_mesh(active_obj.data)
-    bpy.ops.object.mode_set(mode='EDIT')
 
-    # Clean up old mesh if not needed
-    if not (old_mesh.users or old_mesh.use_fake_user):
-        print("would have removed old mesh")
-        #bpy.data.meshes.remove(old_mesh)
+    active_obj.data = new_mesh
 
-    # Apply matrix if provided in return options
+    # Now the old mesh should have one fewer user
+    if old_mesh.users == 0 and not old_mesh.use_fake_user:
+        bpy.data.meshes.remove(old_mesh)
+
+    # Handle other operations in object mode first
     if "matrix" in return_options:
         try:
-            # Note: This is just a placeholder - actual implementation would depend on
-            # how the matrix is encoded in return_options
-            # active_obj.matrix_world = matrix_from_return_options(return_options["matrix"])
+            # TODO handle matrix
             pass
         except Exception as e:
-            print(f"Error applying matrix: {e}")
+            import traceback
+            traceback.print_exc()
+            raise HallrException(f"Error applying matrix: {e}")
 
-    # Handle remove doubles option
+    # Handle remove doubles if needed
     remove_doubles = return_options.get("REMOVE_DOUBLES", "").lower() == "true"
-    remove_doubles_threshold = float(return_options.get("REMOVE_DOUBLES_THRESHOLD", "0.00001"))
-
     if remove_doubles:
         bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.remove_doubles(threshold=remove_doubles_threshold)
-        bpy.ops.object.editmode_toggle()
+        bpy.ops.mesh.remove_doubles(threshold=float(return_options.get("REMOVE_DOUBLES_THRESHOLD", "0.00001")))
         bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.mode_set(mode='EDIT')
+
+    # Return to edit mode if that's where we started
+    bpy.ops.object.mode_set(mode='EDIT')
 
 
 def apply_all_transformations(obj: bpy.types.Object, temp_name: str) -> Tuple[bpy.types.Object, bool]:
@@ -523,46 +501,54 @@ def process_mesh_with_rust(config: Dict[str, str],
     # Fetch Rust library
     rust_lib = load_latest_dylib()
 
+    try:
+        bpy.ops.object.mode_set(mode='EDIT')
+    except Exception as e:
+        print(f"Ignoring exception {e}: it's probably because there is no active object (as expected)")
+
     # Call Rust function
     rust_result = rust_lib.process_geometry(
         vertices_ptr, len(vertices), indices_ptr, len(indices),
         matrices_ptr, len(matrices), map_data
     )
+    try:
+        # Extract return options
+        output_map = {}
+        for i in range(rust_result.map.count):
+            key = ctypes.string_at(rust_result.map.keys[i]).decode('utf-8')
+            value = ctypes.string_at(rust_result.map.values[i]).decode('utf-8')
+            if key == "ERROR":
+                raise HallrException(value)
+            output_map[key] = value
 
-    # Extract results
-    output_vertices = [(vec.x, vec.y, vec.z) for vec in
-                       (rust_result.geometry.vertices[i] for i in range(rust_result.geometry.vertex_count))]
-    output_indices = [rust_result.geometry.indices[i] for i in range(rust_result.geometry.indices_count)]
+        new_mesh = process_mesh_from_ffi(rust_result.geometry.vertices, rust_result.geometry.indices,
+                                         rust_result.geometry.vertex_count, rust_result.geometry.indices_count,
+                                         output_map)
+        indices_count = rust_result.geometry.indices_count
+    finally:
+        # Free Rust memory
+        rust_lib.free_process_results(rust_result)
 
-    # Extract return options
-    output_map = {}
-    for i in range(rust_result.map.count):
-        key = ctypes.string_at(rust_result.map.keys[i]).decode('utf-8')
-        value = ctypes.string_at(rust_result.map.values[i]).decode('utf-8')
-        output_map[key] = value
+    try:
+        bpy.ops.object.mode_set(mode='OBJECT')
+    except Exception as e:
+        print(f"Ignoring exception {e}: it's probably because there is no active object (as expected)")
 
-    # Free Rust memory
-    rust_lib.free_process_results(rust_result)
     if DEV_MODE:
         ctypes_close_library(rust_lib)
 
-    if "ERROR" in output_map:
-        raise HallrException(output_map["ERROR"])
-
-    # Get output mesh format
-    output_format = output_map.get(MESH_FORMAT_TAG, primary_format)
-
     print("python: received config: ", output_map)
-    print(f"python: received {len(output_vertices)} vertices: " )
-    print(f"python: received {len(output_indices)} indices: " )
-    print(f"python: using mesh output_format:{output_format}")
+    print(f"python: received {len(new_mesh.vertices)} vertices")
+    print(f"python: received {indices_count} indices")
+    print(f"python: received {len(new_mesh.edges)} edges")
+    print(f"python: received {len(new_mesh.polygons)} polygons")
 
     # Create or update object based on results
     if create_new:
         print("new object new mesh")
         # Create a new object
         new_object = create_object_from_mesh_data(
-            output_map, output_vertices, output_indices, output_format,
+            output_map, new_mesh,
             output_map.get("model_0_name", "New_Object")
         )
         return new_object
@@ -570,7 +556,7 @@ def process_mesh_with_rust(config: Dict[str, str],
         print("updating old object with new mesh")
         # Update existing object
         active_obj = bpy.context.view_layer.objects.active
-        update_existing_object(active_obj, output_map, output_vertices, output_indices, output_format)
+        update_existing_object(active_obj, output_map, new_mesh)
         return None
 
 
@@ -597,6 +583,7 @@ def process_single_mesh(config: Dict[str, str], mesh_obj: bpy.types.Object = Non
         primary_format=mesh_format,
         create_new=create_new
     )
+
 
 def process_config(config: Dict[str, str]) -> bpy.types.Object:
     """
