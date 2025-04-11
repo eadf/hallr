@@ -91,21 +91,42 @@ pub(crate) fn build_output_model(
             now.elapsed()
         );
     }
-    Ok(OwnedModel {
-        world_orientation: OwnedModel::identity_matrix(),
-        //name: pb_model_name,
-        vertices: v_dedup
-            .vertices
-            .into_iter()
-            .map(|v| FFIVector3::new(v.x, v.y, v.z))
-            .collect(),
-        indices: out_indices,
-    })
+    if let Some(world_to_local) = model.get_world_to_local_transform()? {
+        println!(
+            "Rust: applying world-local transformation 1/{:?}",
+            model.world_orientation
+        );
+        Ok(OwnedModel {
+            world_orientation: OwnedModel::identity_matrix(),
+            //name: pb_model_name,
+            vertices: v_dedup
+                .vertices
+                .into_iter()
+                .map(|v| world_to_local(FFIVector3::new(v.x, v.y, v.z)))
+                .collect(),
+            indices: out_indices,
+        })
+    } else {
+        println!(
+            "Rust: *not* applying world-local transformation 1/{:?}",
+            model.world_orientation
+        );
+        Ok(OwnedModel {
+            world_orientation: OwnedModel::identity_matrix(),
+            //name: pb_model_name,
+            vertices: v_dedup
+                .vertices
+                .into_iter()
+                .map(|v| FFIVector3::new(v.x, v.y, v.z))
+                .collect(),
+            indices: out_indices,
+        })
+    }
 }
 
 /// Run the voronoi_mesh command
 pub(crate) fn process_command(
-    config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError> {
     if models.is_empty() {
@@ -124,9 +145,10 @@ pub(crate) fn process_command(
             "Input vertex list was empty".to_string(),
         ));
     }
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
 
     let cmd_arg_discretize_length_multiplier =
-        config.get_mandatory_parsed_option::<f32>("discretize_length", None)? / 100.0;
+        input_config.get_mandatory_parsed_option::<f32>("discretize_length", None)? / 100.0;
 
     // we already tested a_command.models.len()
     let input_model = &models[0];
@@ -140,7 +162,7 @@ pub(crate) fn process_command(
 
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::LineChunks.to_string(),
     );
 

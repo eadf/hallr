@@ -186,7 +186,7 @@ class OBJECT_OT_MT_GenerateMesh(bpy.types.Operator):
                       "pattern": str(settings.pattern_props),
                       "step": str(settings.step_props),
                       "minimum_z": str(settings.minimum_z_props),
-                      "command": "surface_scan"}
+                      hallr_ffi_utils.COMMAND_TAG: "surface_scan"}
             if str(settings.probe_props) == "TAPERED_END":
                 config["probe_angle"] = str(settings.probe_angle_props)
 
@@ -198,8 +198,8 @@ class OBJECT_OT_MT_GenerateMesh(bpy.types.Operator):
             print("config:", config)
             try:
                 # Call the Rust function
-                hallr_ffi_utils.process_mesh_with_rust(config, primary_mesh=model,
-                                                       secondary_mesh=bounding_shape,
+                hallr_ffi_utils.process_mesh_with_rust(config, primary_object=model,
+                                                       secondary_object=bounding_shape,
                                                        primary_format=MeshFormat.TRIANGULATED,
                                                        secondary_format=MeshFormat.POINT_CLOUD,
                                                        create_new=True)

@@ -5,18 +5,18 @@
 use crate::{
     HallrError,
     command::{ConfigType, OwnedModel},
-    ffi::{MESH_FORMAT_TAG, MeshFormat},
+    ffi::MeshFormat,
 };
 
 #[test]
 fn test_discretize_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::LineChunks.to_string(),
     );
     let _ = config.insert("discretize_length".to_string(), "50.0".to_string());
-    let _ = config.insert("command".to_string(), "discretize".to_string());
+    let _ = config.insert("▶".to_string(), "discretize".to_string());
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -42,9 +42,9 @@ fn test_discretize_1() -> Result<(), HallrError> {
 fn test_discretize_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("discretize_length".to_string(), "30.0".to_string());
-    let _ = config.insert("command".to_string(), "discretize".to_string());
+    let _ = config.insert("▶".to_string(), "discretize".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::LineChunks.to_string(),
     );
 

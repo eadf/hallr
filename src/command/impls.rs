@@ -4,7 +4,7 @@
 
 //! A module containing boiler-plate implementations of standard traits such as Default, From etc etc
 
-use crate::{HallrError, command::Options};
+use crate::{HallrError, command::Options, ffi::MeshFormat};
 use std::collections::HashMap;
 
 impl Options for HashMap<String, String> {
@@ -69,5 +69,27 @@ impl Options for HashMap<String, String> {
             Some(_) => Ok(true),
             _ => Ok(false),
         }
+    }
+
+    /// Confirms the correct mesh packaging format is applied
+    fn confirm_mesh_packaging(
+        &self,
+        model_nr: usize,
+        expected_format: MeshFormat,
+    ) -> Result<(), HallrError> {
+        let found_char = self
+            .get_mandatory_option(MeshFormat::MESH_FORMAT_TAG)?
+            .chars()
+            .nth(model_nr)
+            .ok_or_else(|| {
+                HallrError::InvalidParameter(format!("Missing mesh format of model {}", model_nr))
+            })?;
+        if found_char != expected_format.as_char() {
+            return Err(HallrError::InvalidParameter(format!(
+                "This operation requires a mesh format of {}, not {}",
+                expected_format, found_char
+            )));
+        }
+        Ok(())
     }
 }

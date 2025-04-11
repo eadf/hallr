@@ -25,9 +25,14 @@ def is_mesh_non_manifold(obj):
     bm.free()
     return not is_manifold
 
+class BaseOperatorMixin:
+    @classmethod
+    def poll(cls, context):
+        ob = context.active_object
+        return ob is not None and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
 
 # Baby Shark Decimate mesh operator
-class MESH_OT_baby_shark_decimate(bpy.types.Operator):
+class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
     bl_idname = "mesh.hallr_meshtools_bs_decimate"
     bl_label = "Baby Shark Decimate"
     bl_icon = 'MOD_DECIM'
@@ -51,11 +56,6 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator):
         min=1,
         max=1000000
     )
-
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
 
     def execute(self, context):
         obj = context.active_object
@@ -85,7 +85,7 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
 
         config = {
-            "command": "baby_shark_decimate",
+            hallr_ffi_utils.COMMAND_TAG: "baby_shark_decimate",
             "ERROR_THRESHOLD": str(self.error_threshold),
             "MIN_FACES_COUNT": str(self.min_faces_count)
         }
@@ -112,7 +112,7 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator):
 
 
 # Baby Shark Isotropic Remeshing mesh operator
-class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
+class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
     bl_idname = "mesh.hallr_meshtools_bs_isotropic_remesh"
     bl_label = "Baby Shark Isotropic Remesh"
     bl_icon = 'MOD_MESHDEFORM'
@@ -168,11 +168,6 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
         default=True
     )
 
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
-
     def execute(self, context):
         obj = context.active_object
 
@@ -201,7 +196,7 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
 
         config = {
-            "command": "baby_shark_isotropic_remesh",
+            hallr_ffi_utils.COMMAND_TAG: "baby_shark_isotropic_remesh",
             "ITERATIONS_COUNT": str(self.iterations_count_prop),
             "TARGET_EDGE_LENGTH": str(self.target_edge_length_prop),
             "SPLIT_EDGES": str(self.split_edges_prop),
@@ -249,7 +244,7 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator):
 
 
 # Mesh Offset Operator
-class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
+class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
     bl_idname = "mesh.hallr_meshtools_bs_offset"
     bl_label = "Baby Shark Mesh Offset"
     bl_icon = 'MOD_SKIN'
@@ -260,7 +255,7 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
         name="Voxel Size",
         description="Size of voxels for volume conversion",
         default=0.2,
-        min=0.01,
+        min=0.001,
         max=5.0,
         precision=3,
         unit='LENGTH'
@@ -270,9 +265,9 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
         name="Offset Amount",
         description="Distance to offset the mesh surface",
         default=1.5,
-        min=0.0,
+        min=0.001,
         max=10.0,
-        precision=2,
+        precision=3,
         unit='LENGTH'
     )
 
@@ -286,11 +281,6 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
         unit='LENGTH',
     )
 
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
-
     def execute(self, context):
         obj = context.active_object
 
@@ -298,7 +288,7 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
 
         config = {
-            "command": "baby_shark_mesh_offset",
+            hallr_ffi_utils.COMMAND_TAG: "baby_shark_mesh_offset",
             "VOXEL_SIZE": str(self.voxel_size_prop),
             "OFFSET_BY": str(self.offset_by_prop),
             "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
@@ -403,12 +393,12 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
                       "swap": str(self.swap_operands_prop),
                       "voxel_size": str(self.voxel_size_prop),
                       "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
-                      "command": "baby_shark_boolean"}
+                      hallr_ffi_utils.COMMAND_TAG: "baby_shark_boolean"}
 
             try:
                 # Call the Rust function
-                hallr_ffi_utils.process_mesh_with_rust(config, primary_mesh=mesh_1,
-                                                       secondary_mesh=mesh_2,
+                hallr_ffi_utils.process_mesh_with_rust(config, primary_object=mesh_1,
+                                                       secondary_object=mesh_2,
                                                        primary_format=MeshFormat.TRIANGULATED,
                                                        secondary_format=MeshFormat.TRIANGULATED,
                                                        create_new=True)

@@ -5,7 +5,7 @@
 use crate::{
     HallrError,
     command::{ConfigType, OwnedModel},
-    ffi::{MESH_FORMAT_TAG, MeshFormat},
+    ffi::MeshFormat,
 };
 use vector_traits::{approx::ulps_eq, glam::Vec3};
 
@@ -23,10 +23,10 @@ fn test_surface_scan_1() -> Result<(), HallrError> {
     let _ = config.insert("minimum_z".to_string(), "0.0".to_string());
     let _ = config.insert("step".to_string(), "0.20000000298023224".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
-        MeshFormat::Triangulated.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string() + &MeshFormat::PointCloud.to_string(),
     );
-    let _ = config.insert("command".to_string(), "surface_scan".to_string());
+    let _ = config.insert("▶".to_string(), "surface_scan".to_string());
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -71,10 +71,10 @@ fn test_surface_scan_10() -> Result<(), HallrError> {
     let _ = config.insert("minimum_z".to_string(), "0.0".to_string());
     let _ = config.insert("first_index_model_1".to_string(), "15".to_string());
     let _ = config.insert("step".to_string(), "0.5".to_string());
-    let _ = config.insert("command".to_string(), "surface_scan".to_string());
+    let _ = config.insert("▶".to_string(), "surface_scan".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
-        MeshFormat::Triangulated.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string() + &MeshFormat::PointCloud.to_string(),
     );
     let _ = config.insert("pattern".to_string(), "MEANDER".to_string());
     let _ = config.insert("first_vertex_model_1".to_string(), "6".to_string());
@@ -121,11 +121,11 @@ fn test_surface_scan_2() -> Result<(), HallrError> {
     let _ = config.insert("first_vertex_model_1".to_string(), "6".to_string());
     let _ = config.insert("pattern".to_string(), "MEANDER".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
-        MeshFormat::Triangulated.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string() + &MeshFormat::PointCloud.to_string(),
     );
     let _ = config.insert("minimum_z".to_string(), "0.0".to_string());
-    let _ = config.insert("command".to_string(), "surface_scan".to_string());
+    let _ = config.insert("▶".to_string(), "surface_scan".to_string());
     let _ = config.insert("probe_radius".to_string(), "0.5".to_string());
     let _ = config.insert("probe".to_string(), "BALL_NOSE".to_string());
     let _ = config.insert("step".to_string(), "0.5".to_string());
@@ -177,11 +177,11 @@ fn test_surface_scan_3() -> Result<(), HallrError> {
     let _ = config.insert("first_index_model_1".to_string(), "9".to_string());
     let _ = config.insert("step".to_string(), "0.5".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
-        MeshFormat::Triangulated.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string() + &MeshFormat::PointCloud.to_string(),
     );
     let _ = config.insert("pattern".to_string(), "TRIANGULATION".to_string());
-    let _ = config.insert("command".to_string(), "surface_scan".to_string());
+    let _ = config.insert("▶".to_string(), "surface_scan".to_string());
     let _ = config.insert("probe".to_string(), "BALL_NOSE".to_string());
 
     let owned_model_0 = OwnedModel {
@@ -226,7 +226,7 @@ fn test_surface_scan_5() -> Result<(), HallrError> {
     let _ = config.insert("first_vertex_model_1".to_string(), "8".to_string());
     let _ = config.insert("first_index_model_1".to_string(), "24".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::Triangulated.to_string(),
     );
     let _ = config.insert("probe".to_string(), "BALL_NOSE".to_string());
@@ -238,7 +238,7 @@ fn test_surface_scan_5() -> Result<(), HallrError> {
         "z_jump_threshold_multiplier".to_string(),
         "0.4399999976158142".to_string(),
     );
-    let _ = config.insert("command".to_string(), "surface_scan".to_string());
+    let _ = config.insert("▶".to_string(), "surface_scan".to_string());
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -281,11 +281,11 @@ fn test_surface_scan_6() -> Result<(), HallrError> {
     let _ = config.insert("bounds".to_string(), "CONVEX_HULL".to_string());
     let _ = config.insert("step".to_string(), "1.0".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
-        MeshFormat::Triangulated.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string() + &MeshFormat::PointCloud.to_string(),
     );
     let _ = config.insert("minimum_z".to_string(), "0.0".to_string());
-    let _ = config.insert("command".to_string(), "surface_scan".to_string());
+    let _ = config.insert("▶".to_string(), "surface_scan".to_string());
     let _ = config.insert(
         "probe_radius".to_string(),
         "0.10000000149011612".to_string(),
@@ -341,11 +341,11 @@ fn test_surface_scan_7() -> Result<(), HallrError> {
     let _ = config.insert("minimum_z".to_string(), "0.0".to_string());
     let _ = config.insert("first_vertex_model_1".to_string(), "3".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
-        MeshFormat::Triangulated.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string() + &MeshFormat::PointCloud.to_string(),
     );
     let _ = config.insert("probe_angle".to_string(), "1.5707963705062866".to_string());
-    let _ = config.insert("command".to_string(), "surface_scan".to_string());
+    let _ = config.insert("▶".to_string(), "surface_scan".to_string());
     let _ = config.insert("bounds".to_string(), "CONVEX_HULL".to_string());
     let _ = config.insert("step".to_string(), "1.0".to_string());
     let _ = config.insert("first_index_model_1".to_string(), "3".to_string());
@@ -389,11 +389,11 @@ fn test_surface_scan_8() -> Result<(), HallrError> {
     let _ = config.insert("step".to_string(), "1.0".to_string());
     let _ = config.insert("first_index_model_1".to_string(), "3".to_string());
     let _ = config.insert("pattern".to_string(), "MEANDER".to_string());
-    let _ = config.insert("command".to_string(), "surface_scan".to_string());
+    let _ = config.insert("▶".to_string(), "surface_scan".to_string());
     let _ = config.insert("probe_radius".to_string(), "0.5".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
-        MeshFormat::Triangulated.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string() + &MeshFormat::PointCloud.to_string(),
     );
 
     let owned_model_0 = OwnedModel {
@@ -435,8 +435,8 @@ fn test_surface_scan_9() -> Result<(), HallrError> {
     let _ = config.insert("pattern".to_string(), "MEANDER".to_string());
     let _ = config.insert("step".to_string(), "0.03999999910593033".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
-        MeshFormat::Triangulated.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
+        MeshFormat::Triangulated.to_string() + &MeshFormat::PointCloud.to_string(),
     );
     let _ = config.insert(
         "xy_sample_dist_multiplier".to_string(),
@@ -450,7 +450,7 @@ fn test_surface_scan_9() -> Result<(), HallrError> {
         "z_jump_threshold_multiplier".to_string(),
         "0.10000000149011612".to_string(),
     );
-    let _ = config.insert("command".to_string(), "surface_scan".to_string());
+    let _ = config.insert("▶".to_string(), "surface_scan".to_string());
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),

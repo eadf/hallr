@@ -39,8 +39,6 @@ pub struct FFIVector3 {
     pub z: f32,
 }
 
-pub(crate) const MESH_FORMAT_TAG: &str = "📦";
-
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub enum MeshFormat {
     Triangulated,
@@ -49,28 +47,45 @@ pub enum MeshFormat {
     PointCloud,
 }
 
-impl From<&MeshFormat> for &'static str {
+pub const COMMAND_TAG: &str = "▶";
+
+impl MeshFormat {
+    pub(crate) const MESH_FORMAT_TAG: &str = "📦";
+    pub(crate) const TRIANGULATED_CHAR: char = '△';
+    pub(crate) const LINE_WINDOWS_CHAR: char = '∧';
+    pub(crate) const LINE_CHUNKS_CHAR: char = '⸗';
+    pub(crate) const POINT_CLOUD_CHAR: char = '⁖';
+
     #[inline(always)]
-    fn from(format: &MeshFormat) -> Self {
-        match format {
-            MeshFormat::Triangulated => "△",
-            MeshFormat::LineWindows => "∧",
-            MeshFormat::LineChunks => "⸗",
-            MeshFormat::PointCloud => "┅",
+    pub(crate) fn as_char(&self) -> char {
+        match self {
+            MeshFormat::Triangulated => Self::TRIANGULATED_CHAR,
+            MeshFormat::LineWindows => Self::LINE_WINDOWS_CHAR,
+            MeshFormat::LineChunks => Self::LINE_CHUNKS_CHAR,
+            MeshFormat::PointCloud => Self::POINT_CLOUD_CHAR,
         }
     }
-}
-impl From<MeshFormat> for &'static str {
+
+    // Create from a character with Result
     #[inline(always)]
-    fn from(format: MeshFormat) -> Self {
-        (&format).into()
+    pub(crate) fn from_char(c: char) -> Result<Self, HallrError> {
+        match c {
+            Self::TRIANGULATED_CHAR => Ok(MeshFormat::Triangulated),
+            Self::LINE_WINDOWS_CHAR => Ok(MeshFormat::LineWindows),
+            Self::LINE_CHUNKS_CHAR => Ok(MeshFormat::LineChunks),
+            Self::POINT_CLOUD_CHAR => Ok(MeshFormat::PointCloud),
+            _ => Err(HallrError::InvalidInputData(format!(
+                "Invalid char for MeshFormat conversion: '{}'",
+                c
+            ))),
+        }
     }
 }
 
 impl fmt::Display for MeshFormat {
     #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", <&str>::from(self))
+        write!(f, "{}", self.as_char())
     }
 }
 
@@ -78,14 +93,13 @@ impl TryFrom<&str> for MeshFormat {
     type Error = HallrError;
 
     fn try_from(s: &str) -> Result<Self, HallrError> {
-        match s {
-            "t" => Ok(MeshFormat::Triangulated),
-            "l" => Ok(MeshFormat::LineWindows),
-            "e" => Ok(MeshFormat::LineChunks),
-            u => Err(HallrError::InvalidInputData(
-                format!("Invalid char for MeshFormat conversion: ’{}’", u).to_string(),
-            )),
-        }
+        // Extract the first character if present
+        s.chars()
+            .next()
+            .ok_or_else(|| {
+                HallrError::InvalidInputData("Empty string for MeshFormat conversion".to_string())
+            })
+            .and_then(MeshFormat::from_char)
     }
 }
 
@@ -294,7 +308,7 @@ pub unsafe extern "C" fn process_geometry(
     );
 
     let count = unsafe { (*config).count };
-    println!("Rust:Received config of size:{:?}", count);
+    println!("Rust: received config of size:{:?}", count);
 
     assert!(
         count < 1000,
@@ -318,22 +332,22 @@ pub unsafe extern "C" fn process_geometry(
             .to_string();
         let _ = input_config.insert(key, value);
     }
-    println!("Rust:Received config:{:?}", input_config);
+    println!("Rust: received config:{:?}", input_config);
 
     let input_vertices = unsafe { slice::from_raw_parts(input_ffi_vertices, vertex_count) };
     let input_indices = unsafe { slice::from_raw_parts(input_ffi_indices, indices_count) };
     let input_matrix = unsafe { slice::from_raw_parts(input_ffi_matrix, matrix_count) };
 
-    println!("Rust:received {} vertices", input_vertices.len());
-    println!("Rust:received {} indices", input_indices.len());
-    println!("Rust:received {} matrix", input_matrix.len());
+    println!("Rust: received {} vertices", input_vertices.len());
+    println!("Rust: received {} indices", input_indices.len());
+    println!("Rust: received {} matrix", input_matrix.len());
 
     // Safe code: Processing the data
     let (output_vertices, output_indices, output_matrix, output_config) =
         process_command_error_handler(input_vertices, input_indices, input_matrix, input_config);
 
     println!(
-        "Rust returning: vertices:{}, indices:{}, matrices:{}/16, config:{:?}",
+        "Rust: returning: vertices:{}, indices:{}, matrices:{}/16, config:{:?}",
         output_vertices.len(),
         output_indices.len(),
         output_matrix.len(),

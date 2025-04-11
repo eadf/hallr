@@ -150,7 +150,7 @@ pub(crate) fn compute_voronoi_mesh(
 
 /// Run the voronoi_mesh command
 pub(crate) fn process_command(
-    config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError> {
     type Scalar = f32;
@@ -161,18 +161,20 @@ pub(crate) fn process_command(
         ));
     }
 
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
+
     if models.len() > 1 {
         return Err(HallrError::InvalidInputData(
             "This operation only supports one model as input".to_string(),
         ));
     }
 
-    let cmd_arg_max_voronoi_dimension: Scalar = config.get_mandatory_parsed_option(
+    let cmd_arg_max_voronoi_dimension: Scalar = input_config.get_mandatory_parsed_option(
         "MAX_VORONOI_DIMENSION",
         Some(super::DEFAULT_MAX_VORONOI_DIMENSION.as_()),
     )?;
 
-    let cmd_arg_negative_radius = config
+    let cmd_arg_negative_radius = input_config
         .get_parsed_option::<bool>("NEGATIVE_RADIUS")?
         .unwrap_or(true);
 
@@ -185,7 +187,7 @@ pub(crate) fn process_command(
             cmd_arg_max_voronoi_dimension
         )));
     }
-    let cmd_arg_discretization_distance: Scalar = config.get_mandatory_parsed_option(
+    let cmd_arg_discretization_distance: Scalar = input_config.get_mandatory_parsed_option(
         "DISTANCE",
         Some(super::DEFAULT_VORONOI_DISCRETE_DISTANCE.as_()),
     )?;
@@ -205,11 +207,6 @@ pub(crate) fn process_command(
         cmd_arg_max_voronoi_dimension * cmd_arg_discretization_distance / 100.0;
     // we already tested a_command.models.len()
     let input_model = &models[0];
-    if !input_model.has_identity_orientation() {
-        return Err(HallrError::InvalidInputData(
-            "The voronoi mesh operation currently requires identify world orientation".to_string(),
-        ));
-    }
 
     // we already tested that there is only one model
     println!();
@@ -237,28 +234,53 @@ pub(crate) fn process_command(
         cmd_arg_max_voronoi_dimension,
         cmd_arg_discretization_distance,
     )?;
+    let output_vertices =
+        if let Some(world_to_local) = input_model.get_world_to_local_transform()? {
+            println!(
+                "Rust: applying world-local transformation 1/{:?}",
+                input_model.world_orientation
+            );
+            if cmd_arg_negative_radius {
+                // radius is interpreted as a negative Z value by default
+                vertices
+                    .into_iter()
+                    .map(|v: Vec3A| world_to_local(v.to()))
+                    .collect()
+            } else {
+                vertices
+                    .into_iter()
+                    .map(|v: Vec3A| world_to_local(Vec3A::new(v.x, v.y, v.z.abs()).to()))
+                    .collect()
+            }
+        } else {
+            println!(
+                "Rust: *not* applying world-local transformation 1/{:?}",
+                input_model.world_orientation
+            );
+            if cmd_arg_negative_radius {
+                // radius is interpreted as a negative Z value by default
+                vertices.into_iter().map(|v: Vec3A| v.to()).collect()
+            } else {
+                vertices
+                    .into_iter()
+                    .map(|v: Vec3A| Vec3A::new(v.x, v.y, v.z.abs()).to())
+                    .collect()
+            }
+        };
     let output_model = OwnedModel {
         world_orientation: Model::copy_world_orientation(input_model)?,
         indices,
-        vertices: if cmd_arg_negative_radius {
-            // radius is interpreted as a negative Z value by default
-            vertices.into_iter().map(|v: Vec3A| v.to()).collect()
-        } else {
-            vertices
-                .into_iter()
-                .map(|v: Vec3A| Vec3A::new(v.x, v.y, v.z.abs()).to())
-                .collect()
-        },
+        vertices: output_vertices,
     };
 
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
     // we take the easy way out here, and let blender do the de-duplication of the vertices.
     let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
-    if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {
+    if let Some(value) = input_config.get("REMOVE_DOUBLES_THRESHOLD") {
         let _ = return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());
     }
 

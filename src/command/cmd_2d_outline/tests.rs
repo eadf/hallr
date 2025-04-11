@@ -5,7 +5,7 @@
 use crate::{
     HallrError,
     command::{ConfigType, Model, OwnedModel},
-    ffi::{MESH_FORMAT_TAG, MeshFormat},
+    ffi::MeshFormat,
 };
 use vector_traits::glam::Vec3;
 
@@ -13,10 +13,10 @@ use vector_traits::glam::Vec3;
 fn test_2d_outline_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::Triangulated.to_string(),
     );
-    let _ = config.insert("command".to_string(), "2d_outline".to_string());
+    let _ = config.insert("▶".to_string(), "2d_outline".to_string());
 
     let owned_model = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -44,10 +44,10 @@ fn test_2d_outline_1() -> Result<(), HallrError> {
 fn test_2d_outline_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::Triangulated.to_string(),
     );
-    let _ = config.insert("command".to_string(), "2d_outline".to_string());
+    let _ = config.insert("▶".to_string(), "2d_outline".to_string());
 
     let owned_model = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),

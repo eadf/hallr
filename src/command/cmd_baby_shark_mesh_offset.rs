@@ -16,7 +16,7 @@ use hronn::HronnError;
 use std::time::Instant;
 
 pub(crate) fn process_command(
-    config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError> {
     if models.len() != 1 {
@@ -24,6 +24,7 @@ pub(crate) fn process_command(
             "Incorrect number of models selected".to_string(),
         ))?
     }
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Triangulated)?;
     let model = &models[0];
     // todo: actually use the matrices
     let world_matrix = model.world_orientation.to_vec();
@@ -39,12 +40,12 @@ pub(crate) fn process_command(
     };
 
     let mut mesh_to_volume = MeshToVolume::default()
-        .with_voxel_size(config.get_mandatory_parsed_option("VOXEL_SIZE", None)?);
+        .with_voxel_size(input_config.get_mandatory_parsed_option("VOXEL_SIZE", None)?);
 
     println!("Rust: Starting baby_shark::offset()");
     let start = Instant::now();
     let mesh_volume = mesh_to_volume.convert(&input_mesh).unwrap();
-    let offset = mesh_volume.offset(config.get_mandatory_parsed_option("OFFSET_BY", None)?);
+    let offset = mesh_volume.offset(input_config.get_mandatory_parsed_option("OFFSET_BY", None)?);
     let vertices = MarchingCubesMesher::default()
         .with_voxel_size(offset.voxel_size())
         .mesh(&offset);
@@ -54,20 +55,34 @@ pub(crate) fn process_command(
         start.elapsed()
     );
 
-    let ffi_vertices = mesh
-        .vertices()
-        .map(|i| (*mesh.vertex_position(&i)).into())
-        .collect::<Vec<FFIVector3>>();
+    let ffi_vertices = if let Some(world_to_local) = model.get_world_to_local_transform()? {
+        println!(
+            "Rust: applying world-local transformation 1/{:?}",
+            model.world_orientation
+        );
+        mesh.vertices()
+            .map(|i| world_to_local((*mesh.vertex_position(&i)).into()))
+            .collect::<Vec<FFIVector3>>()
+    } else {
+        println!(
+            "Rust: *not* applying world-local transformation 1/{:?}",
+            model.world_orientation
+        );
+        mesh.vertices()
+            .map(|i| (*mesh.vertex_position(&i)).into())
+            .collect::<Vec<FFIVector3>>()
+    };
+
     let ffi_indices: Vec<usize> = (0..mesh.vertices().count()).collect();
 
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
     // we take the easy way out here, and let blender do the de-duplication of the vertices.
     let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
-    if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {
+    if let Some(value) = input_config.get("REMOVE_DOUBLES_THRESHOLD") {
         let _ = return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());
     }
 

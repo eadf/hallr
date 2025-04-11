@@ -5,7 +5,7 @@
 use crate::{
     HallrError,
     command::{ConfigType, Model, OwnedModel},
-    ffi::{MESH_FORMAT_TAG, MeshFormat},
+    ffi::MeshFormat,
 };
 use vector_traits::glam::Vec3;
 
@@ -15,11 +15,11 @@ fn test_centerline_1() -> Result<(), HallrError> {
     let _ = config.insert("KEEP_INPUT".to_string(), "true".to_string());
     let _ = config.insert("NEGATIVE_RADIUS".to_string(), "true".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::LineChunks.to_string(),
     );
     let _ = config.insert("WELD".to_string(), "true".to_string());
-    let _ = config.insert("command".to_string(), "centerline".to_string());
+    let _ = config.insert("▶".to_string(), "centerline".to_string());
     let _ = config.insert("REMOVE_INTERNALS".to_string(), "true".to_string());
     let _ = config.insert("DISTANCE".to_string(), "0.004999999888241291".to_string());
     let _ = config.insert("ANGLE".to_string(), "89.00000133828577".to_string());
@@ -55,13 +55,13 @@ fn test_centerline_2() -> Result<(), HallrError> {
     let _ = config.insert("SIMPLIFY".to_string(), "true".to_string());
     let _ = config.insert("REMOVE_INTERNALS".to_string(), "true".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::LineChunks.to_string(),
     );
     let _ = config.insert("KEEP_INPUT".to_string(), "false".to_string());
     let _ = config.insert("DISTANCE".to_string(), "0.004999999888241291".to_string());
     let _ = config.insert("WELD".to_string(), "true".to_string());
-    let _ = config.insert("command".to_string(), "centerline".to_string());
+    let _ = config.insert("▶".to_string(), "centerline".to_string());
     let _ = config.insert("ANGLE".to_string(), "89.00000133828577".to_string());
 
     let owned_model_0 = OwnedModel {
@@ -92,10 +92,10 @@ fn test_centerline_3() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("REMOVE_INTERNALS".to_string(), "true".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::LineChunks.to_string(),
     );
-    let _ = config.insert("command".to_string(), "centerline".to_string());
+    let _ = config.insert("▶".to_string(), "centerline".to_string());
     let _ = config.insert("NEGATIVE_RADIUS".to_string(), "true".to_string());
     let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
     let _ = config.insert("ANGLE".to_string(), "89.00000133828577".to_string());

@@ -97,6 +97,7 @@ fn build_output_model<T>(
     inverted_transform: T::Matrix4Type,
     cmd_arg_negative_radius: bool,
     cmd_arg_keep_input: bool,
+    world_to_local: Option<impl Fn(FFIVector3) -> FFIVector3>,
 ) -> Result<OwnedModel, HallrError>
 where
     T: GenericVector3,
@@ -207,7 +208,7 @@ where
         }
     }
     //println!("allocated {} needed {} and {}", count, output_pb_model_vertices.len(), output_pb_model_faces.len());
-    // Todo: store in the output_pb_model_indices format in the first place
+    // Todo: store in the output_indices format in the first place
     let mut output_pb_model_indices = Vec::<usize>::with_capacity(output_model_edges.len() * 2);
     for (a, b) in output_model_edges {
         if a != b {
@@ -222,8 +223,24 @@ where
         print!("{}-{}, ", p[0], p[1]);
     }
     println!();*/
-
-    let output_model_vertices: Vec<FFIVector3> = if cmd_arg_negative_radius {
+    let output_model_vertices: Vec<FFIVector3> = if let Some(world_to_local) = world_to_local {
+        if cmd_arg_negative_radius {
+            v_map
+                .vertices
+                .into_iter()
+                .map(|v| world_to_local(inverted_transform.transform_point3(v).to()))
+                .collect()
+        } else {
+            v_map
+                .vertices
+                .into_iter()
+                .map(|v| {
+                    let point = inverted_transform.transform_point3(v);
+                    world_to_local(T::new_3d(point.x(), point.y(), -point.z()).to())
+                })
+                .collect()
+        }
+    } else if cmd_arg_negative_radius {
         v_map
             .vertices
             .into_iter()
@@ -250,7 +267,7 @@ where
 
 /// Run the centerline command
 pub(crate) fn process_command<T>(
-    config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
@@ -264,26 +281,28 @@ where
     let default_max_voronoi_dimension: T::Scalar =
         NumCast::from(super::DEFAULT_MAX_VORONOI_DIMENSION).unwrap();
 
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
+
     // angle is supposed to be in degrees
-    let cmd_arg_angle: T::Scalar = config.get_mandatory_parsed_option("ANGLE", None)?;
+    let cmd_arg_angle: T::Scalar = input_config.get_mandatory_parsed_option("ANGLE", None)?;
     if !(0.0.into()..=90.0.into()).contains(&cmd_arg_angle) {
         return Err(HallrError::InvalidInputData(format!(
             "The valid range of ANGLE is [0..90] :({})",
             cmd_arg_angle
         )));
     }
-    let cmd_arg_remove_internals = config
+    let cmd_arg_remove_internals = input_config
         .get_parsed_option::<bool>("REMOVE_INTERNALS")?
         .unwrap_or(true);
 
-    let cmd_arg_discrete_distance = config.get_mandatory_parsed_option("DISTANCE", None)?;
+    let cmd_arg_discrete_distance = input_config.get_mandatory_parsed_option("DISTANCE", None)?;
     if !(0.001.into()..100.0.into()).contains(&cmd_arg_discrete_distance) {
         return Err(HallrError::InvalidInputData(format!(
             "The valid range of DISTANCE is [0.001..100[% :({:?})",
             cmd_arg_discrete_distance
         )));
     }
-    let cmd_arg_max_voronoi_dimension = config
+    let cmd_arg_max_voronoi_dimension = input_config
         .get_parsed_option::<T::Scalar>("MAX_VORONOI_DIMENSION")?
         .unwrap_or(default_max_voronoi_dimension);
     if !(default_max_voronoi_dimension..100_000_000.0.into())
@@ -295,13 +314,15 @@ where
             cmd_arg_max_voronoi_dimension
         )));
     }
-    let cmd_arg_simplify = config
+    let cmd_arg_simplify = input_config
         .get_parsed_option::<bool>("SIMPLIFY")?
         .unwrap_or(true);
 
     let (cmd_arg_weld, cmd_arg_keep_input) = {
-        let mut cmd_arg_weld = config.get_parsed_option("WELD")?.unwrap_or(true);
-        let cmd_arg_keep_input = config.get_parsed_option("KEEP_INPUT")?.unwrap_or(true);
+        let mut cmd_arg_weld = input_config.get_parsed_option("WELD")?.unwrap_or(true);
+        let cmd_arg_keep_input = input_config
+            .get_parsed_option("KEEP_INPUT")?
+            .unwrap_or(true);
 
         if !cmd_arg_keep_input {
             // cmd_arg_keep_input overrides cmd_arg_weld
@@ -310,20 +331,9 @@ where
         (cmd_arg_weld, cmd_arg_keep_input)
     };
 
-    let cmd_arg_negative_radius = config
+    let cmd_arg_negative_radius = input_config
         .get_parsed_option::<bool>("NEGATIVE_RADIUS")?
         .unwrap_or(true);
-
-    let mesh_format = config.get_mandatory_option(ffi::MESH_FORMAT_TAG)?;
-    if mesh_format.ne(ffi::MeshFormat::LineChunks.into()) {
-        return Err(HallrError::InvalidInputData(
-            format!(
-                "Model mesh data must be in the MeshFormat::LineChunks format :{}",
-                mesh_format
-            )
-            .to_string(),
-        ));
-    }
 
     // used for simplification and discretization distance
     let max_distance = cmd_arg_max_voronoi_dimension * cmd_arg_discrete_distance / 100.0.into();
@@ -333,29 +343,29 @@ where
             "No models detected".to_string(),
         ));
     }
-    let model = models.first().unwrap();
-    if model.indices.is_empty() || model.vertices.is_empty() {
+    let input_model = models.first().unwrap();
+    if input_model.indices.is_empty() || input_model.vertices.is_empty() {
         return Err(HallrError::InvalidInputData(
             "Model did not contain any data".to_string(),
         ));
     }
 
-    if !model.has_identity_orientation() {
+    /*if !model.has_identity_orientation() {
         return Err(HallrError::InvalidInputData(
             "The centerline operation currently requires identify world orientation".to_string(),
         ));
-    }
+    }*/
     // The dot product between normalized vectors of edge and the segment that created it.
     // Can also be described as cos(angle) between edge and segment.
     let dot_limit = cmd_arg_angle.to_radians().cos().abs();
 
     println!("cmd_centerline got command");
-    println!("model.vertices:{:?}", model.vertices.len());
-    println!("model.indices:{:?}", model.indices.len());
+    println!("model.vertices:{:?}", input_model.vertices.len());
+    println!("model.indices:{:?}", input_model.indices.len());
     println!(
         "model.world_orientation:{:?}:{}",
-        model.world_orientation,
-        model.has_identity_orientation()
+        input_model.world_orientation,
+        input_model.has_identity_orientation()
     );
     println!("ANGLE:{:?}°, dot_limit:{:?}", cmd_arg_angle, dot_limit);
     println!("REMOVE_INTERNALS:{:?}", cmd_arg_remove_internals);
@@ -380,7 +390,7 @@ where
     //println!("Vertices:{:?}", vertices);
     //println!("Indices:{:?}", indices);
 
-    let (edges, vertices, total_aabb) = parse_input(model)?;
+    let (edges, vertices, total_aabb) = parse_input(input_model)?;
     //println!("edge set: {:?}", edges);
     //println!("-> divide_into_shapes");
     let lines = centerline::divide_into_shapes(edges, vertices)?;
@@ -496,26 +506,27 @@ where
             )>,
             HallrError,
         >>()?;
-    //println!("<-build_voronoi");
+
     let model = build_output_model(
-        &config,
+        &input_config,
         shapes,
         cmd_arg_weld,
         inverted_transform,
         cmd_arg_negative_radius,
         cmd_arg_keep_input,
+        input_model.get_world_to_local_transform()?,
     )?;
 
     //println!("result vertices:{:?}", obj.vertices);
     //println!("result edges:{:?}", obj.lines.first());
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::LineChunks.to_string(),
     );
     if cmd_arg_weld {
         let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
-        if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {
+        if let Some(value) = input_config.get("REMOVE_DOUBLES_THRESHOLD") {
             let _ = return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());
         }
     }

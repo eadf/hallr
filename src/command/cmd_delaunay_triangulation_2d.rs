@@ -49,7 +49,7 @@ where
     let results = triangulate_vertices::<T, FFIVector3>(aabb, &hull, model.vertices)?;
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
     Ok((
@@ -61,7 +61,7 @@ where
 }
 
 fn convex_hull_delaunay_triangulation_2d<T>(
-    _config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
@@ -76,8 +76,14 @@ where
     // do not limit us to a line bound, - yet
     //let bounding_indices =
     //    crate::collision::continuous_loop_from_unordered_edges(bounding_indices)?;
-    println!("bounding_indices {:?}", bounding_shape.indices.len());
-    println!("bounding_vertices {:?}", bounding_shape.vertices.len());
+    println!(
+        "Rust: bounding_indices: {:?} bounding_vertices {:?}",
+        bounding_shape.indices.len(),
+        bounding_shape.vertices.len()
+    );
+
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::PointCloud)?;
+    input_config.confirm_mesh_packaging(1, ffi::MeshFormat::PointCloud)?;
 
     let convex_hull: Vec<T::Vector2> = {
         // strip the Z coordinate off the bounding shape
@@ -93,7 +99,7 @@ where
     let results = triangulate_vertices::<T, FFIVector3>(aabb, &convex_hull, model.vertices)?;
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
     Ok((

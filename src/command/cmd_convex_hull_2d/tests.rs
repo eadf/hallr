@@ -5,13 +5,18 @@
 use crate::{
     HallrError,
     command::{ConfigType, Model, OwnedModel},
+    ffi::MeshFormat,
 };
 use vector_traits::glam::Vec3;
 
 #[test]
 fn test_convex_hull_2d_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("command".to_string(), "convex_hull_2d".to_string());
+    let _ = config.insert("▶".to_string(), "convex_hull_2d".to_string());
+    let _ = config.insert(
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
+        MeshFormat::PointCloud.to_string(),
+    );
 
     let owned_model = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -38,7 +43,11 @@ fn test_convex_hull_2d_1() -> Result<(), HallrError> {
 #[test]
 fn test_convex_hull_2d_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("command".to_string(), "convex_hull_2d".to_string());
+    let _ = config.insert("▶".to_string(), "convex_hull_2d".to_string());
+    let _ = config.insert(
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
+        MeshFormat::PointCloud.to_string(),
+    );
 
     let owned_model = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -77,7 +86,11 @@ fn test_convex_hull_2d_3() -> Result<(), HallrError> {
     use rand::{Rng, SeedableRng, rngs::StdRng};
 
     let mut config = ConfigType::default();
-    let _ = config.insert("command".to_string(), "convex_hull_2d".to_string());
+    let _ = config.insert("▶".to_string(), "convex_hull_2d".to_string());
+    let _ = config.insert(
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
+        MeshFormat::PointCloud.to_string(),
+    );
 
     let mut rng: StdRng = SeedableRng::from_seed([42; 32]);
     let mut owned_model_0 = OwnedModel {
@@ -106,7 +119,12 @@ fn test_convex_hull_2d_3() -> Result<(), HallrError> {
 
     // test that the convex hull of the convex hull remain the same
     let mut config = ConfigType::default();
-    let _ = config.insert("command".to_string(), "convex_hull_2d".to_string());
+    let _ = config.insert("▶".to_string(), "convex_hull_2d".to_string());
+    let _ = config.insert(
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
+        MeshFormat::PointCloud.to_string(),
+    );
+
     let model_0 = Model {
         world_orientation: &owned_model_0.world_orientation,
         indices: &[],

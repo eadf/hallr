@@ -35,21 +35,21 @@ def angle_between_edges(p0, p1, p2):
     angle = math.degrees(math.acos(max(-1.0, min(res, 1.0))))
     return angle
 
+class BaseOperatorMixin:
+    @classmethod
+    def poll(cls, context):
+        ob = context.active_object
+        return ob is not None and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
 
-class MESH_OT_hallr_2d_outline(bpy.types.Operator):
+class MESH_OT_hallr_2d_outline(bpy.types.Operator, BaseOperatorMixin):
     """Generates the 2d outline from 2D mesh objects"""
 
     bl_idname = "mesh.hallr_2d_outline"
     bl_icon = "MOD_OUTLINE"
     bl_label = "[XY] Hallr 2D Outline"
-    bl_description = ("Outline 2d geometry into a wire frame, the geometry must be flat and on a plane intersecting "
-                      "origin")
+    bl_description = ("Outline 2d geometry into a wire frame, the geometry *must* be flat (Z=0) and on the XY plane"
+                      "Typically the kind of mesh you get when you convert a text to mesh.")
     bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
 
     def execute(self, context):
         obj = context.active_object
@@ -57,7 +57,7 @@ class MESH_OT_hallr_2d_outline(bpy.types.Operator):
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "2d_outline"}
+        config = {hallr_ffi_utils.COMMAND_TAG: "2d_outline"}
 
         try:
             # Call the Rust function
@@ -72,7 +72,7 @@ class MESH_OT_hallr_2d_outline(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MESH_OT_hallr_knife_intersect(bpy.types.Operator):
+class MESH_OT_hallr_knife_intersect(bpy.types.Operator, BaseOperatorMixin):
     """A knife intersect operator that works in the XY plane, remember to apply any transformations"""
 
     bl_idname = "mesh.hallr_meshtools_knife_intersect_2d"
@@ -85,11 +85,6 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator):
         "Ensure mesh transformations are applied before use."
     )
 
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
-
     def execute(self, context):
         obj = context.active_object
 
@@ -98,11 +93,11 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator):
 
         bpy.context.view_layer.update()
 
-        config = {"command": "knife_intersect"}
+        config = {hallr_ffi_utils.COMMAND_TAG: "knife_intersect"}
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_mesh_with_rust(config, obj, line_format=MeshFormat.LINE_CHUNKS, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -115,7 +110,7 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
+class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator, BaseOperatorMixin):
     """A 2D convex hull operator that works in the XY plane, remember to apply any transformations"""
 
     bl_idname = "mesh.hallr_convex_hull_2d"
@@ -123,22 +118,17 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
     bl_icon = "MESH_CAPSULE"
     bl_options = {'REGISTER', 'UNDO'}
 
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
-
     def execute(self, context):
         obj = context.active_object
 
         # Switch to object mode to gather data without changing the user's selection
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "convex_hull_2d"}
+        config = {hallr_ffi_utils.COMMAND_TAG: "convex_hull_2d"}
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.TRIANGULATED, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.POINT_CLOUD, create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -151,7 +141,7 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MESH_OT_hallr_simplify_rdp(bpy.types.Operator):
+class MESH_OT_hallr_simplify_rdp(bpy.types.Operator, BaseOperatorMixin):
     """Line Simplification using the RDP Algorithm, for 2d and 3d lines"""
 
     bl_idname = "mesh.hallr_simplify_rdp"
@@ -175,18 +165,13 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator):
         subtype='PERCENTAGE'
     )
 
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
-
     def execute(self, context):
         obj = context.active_object
 
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "simplify_rdp", "simplify_distance": str(self.simplify_distance_prop),
+        config = {hallr_ffi_utils.COMMAND_TAG: "simplify_rdp", "simplify_distance": str(self.simplify_distance_prop),
                   "simplify_3d": str(self.simplify_3d_prop).lower()}
 
         try:
@@ -215,17 +200,13 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator):
         layout.prop(self, "simplify_3d_prop")
 
 
-class MESH_OT_hallr_triangulate_and_flatten(bpy.types.Operator):
+class MESH_OT_hallr_triangulate_and_flatten(bpy.types.Operator, BaseOperatorMixin):
     """Triangulates the mesh and moves all vertices to the XY plane (Z=0)"""
     bl_idname = "mesh.hallr_meshtools_triangulate_and_flatten"
     bl_icon = "MOD_TRIANGULATE"
     bl_label = "Triangulate and Flatten XY"
     bl_description = "Triangulates the mesh and moves all vertices to the XY plane (Z=0)"
     bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
-
-    @classmethod
-    def poll(cls, context):
-        return context.active_object is not None and context.active_object.type == 'MESH'
 
     def execute(self, context):
         # Get the active object and mesh
@@ -272,17 +253,13 @@ class MESH_OT_hallr_triangulate_and_flatten(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MESH_OT_hallr_select_end_vertices(bpy.types.Operator):
+class MESH_OT_hallr_select_end_vertices(bpy.types.Operator, BaseOperatorMixin):
     """Selects all vertices that are only connected to one other vertex or none (offline plugin)"""
     bl_idname = "mesh.hallr_meshtools_select_end_vertices"
     bl_label = "Select end vertices"
     bl_icon = "EVENT_END"
     bl_description = "Selects all vertices that are only connected to one other vertex (offline plugin)"
     bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
-
-    @classmethod
-    def poll(cls, context):
-        return context.active_object is not None
 
     def execute(self, context):
 
@@ -313,7 +290,7 @@ class MESH_OT_hallr_select_end_vertices(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MESH_OT_hallr_select_collinear_edges(bpy.types.Operator):
+class MESH_OT_hallr_select_collinear_edges(bpy.types.Operator, BaseOperatorMixin):
     """Selects edges that are connected to the selected edges, but limit by an angle constraint.
        You must select at least one edge to get this operation going"""
     bl_idname = "mesh.hallr_meshtools_select_collinear_edges"
@@ -332,10 +309,6 @@ class MESH_OT_hallr_select_collinear_edges(bpy.types.Operator):
         precision=6,
         subtype='ANGLE'
     )
-
-    @classmethod
-    def poll(cls, context):
-        return context.active_object is not None
 
     def execute(self, context):
 
@@ -398,17 +371,13 @@ class MESH_OT_hallr_select_collinear_edges(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MESH_OT_hallr_select_intersection_vertices(bpy.types.Operator):
+class MESH_OT_hallr_select_intersection_vertices(bpy.types.Operator, BaseOperatorMixin):
     """Selects all vertices that are connected to more than two other vertices"""
     bl_idname = "mesh.hallr_meshtools_select_intersection_vertices"
     bl_icon = "SELECT_INTERSECT"
     bl_label = "Select intersection vertices"
     bl_description = "Selects all vertices that are connected to more than two other vertices"
     bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
-
-    @classmethod
-    def poll(cls, context):
-        return context.active_object is not None
 
     def execute(self, context):
 
@@ -439,7 +408,7 @@ class MESH_OT_hallr_select_intersection_vertices(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MESH_OT_hallr_select_vertices_until_intersection(bpy.types.Operator):
+class MESH_OT_hallr_select_vertices_until_intersection(bpy.types.Operator, BaseOperatorMixin):
     """Selects all (wire-frame) vertices that are connected to already selected vertices until an intersection is
     detected. The intersection vertex will not be selected."""
     bl_idname = "mesh.hallr_meshtools_select_vertices_until_intersection"
@@ -448,10 +417,6 @@ class MESH_OT_hallr_select_vertices_until_intersection(bpy.types.Operator):
     bl_description = ("Selects all (wire-frame) vertices that are connected to already selected vertices until an "
                       "intersection is detected")
     bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
-
-    @classmethod
-    def poll(cls, context):
-        return context.active_object is not None
 
     def execute(self, context):
 
@@ -496,7 +461,7 @@ class MESH_OT_hallr_select_vertices_until_intersection(bpy.types.Operator):
 
 
 # Voronoi mesh operator
-class MESH_OT_hallr_voroni_mesh(bpy.types.Operator):
+class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
     bl_idname = "mesh.hallr_meshtools_voronoi_mesh"
     bl_label = "[XY] Voronoi Mesh"
     bl_icon = "MESH_UVSPHERE"
@@ -531,18 +496,13 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator):
         unit='LENGTH'
     )
 
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
-
     def execute(self, context):
         obj = context.active_object
 
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "voronoi_mesh",
+        config = {hallr_ffi_utils.COMMAND_TAG: "voronoi_mesh",
                   "DISTANCE": str(self.distance_prop),
                   "NEGATIVE_RADIUS": str(self.negative_radius_prop).lower(),
                   "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
@@ -577,7 +537,7 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator):
 
 
 # Voronoi operator
-class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator):
+class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
     bl_idname = "mesh.hallr_meshtools_voronoi_diagram"
     bl_label = "[XY] Voronoi Diagram"
     bl_icon = "CURVE_NCURVE"
@@ -612,11 +572,6 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator):
         unit='LENGTH'
     )
 
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
-
     def execute(self, context):
         obj = context.active_object
 
@@ -627,7 +582,7 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator):
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "voronoi_diagram",
+        config = {hallr_ffi_utils.COMMAND_TAG: "voronoi_diagram",
                   "DISTANCE": str(self.distance_prop),
                   "KEEP_INPUT": str(self.keep_input_prop).lower(),
                   "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
@@ -662,7 +617,7 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator):
 
 
 # SDF mesh 2½D operator
-class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator):
+class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
     """Tooltip: Generate a 3D SDF mesh from 2½D edges."""
     bl_idname = "mesh.hallr_meshtools_sdf_mesh_2_5"
     bl_label = "SDF Mesh 2½D"
@@ -695,18 +650,13 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator):
         unit='LENGTH'
     )
 
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
-
     def execute(self, context):
         obj = context.active_object
 
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "sdf_mesh_2_5",
+        config = {hallr_ffi_utils.COMMAND_TAG: "sdf_mesh_2_5",
                   "SDF_DIVISIONS": str(self.sdf_divisions_prop),
                   "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
@@ -739,7 +689,7 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator):
 
 
 # SDF mesh operator
-class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
+class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
     """Generate a 3D SDF mesh from 3d edges."""
     bl_idname = "mesh.hallr_meshtools_sdf_mesh"
     bl_label = "SDF Mesh"
@@ -786,18 +736,13 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
         unit='LENGTH'
     )
 
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
-
     def execute(self, context):
         obj = context.active_object
 
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": self.cmd_backend_prop,
+        config = {hallr_ffi_utils.COMMAND_TAG: self.cmd_backend_prop,
                   "SDF_DIVISIONS": str(self.sdf_divisions_prop),
                   "SDF_RADIUS_MULTIPLIER": str(self.sdf_radius_prop),
                   "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
@@ -834,7 +779,7 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator):
 
 
 # Random vertices operation
-class MESH_OT_hallr_random_vertices(bpy.types.Operator):
+class MESH_OT_hallr_random_vertices(bpy.types.Operator, BaseOperatorMixin):
     """Generate some random vertices in the XY plane"""
     bl_idname = "mesh.hallr_meshtools_random_vertices"
     bl_label = "[XY] Random vertices"
@@ -872,11 +817,6 @@ class MESH_OT_hallr_random_vertices(bpy.types.Operator):
         precision=6,
         unit='LENGTH'
     )
-
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
 
     def execute(self, context):
         obj = context.active_object
@@ -918,7 +858,6 @@ class MESH_OT_hallr_random_vertices(bpy.types.Operator):
         layout = self.layout
         layout.prop(self, "number_of_vertices_prop")
         layout.prop(self, "std_deviation_prop")
-        layout.prop(self, "merge_distance_prop")
         row = layout.row()
         row.label(icon='SNAP_MIDPOINT')
         row.prop(self, "remove_doubles_threshold_prop")
@@ -929,7 +868,7 @@ class MESH_OT_hallr_random_vertices(bpy.types.Operator):
 
 
 # Discretize operator
-class MESH_OT_hallr_discretize(bpy.types.Operator):
+class MESH_OT_hallr_discretize(bpy.types.Operator, BaseOperatorMixin):
     """Subdivide edges by length"""
     bl_idname = "mesh.hallr_meshtools_discretize"
     bl_label = "Subdivide by length"
@@ -950,18 +889,13 @@ class MESH_OT_hallr_discretize(bpy.types.Operator):
         subtype='PERCENTAGE'
     )
 
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
-
     def execute(self, context):
         obj = context.active_object
 
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "discretize",
+        config = {hallr_ffi_utils.COMMAND_TAG: "discretize",
                   "discretize_length": str(self.discretize_length_prop),
                   }
 
@@ -990,7 +924,7 @@ class MESH_OT_hallr_discretize(bpy.types.Operator):
         return wm.invoke_props_dialog(self)
 
 
-class MESH_OT_hallr_centerline(bpy.types.Operator):
+class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
     """Finds the center line of closed geometry, works in the XY plane"""
 
     bl_idname = "mesh.hallr_centerline"
@@ -1060,18 +994,13 @@ class MESH_OT_hallr_centerline(bpy.types.Operator):
         unit='LENGTH'
     )
 
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return ob and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
-
     def execute(self, context):
         obj = context.active_object
 
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {"command": "centerline",
+        config = {hallr_ffi_utils.COMMAND_TAG: "centerline",
                   "ANGLE": str(math.degrees(self.angle_prop)),
                   "REMOVE_INTERNALS"
                   : str(self.remove_internals_prop).lower(),

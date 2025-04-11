@@ -5,18 +5,18 @@
 use crate::{
     HallrError,
     command::{ConfigType, OwnedModel},
-    ffi::{MESH_FORMAT_TAG, MeshFormat},
+    ffi::MeshFormat,
 };
 
 #[test]
 fn test_baby_shark_mesh_offset_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::Triangulated.to_string(),
     );
     let _ = config.insert("VOXEL_SIZE".to_string(), "1.0".to_string());
-    let _ = config.insert("command".to_string(), "baby_shark_mesh_offset".to_string());
+    let _ = config.insert("▶".to_string(), "baby_shark_mesh_offset".to_string());
     let _ = config.insert("OFFSET_BY".to_string(), "1.5".to_string());
 
     let owned_model_0 = OwnedModel {

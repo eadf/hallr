@@ -30,9 +30,14 @@ mod cmd_voronoi_mesh;
 mod cmd_wavefront_obj_logger;
 mod impls;
 
-use crate::{ffi::FFIVector3, prelude::*};
+use crate::{ffi, ffi::FFIVector3, prelude::*};
+use centerline::Matrix4;
 use std::collections::HashMap;
-use vector_traits::{GenericVector3, approx::ulps_eq, glam::Vec3A};
+use vector_traits::{
+    GenericVector3,
+    approx::ulps_eq,
+    glam::{Vec3A, Vec4Swizzles},
+};
 
 /// The largest dimension of the voronoi input, totally arbitrarily selected.
 const DEFAULT_MAX_VORONOI_DIMENSION: f32 = 200000.0;
@@ -81,9 +86,16 @@ trait Options {
 
     /// Returns true if the option exists
     fn does_option_exist(&self, key: &str) -> Result<bool, HallrError>;
+
+    fn confirm_mesh_packaging(
+        &self,
+        model_nr: usize,
+        expected_format: ffi::MeshFormat,
+    ) -> Result<(), HallrError>;
 }
 
 /// A re-packaging of the input mesh, python still owns this data
+/// The OwnedModel contains a similar type that contains data owned by rust.
 pub struct Model<'a> {
     world_orientation: &'a [f32],
     vertices: &'a [FFIVector3],
@@ -102,6 +114,7 @@ impl Model<'_> {
         ))
     }
 
+    #[inline(always)]
     pub fn is_identity_matrix(matrix: &[f32]) -> bool {
         matrix.len() == 16
             && matrix
@@ -110,8 +123,89 @@ impl Model<'_> {
                 .all(|(&a, &b)| ulps_eq!(a, b))
     }
 
+    #[inline(always)]
     pub fn has_identity_orientation(&self) -> bool {
         Self::is_identity_matrix(self.world_orientation)
+    }
+
+    #[inline(always)]
+    pub fn has_xy_transform_only(&self) -> bool {
+        let matrix = self.world_orientation;
+        // Check if array has correct size
+        if matrix.len() != 16 {
+            return false;
+        }
+
+        // Column-major format:
+        // [0, 4, 8,  12]  // first column
+        // [1, 5, 9,  13]  // second column
+        // [2, 6, 10, 14]  // third column
+        // [3, 7, 11, 15]  // fourth column
+
+        // Z row must be [0, 0, scale_z, 0] where scale_z is typically 1
+        // This means matrix[2], matrix[6], matrix[10], matrix[14] is [0, 0, scale_z, 0]
+
+        // Check no X/Y rotations or shears affecting Z
+        if !ulps_eq!(matrix[2], 0.0) || !ulps_eq!(matrix[6], 0.0) {
+            return false;
+        }
+
+        // Check no Z translation
+        if !ulps_eq!(matrix[14], 0.0) {
+            return false;
+        }
+
+        // Check no perspective transformation
+        if !ulps_eq!(matrix[3], 0.0)
+            || !ulps_eq!(matrix[7], 0.0)
+            || !ulps_eq!(matrix[11], 0.0)
+            || !ulps_eq!(matrix[15], 1.0)
+        {
+            return false;
+        }
+
+        true
+    }
+
+    /// Returns a closure that transforms world coordinates back to local coordinates
+    pub fn get_world_to_local_transform(
+        &self,
+    ) -> Result<Option<impl Fn(FFIVector3) -> FFIVector3>, HallrError> {
+        use vector_traits::glam::{Mat4, Vec3, Vec4};
+
+        if self.has_identity_orientation() {
+            // Identity matrix - just return the vector unchanged
+            return Ok(None);
+        }
+
+        // Convert the flat array to a glam Matrix4
+        let world_matrix = {
+            if self.world_orientation.len() != 16 {
+                return Err(HallrError::InvalidInputData(
+                    "The provided world orientation matrix was of the wrong size".to_string(),
+                ));
+            }
+
+            // Construct a Mat4 from the slice
+            Mat4::from_cols_array(<&[f32; 16]>::try_from(self.world_orientation)?)
+        };
+
+        // Calculate inverse matrix for the reverse transformation
+        match <Mat4 as Matrix4<Vec3>>::safe_inverse(&world_matrix) {
+            Some(inverse_matrix) => {
+                // Return closure that applies the inverse transform
+                Ok(Some(move |v: FFIVector3| -> FFIVector3 {
+                    let gv: Vec3 = v.into();
+                    // Apply the inverse transformation to convert from world to local
+                    (inverse_matrix * Vec4::new(gv.x, gv.y, gv.z, 1.0))
+                        .xyz()
+                        .into()
+                }))
+            }
+            None => Err(HallrError::InvalidInputData(
+                "World orientation matrix is not invertible".to_string(),
+            )),
+        }
     }
 }
 
@@ -203,9 +297,8 @@ pub fn collect_models<'a, T: GenericVector3>(
         // Check if the keys exist in the config
         if model_counter == 0 || config.does_option_exist(&vertices_key)? {
             if matrix.len() < 16 {
-                return Err(HallrError::InvalidInputData(
-                    "World matrix data missing".to_string(),
-                ));
+                // no matrix found for this model, consider model as non-existing
+                break;
             }
             // Retrieve the vertex and index offset data as strings
             let vertices_idx: usize =
@@ -266,7 +359,7 @@ pub(crate) fn process_command(
             cmd_wavefront_obj_logger::process_command(&config, &models)?;
         }
     }
-    Ok(match config.get_mandatory_option("command")? {
+    Ok(match config.get_mandatory_option(ffi::COMMAND_TAG)? {
         "surface_scan" => cmd_surface_scan::process_command::<T>(config, models)?,
         "convex_hull_2d" => cmd_convex_hull_2d::process_command::<T>(config, models)?,
         "simplify_rdp" => cmd_simplify_rdp::process_command::<T>(config, models)?,

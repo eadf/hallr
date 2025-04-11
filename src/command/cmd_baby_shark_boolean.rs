@@ -16,7 +16,7 @@ use hronn::HronnError;
 use std::time::Instant;
 
 pub(crate) fn process_command(
-    config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError> {
     if models.len() != 2 {
@@ -28,10 +28,18 @@ pub(crate) fn process_command(
     // todo: actually use the matrices
     let world_matrix = models[0].world_orientation.to_vec();
 
-    let voxel_size = config.get_mandatory_parsed_option("voxel_size", None)?;
-    let swap = config.get_mandatory_parsed_option("swap", Some(false))?;
+    let voxel_size = input_config.get_mandatory_parsed_option("voxel_size", None)?;
+    let swap = input_config.get_mandatory_parsed_option("swap", Some(false))?;
+
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Triangulated)?;
+    input_config.confirm_mesh_packaging(1, ffi::MeshFormat::Triangulated)?;
 
     let mut mesh_0_volume = {
+        println!(
+            "Rust: model0: {} vertices, {} indices",
+            models[0].vertices.len(),
+            models[0].indices.len()
+        );
         let vertex_soup: Vec<Vector3<f32>> = models[0]
             .indices
             .iter()
@@ -47,6 +55,11 @@ pub(crate) fn process_command(
     };
 
     let mut mesh_1_volume = {
+        println!(
+            "Rust: model1: {} vertices, {} indices",
+            models[1].vertices.len(),
+            models[1].indices.len()
+        );
         let vertex_soup: Vec<Vector3<f32>> = models[1]
             .indices
             .iter()
@@ -64,7 +77,7 @@ pub(crate) fn process_command(
     if swap {
         std::mem::swap(&mut mesh_0_volume, &mut mesh_1_volume);
     }
-    let operation = config.get_mandatory_option("operation")?;
+    let operation = input_config.get_mandatory_option("operation")?;
 
     println!("Rust: Starting baby_shark::boolean()");
     let start = Instant::now();
@@ -93,12 +106,12 @@ pub(crate) fn process_command(
 
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
     // we take the easy way out here, and let blender do the de-duplication of the vertices.
     let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
-    if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {
+    if let Some(value) = input_config.get("REMOVE_DOUBLES_THRESHOLD") {
         let _ = return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());
     }
 

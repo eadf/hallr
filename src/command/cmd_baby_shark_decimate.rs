@@ -15,7 +15,7 @@ use hronn::HronnError;
 use std::time::Instant;
 
 pub(crate) fn process_command(
-    config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError> {
     if models.len() != 1 {
@@ -23,8 +23,8 @@ pub(crate) fn process_command(
             "Incorrect number of models selected".to_string(),
         ))?
     }
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Triangulated)?;
     let model = &models[0];
-    // todo: actually use the matrices
     let world_matrix = model.world_orientation.to_vec();
 
     let mut mesh = CornerTableF::from_vertex_and_face_iters(
@@ -32,12 +32,12 @@ pub(crate) fn process_command(
         model.indices.iter().copied(),
     );
     let decimation_criteria = ConstantErrorDecimationCriteria::new(
-        config.get_mandatory_parsed_option("ERROR_THRESHOLD", None)?,
+        input_config.get_mandatory_parsed_option("ERROR_THRESHOLD", None)?,
     );
     let mut decimator = EdgeDecimator::new()
         .decimation_criteria(decimation_criteria)
         .min_faces_count(Some(
-            config.get_mandatory_parsed_option("MIN_FACES_COUNT", None)?,
+            input_config.get_mandatory_parsed_option("MIN_FACES_COUNT", None)?,
         ));
 
     println!("Rust: Starting baby_shark::decimate()");
@@ -65,25 +65,42 @@ pub(crate) fn process_command(
         }
 
         // Map each vertex to a new compressed index
-        let v0 = compressor.get_or_create_mapping(i0, || {
+        let ni0 = compressor.get_or_create_mapping(i0, || {
             let pos = mesh.vertex_position(&i0);
             FFIVector3::new(pos.x, pos.y, pos.z)
         });
 
-        let v1 = compressor.get_or_create_mapping(i1, || {
+        let ni1 = compressor.get_or_create_mapping(i1, || {
             let pos = mesh.vertex_position(&i1);
             FFIVector3::new(pos.x, pos.y, pos.z)
         });
 
-        let v2 = compressor.get_or_create_mapping(i2, || {
+        let ni2 = compressor.get_or_create_mapping(i2, || {
             let pos = mesh.vertex_position(&i2);
             FFIVector3::new(pos.x, pos.y, pos.z)
         });
 
         // Push directly to the output vector
-        ffi_indices.push(v0);
-        ffi_indices.push(v1);
-        ffi_indices.push(v2);
+        ffi_indices.push(ni0);
+        ffi_indices.push(ni1);
+        ffi_indices.push(ni2);
+    }
+
+    if let Some(world_to_local) = model.get_world_to_local_transform()? {
+        // Transform to local
+        println!(
+            "Rust: applying world-local transformation 1/{:?}",
+            model.world_orientation
+        );
+        compressor
+            .vertices
+            .iter_mut()
+            .for_each(|v| *v = world_to_local(*v));
+    } else {
+        println!(
+            "Rust: *not* applying world-local transformation 1/{:?}",
+            model.world_orientation
+        );
     }
 
     // Get the final vertex array
@@ -91,11 +108,11 @@ pub(crate) fn process_command(
 
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
     let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "false".to_string());
-    if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {
+    if let Some(value) = input_config.get("REMOVE_DOUBLES_THRESHOLD") {
         let _ = return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());
     }
 

@@ -410,7 +410,7 @@ class RunLSystemScriptOperator(bpy.types.Operator):
             script_content = text.as_string()  # Get script as string
             try:
                 config = {
-                    "command": "lsystems",
+                    hallr_ffi_utils.COMMAND_TAG: "lsystems",
                     "🐢": script_content,
                 }
 

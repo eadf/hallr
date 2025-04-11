@@ -8,7 +8,6 @@ import os
 import platform
 import bpy
 import ctypes
-import bmesh
 from typing import List, Tuple, Dict, Optional
 
 # workaround for the "ImportError: attempted relative import with no known parent package" problem:
@@ -110,11 +109,13 @@ class MeshFormat:
     TRIANGULATED = "△"
     LINE_WINDOWS = "∧"
     LINE_CHUNKS = "⸗"
-    POINT_CLOUD = "┅"
+    POINT_CLOUD = "⁖"
 
 
 MESH_FORMAT_TAG = "📦"
+COMMAND_TAG = "▶"
 
+IDENTITY_FFI_MATRIX = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
 def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.TRIANGULATED,
                       only_selected_vertices: bool = False) -> Tuple[List, List]:
@@ -130,10 +131,19 @@ def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.
         tuple: (vertices, indices) in the format specified
     """
     # Handle vertices
-    if only_selected_vertices:
-        vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in mesh_obj.data.vertices if v.select]
+    world_matrix = mesh_obj.matrix_world
+    if world_matrix.is_identity:
+        print(f"Python: applying *no* local-world transformation {get_matrices_col_major(mesh_obj)}")
+        if only_selected_vertices:
+            vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in mesh_obj.data.vertices if v.select]
+        else:
+            vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in mesh_obj.data.vertices]
     else:
-        vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in mesh_obj.data.vertices]
+        print(f"Python: applying local-world transformation: {get_matrices_col_major(mesh_obj)}")
+        if only_selected_vertices:
+            vertices = [Vector3(*(world_matrix @ v.co)[:]) for v in mesh_obj.data.vertices if v.select]
+        else:
+            vertices = [Vector3(*(world_matrix @ v.co)[:]) for v in mesh_obj.data.vertices]
 
     # Handle indices based on mesh_format
     indices = []
@@ -162,14 +172,13 @@ def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.
 
 def handle_new_object(return_options: Dict[str, str], mesh_obj: bpy.types.Object, select_new_mesh: bool = True) -> None:
     """
-    Link a new mesh object to the scene and set up its properties.
+    Set up the properties of the new object
 
     Args:
         return_options: Dictionary of options for post-processing
         mesh_obj: The new mesh object to handle
         select_new_mesh: Whether to select the new mesh
     """
-    bpy.context.collection.objects.link(mesh_obj)
 
     if select_new_mesh:
         # Make the new object active
@@ -299,7 +308,6 @@ def create_object_from_mesh_data(return_options: Dict[str, str],
     # Create mesh object
     # mesh_obj = create_mesh_object(vertices, edges, faces, name)
     mesh_obj = bpy.data.objects.new(name, new_mesh)
-
     # Handle the new object (link to scene, select, etc.)
     handle_new_object(return_options, mesh_obj)
 
@@ -311,7 +319,7 @@ def update_existing_object(active_obj: bpy.types.Object,
                            new_mesh) -> None:
     # Store reference to old mesh
     old_mesh = active_obj.data
-
+    active_obj.select_set(True)
     # Switch to object mode for mesh operations
     bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -394,8 +402,8 @@ def apply_all_transformations_direct(obj: bpy.types.Object) -> bpy.types.Object:
 
 
 def process_mesh_with_rust(config: Dict[str, str],
-                           primary_mesh: Optional[bpy.types.Object] = None,
-                           secondary_mesh: Optional[bpy.types.Object] = None,
+                           primary_object: Optional[bpy.types.Object] = None,
+                           secondary_object: Optional[bpy.types.Object] = None,
                            primary_format: Optional[str] = None,
                            secondary_format: Optional[str] = None,
                            create_new: bool = True,
@@ -405,8 +413,8 @@ def process_mesh_with_rust(config: Dict[str, str],
 
     Args:
         config: Dictionary of configuration options for Rust
-        primary_mesh: Primary Blender mesh object (can be None)
-        secondary_mesh: Optional secondary mesh object
+        primary_object: Optional Primary Blender mesh object (can be None)
+        secondary_object: Optional secondary mesh object
         primary_format: Optional Format for the primary mesh
         secondary_format: Optional Format for the secondary mesh
         create_new: If True, create a new object; if False, modify the active object
@@ -416,9 +424,22 @@ def process_mesh_with_rust(config: Dict[str, str],
         If create_new is True: The newly created object
         If create_new is False: None (the active object is modified)
     """
+
+    if create_new:
+
+        new_object = bpy.data.objects.new("New_Object", bpy.data.meshes.new("empty mesh"))
+        bpy.context.collection.objects.link(new_object)
+
+        # Create a custom undo step - this will just delete the new object when undone
+        # This prevents blender from crashing on ctrl-Z, but it also, occasionally, leaves the empty "New_Object" behind.
+        bpy.ops.ed.undo_push(message="Create New Object")
+
+        new_object.select_set(True)
+        bpy.context.view_layer.objects.active = new_object
+
     # Set up mesh formats in config
     mesh_format = ""
-    if primary_mesh:
+    if primary_object:
         mesh_format += primary_format
 
     # Prepare data structures
@@ -426,19 +447,16 @@ def process_mesh_with_rust(config: Dict[str, str],
     indices = []
     matrices = []
 
-    # Process primary mesh if provided
-    primary_obj_to_process = None
-    primary_obj_is_duplicated = False
+    # Store the current selection and active object state
+    # selected_objects = [o for o in bpy.context.selected_objects]
 
-    if primary_mesh:
-        # Prepare object with transformations
-        primary_obj_to_process, primary_obj_is_duplicated = apply_all_transformations(
-            primary_mesh, "TempDuplicateActive"
-        )
+    if primary_object:
+
+        primary_obj_to_process = primary_object
 
         # Extract mesh data
         if only_selected_vertices:
-            vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in primary_mesh.data.vertices if v.select]
+            vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in primary_object.data.vertices if v.select]
             indices = []
         else:
             primary_vertices, primary_indices = package_mesh_data(primary_obj_to_process, primary_format)
@@ -446,22 +464,11 @@ def process_mesh_with_rust(config: Dict[str, str],
             indices.extend(primary_indices)
 
         # Get transformation matrices
-        matrices.extend(get_matrices(primary_mesh))
-    else:
-        # Use identity matrix if no primary mesh
-        matrices = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+        matrices.extend(get_matrices_col_major(primary_object))
 
-    # Process secondary mesh if provided
-    secondary_obj_to_process = None
-    secondary_obj_is_duplicated = False
 
-    if secondary_mesh:
+    if secondary_object:
         mesh_format += secondary_format
-
-        # Prepare secondary object
-        secondary_obj_to_process, secondary_obj_is_duplicated = apply_all_transformations(
-            secondary_mesh, "TempDuplicateBounding"
-        )
 
         # Store offset data
         first_vertex_model_1 = len(vertices)
@@ -470,21 +477,15 @@ def process_mesh_with_rust(config: Dict[str, str],
         config["first_index_model_1"] = str(first_index_model_1)
 
         # Extract mesh data
-        secondary_vertices, secondary_indices = package_mesh_data(secondary_obj_to_process, secondary_format)
+        secondary_vertices, secondary_indices = package_mesh_data(secondary_object, secondary_format)
         vertices.extend(secondary_vertices)
         indices.extend(secondary_indices)
 
         # Get transformation matrices
-        matrices.extend(get_matrices(secondary_mesh))
+        matrices.extend(get_matrices_col_major(secondary_object))
 
-    config[MESH_FORMAT_TAG] = mesh_format
-
-    # Clean up if objects were duplicated
-    if primary_obj_is_duplicated and primary_obj_to_process:
-        cleanup_duplicated_object(primary_obj_to_process)
-
-    if secondary_obj_is_duplicated and secondary_obj_to_process:
-        cleanup_duplicated_object(secondary_obj_to_process)
+    if mesh_format != "":
+        config[MESH_FORMAT_TAG] = mesh_format
 
     # Convert data to ctypes pointers
     vertices_ptr = (Vector3 * len(vertices))(*vertices) if vertices else (Vector3 * 0)()
@@ -498,13 +499,15 @@ def process_mesh_with_rust(config: Dict[str, str],
     values_array = (ctypes.c_char_p * len(values_list))(*[v.encode('utf-8') for v in values_list])
     map_data = StringMap(keys_array, values_array, len(keys_list))
 
+    print(f"Python: command: '{config.get('command', '')}'")
+    print(f"Python: sending {len(vertices)} vertices")
+    print(f"Python: sending {len(indices)} indices")
+    print(f"Python: sending {len(matrices)} matrices")
+
     # Fetch Rust library
     rust_lib = load_latest_dylib()
 
-    try:
-        bpy.ops.object.mode_set(mode='EDIT')
-    except Exception as e:
-        print(f"Ignoring exception {e}: it's probably because there is no active object (as expected)")
+    bpy.ops.object.mode_set(mode='EDIT')
 
     # Call Rust function
     rust_result = rust_lib.process_geometry(
@@ -513,50 +516,48 @@ def process_mesh_with_rust(config: Dict[str, str],
     )
     try:
         # Extract return options
-        output_map = {}
+        return_options = {}
         for i in range(rust_result.map.count):
             key = ctypes.string_at(rust_result.map.keys[i]).decode('utf-8')
             value = ctypes.string_at(rust_result.map.values[i]).decode('utf-8')
             if key == "ERROR":
                 raise HallrException(value)
-            output_map[key] = value
+            return_options[key] = value
 
         new_mesh = process_mesh_from_ffi(rust_result.geometry.vertices, rust_result.geometry.indices,
                                          rust_result.geometry.vertex_count, rust_result.geometry.indices_count,
-                                         output_map)
+                                         return_options)
         indices_count = rust_result.geometry.indices_count
     finally:
         # Free Rust memory
         rust_lib.free_process_results(rust_result)
 
-    try:
-        bpy.ops.object.mode_set(mode='OBJECT')
-    except Exception as e:
-        print(f"Ignoring exception {e}: it's probably because there is no active object (as expected)")
+    bpy.ops.object.mode_set(mode='OBJECT')
 
     if DEV_MODE:
         ctypes_close_library(rust_lib)
 
-    print("python: received config: ", output_map)
-    print(f"python: received {len(new_mesh.vertices)} vertices")
-    print(f"python: received {indices_count} indices")
-    print(f"python: received {len(new_mesh.edges)} edges")
-    print(f"python: received {len(new_mesh.polygons)} polygons")
+    print("Python: received config: ", return_options)
+    print(f"Python: received {len(new_mesh.vertices)} vertices")
+    print(f"Python: received {indices_count} indices")
+    print(f"Python: received {len(new_mesh.edges)} edges")
+    print(f"Python: received {len(new_mesh.polygons)} polygons")
 
     # Create or update object based on results
     if create_new:
-        print("new object new mesh")
+        print("Python: new object new mesh")
         # Create a new object
-        new_object = create_object_from_mesh_data(
-            output_map, new_mesh,
-            output_map.get("model_0_name", "New_Object")
-        )
+
+        new_object.data = new_mesh
+        # Handle the new object (link to scene, select, etc.)
+        handle_new_object(return_options, new_object)
+
         return new_object
     else:
-        print("updating old object with new mesh")
+        print("Python: updating old object with new mesh")
         # Update existing object
-        active_obj = bpy.context.view_layer.objects.active
-        update_existing_object(active_obj, output_map, new_mesh)
+        bpy.context.view_layer.objects.active = primary_object
+        update_existing_object(primary_object, return_options, new_mesh)
         return None
 
 
@@ -579,7 +580,7 @@ def process_single_mesh(config: Dict[str, str], mesh_obj: bpy.types.Object = Non
     """
     return process_mesh_with_rust(
         config,
-        primary_mesh=mesh_obj,
+        primary_object=mesh_obj,
         primary_format=mesh_format,
         create_new=create_new
     )
@@ -597,8 +598,8 @@ def process_config(config: Dict[str, str]) -> bpy.types.Object:
     """
     return process_mesh_with_rust(
         config,
-        primary_mesh=None,
-        secondary_mesh=None,
+        primary_object=None,
+        secondary_object=None,
         create_new=True
     )
 
@@ -621,13 +622,15 @@ def cleanup_duplicated_object(an_obj):
         print("obj_name was not found")
 
 
-def get_matrices(bpy_object):
+def get_matrices_col_major(bpy_object):
     """ Return the world orientation as an array of 16 floats"""
     bm = bpy_object.matrix_world
-    return [bm[0][0], bm[0][1], bm[0][2], bm[0][3],
-            bm[1][0], bm[1][1], bm[1][2], bm[1][3],
-            bm[2][0], bm[2][1], bm[2][2], bm[2][3],
-            bm[3][0], bm[3][1], bm[3][2], bm[3][3]]
+    return [
+        bm[0][0], bm[1][0], bm[2][0], bm[3][0],  # Column 0
+        bm[0][1], bm[1][1], bm[2][1], bm[3][1],  # Column 1
+        bm[0][2], bm[1][2], bm[2][2], bm[3][2],  # Column 2
+        bm[0][3], bm[1][3], bm[2][3], bm[3][3],  # Column 3 (translation!)
+    ]
 
 
 def is_loop(mesh):

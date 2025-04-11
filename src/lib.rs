@@ -43,6 +43,9 @@ pub mod prelude {
 #[derive(thiserror::Error, Debug)]
 pub enum HallrError {
     #[error(transparent)]
+    SliceError(#[from] std::array::TryFromSliceError),
+
+    #[error(transparent)]
     EarcutrError(#[from] earcutr::Error),
 
     #[error(transparent)]

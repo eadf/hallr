@@ -5,16 +5,13 @@
 use crate::{
     HallrError,
     command::{ConfigType, OwnedModel},
-    ffi::{MESH_FORMAT_TAG, MeshFormat},
+    ffi::MeshFormat,
 };
 
 #[test]
 fn test_baby_shark_isotropic_remesh_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert(
-        "command".to_string(),
-        "baby_shark_isotropic_remesh".to_string(),
-    );
+    let _ = config.insert("▶".to_string(), "baby_shark_isotropic_remesh".to_string());
     let _ = config.insert("COLLAPSE_EDGES".to_string(), "True".to_string());
     let _ = config.insert("FLIP_EDGES".to_string(), "True".to_string());
     let _ = config.insert("SHIFT_VERTICES".to_string(), "True".to_string());
@@ -24,7 +21,7 @@ fn test_baby_shark_isotropic_remesh_1() -> Result<(), HallrError> {
         "0.10000000149011612".to_string(),
     );
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::Triangulated.to_string(),
     );
     let _ = config.insert("SPLIT_EDGES".to_string(), "True".to_string());
@@ -110,12 +107,9 @@ fn test_baby_shark_isotropic_remesh_non_manifold_pinched_vertex() -> Result<(), 
     let _ = config.insert("SHIFT_VERTICES".to_string(), "True".to_string());
     let _ = config.insert("TARGET_EDGE_LENGTH".to_string(), "1.0".to_string());
     let _ = config.insert("ITERATIONS_COUNT".to_string(), "10".to_string());
+    let _ = config.insert("▶".to_string(), "baby_shark_isotropic_remesh".to_string());
     let _ = config.insert(
-        "command".to_string(),
-        "baby_shark_isotropic_remesh".to_string(),
-    );
-    let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::Triangulated.to_string(),
     );
     let _ = config.insert("PROJECT_VERTICES".to_string(), "True".to_string());

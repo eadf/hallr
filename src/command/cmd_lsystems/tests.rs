@@ -10,7 +10,7 @@ use crate::{
 #[test]
 fn test_lsystems_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("command".to_string(), r###"lsystems"###.to_string());
+    let _ = config.insert("▶".to_string(), r###"lsystems"###.to_string());
     let _ = config.insert(
         "🐢".to_string(),
         r###"
@@ -90,7 +90,7 @@ rule("X", "^<XF^<XFX-F^>>XFX&F+>>XFX-F>X->")
 iterations(1)"###
             .to_string(),
     );
-    let _ = config.insert("command".to_string(), r###"lsystems"###.to_string());
+    let _ = config.insert("▶".to_string(), r###"lsystems"###.to_string());
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -163,7 +163,7 @@ timeout(2)
 "###
         .to_string(),
     );
-    let _ = config.insert("command".to_string(), r###"lsystems"###.to_string());
+    let _ = config.insert("▶".to_string(), r###"lsystems"###.to_string());
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -211,7 +211,7 @@ timeout(2)
 #[test]
 fn test_lsystems_6() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("command".to_string(), r###"lsystems"###.to_string());
+    let _ = config.insert("▶".to_string(), r###"lsystems"###.to_string());
     let _ = config.insert(
         "🐢".to_string(),
         r###"
@@ -291,7 +291,7 @@ timeout(2)
 #[test]
 fn test_lsystems_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("command".to_string(), r###"lsystems"###.to_string());
+    let _ = config.insert("▶".to_string(), r###"lsystems"###.to_string());
     let _ = config.insert(
         "🐢".to_string(),
         r###"
@@ -373,7 +373,7 @@ timeout(1)
 "###
         .to_string(),
     );
-    let _ = config.insert("command".to_string(), r###"lsystems"###.to_string());
+    let _ = config.insert("▶".to_string(), r###"lsystems"###.to_string());
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -440,7 +440,7 @@ timeout(1)
 "###
         .to_string(),
     );
-    let _ = config.insert("command".to_string(), r###"lsystems"###.to_string());
+    let _ = config.insert("▶".to_string(), r###"lsystems"###.to_string());
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -507,7 +507,7 @@ fn test_lsystems_5() -> Result<(), HallrError> {
     "#
         .to_string(),
     );
-    let _ = config.insert("command".to_string(), "lsystems".to_string());
+    let _ = config.insert("▶".to_string(), "lsystems".to_string());
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),

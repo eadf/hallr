@@ -66,26 +66,23 @@ class HALLR_OT_D2TSelectBoundingShape(bpy.types.Operator):
     bl_context = "object"
 
     def execute(self, context):
-        if context.scene.hallr_dt2_delaunay_settings.bounding_shape is not None:
-            context.scene.hallr_dt2_delaunay_settings.bounding_shape = None
+        settings = context.scene.hallr_dt2_delaunay_settings
+        if settings.bounding_shape is not None:
+            settings.bounding_shape = None
             return {'FINISHED'}
 
         # Check the bounding shape
         bounding_shape = bpy.context.active_object
         if bounding_shape.type != 'MESH':
             self.report({'ERROR'}, "The bounding shape should be of type 'MESH'.")
-            context.scene.hallr_dt2_delaunay_settings.bounding_shape = None
+            settings.bounding_shape = None
             return {'CANCELLED'}
-        # Ensure the bounding shape doesn't have any faces:
-        if len(bounding_shape.data.polygons) > 0:
-            self.report({'ERROR'}, "The bounding shape should not have faces. It should be a line object.")
-            context.scene.hallr_dt2_delaunay_settings.bounding_shape = None
+
+        if settings.point_cloud is not None and bpy.context.active_object == settings.point_cloud:
+            self.report({'ERROR'}, "This object is already selected as the point cloud. Please select a different object.")
             return {'CANCELLED'}
-        if not hallr_ffi_utils.is_loop(bounding_shape.data):
-            self.report({'ERROR'}, "The bounding shape should be a continuous loop.")
-            context.scene.hallr_dt2_delaunay_settings.bounding_shape = None
-            return {'CANCELLED'}
-        context.scene.hallr_dt2_delaunay_settings.bounding_shape = bounding_shape
+
+        settings.bounding_shape = bounding_shape
         return {'FINISHED'}
 
 
@@ -96,15 +93,21 @@ class HALLR_OT_D2TSelectPointCloud(bpy.types.Operator):
     bl_context = "object"
 
     def execute(self, context):
-        if context.scene.hallr_dt2_delaunay_settings.point_cloud is not None:
-            context.scene.hallr_dt2_delaunay_settings.point_cloud = None
+        settings = context.scene.hallr_dt2_delaunay_settings
+        if settings.point_cloud is not None:
+            settings.point_cloud = None
             return {'FINISHED'}
 
         if bpy.context.active_object.type != 'MESH':
             self.report({'ERROR'}, "The point cloud should be of type 'MESH'.")
-            context.scene.hallr_dt2_delaunay_settings.point_cloud = None
+            settings.point_cloud = None
             return {'CANCELLED'}
-        context.scene.hallr_dt2_delaunay_settings.point_cloud = bpy.context.active_object
+
+        if settings.bounding_shape is not None and bpy.context.active_object == settings.bounding_shape:
+            self.report({'ERROR'}, "This object is already selected as the bounding shape. Please select a different object.")
+            return {'CANCELLED'}
+
+        settings.point_cloud = bpy.context.active_object
         return {'FINISHED'}
 
 
@@ -127,11 +130,11 @@ class HALLR_OT_DT2GenerateMesh(bpy.types.Operator):
             print("bounding type:", bounds_props)
 
             config = {"bounds": str(bounds_props),
-                      "command": "2d_delaunay_triangulation"}
+                      hallr_ffi_utils.COMMAND_TAG: "2d_delaunay_triangulation"}
             try:
                 # Call the Rust function
-                hallr_ffi_utils.process_mesh_with_rust(config, primary_mesh=point_cloud,
-                                                       secondary_mesh=bounding_shape,
+                hallr_ffi_utils.process_mesh_with_rust(config, primary_object=point_cloud,
+                                                       secondary_object=bounding_shape,
                                                        primary_format=MeshFormat.POINT_CLOUD,
                                                        secondary_format=MeshFormat.POINT_CLOUD,
                                                        create_new=True)

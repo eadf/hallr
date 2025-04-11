@@ -243,6 +243,7 @@ fn generate_and_process_sdf_chunk(
 pub(crate) fn build_output_model(
     voxel_size: f32,
     mesh_buffers: Vec<(iglam::Vec3A, SurfaceNetsBuffer)>,
+    world_to_local: Option<impl Fn(FFIVector3) -> FFIVector3>,
     verbose: bool,
 ) -> Result<OwnedModel, HallrError> {
     let now = time::Instant::now();
@@ -272,23 +273,43 @@ pub(crate) fn build_output_model(
             Vec::with_capacity(face_capacity),
         )
     };
+    if let Some(world_to_local) = world_to_local {
+        for (vertex_offset, mesh_buffer) in mesh_buffers.iter() {
+            // each chunk starts counting vertices from zero
+            let indices_offset = vertices.len() as u32;
 
-    for (vertex_offset, mesh_buffer) in mesh_buffers.iter() {
-        // each chunk starts counting vertices from zero
-        let indices_offset = vertices.len() as u32;
+            // vertices this far inside a chunk should (probably?) not be used outside this chunk.
 
-        // vertices this far inside a chunk should (probably?) not be used outside this chunk.
+            for pv in mesh_buffer.positions.iter() {
+                vertices.push(world_to_local(FFIVector3 {
+                    x: (voxel_size * (pv[0] + vertex_offset.x)),
+                    y: (voxel_size * (pv[1] + vertex_offset.y)),
+                    z: (voxel_size * (pv[2] + vertex_offset.z)),
+                }));
+            }
 
-        for pv in mesh_buffer.positions.iter() {
-            vertices.push(FFIVector3 {
-                x: (voxel_size * (pv[0] + vertex_offset.x)),
-                y: (voxel_size * (pv[1] + vertex_offset.y)),
-                z: (voxel_size * (pv[2] + vertex_offset.z)),
-            });
+            for vertex_id in mesh_buffer.indices.iter() {
+                indices.push((*vertex_id + indices_offset) as usize);
+            }
         }
+    } else {
+        for (vertex_offset, mesh_buffer) in mesh_buffers.iter() {
+            // each chunk starts counting vertices from zero
+            let indices_offset = vertices.len() as u32;
 
-        for vertex_id in mesh_buffer.indices.iter() {
-            indices.push((*vertex_id + indices_offset) as usize);
+            // vertices this far inside a chunk should (probably?) not be used outside this chunk.
+
+            for pv in mesh_buffer.positions.iter() {
+                vertices.push(FFIVector3 {
+                    x: (voxel_size * (pv[0] + vertex_offset.x)),
+                    y: (voxel_size * (pv[1] + vertex_offset.y)),
+                    z: (voxel_size * (pv[2] + vertex_offset.z)),
+                });
+            }
+
+            for vertex_id in mesh_buffer.indices.iter() {
+                indices.push((*vertex_id + indices_offset) as usize);
+            }
         }
     }
 
@@ -307,7 +328,7 @@ pub(crate) fn build_output_model(
 
 /// Run the sdf_mesh command
 pub(crate) fn process_command(
-    config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError> {
     if models.is_empty() {
@@ -322,10 +343,13 @@ pub(crate) fn process_command(
         ));
     }
 
-    let cmd_arg_sdf_radius_multiplier =
-        config.get_mandatory_parsed_option::<f32>("SDF_RADIUS_MULTIPLIER", None)? / 100.0;
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
 
-    let cmd_arg_sdf_divisions: f32 = config.get_mandatory_parsed_option("SDF_DIVISIONS", None)?;
+    let cmd_arg_sdf_radius_multiplier =
+        input_config.get_mandatory_parsed_option::<f32>("SDF_RADIUS_MULTIPLIER", None)? / 100.0;
+
+    let cmd_arg_sdf_divisions: f32 =
+        input_config.get_mandatory_parsed_option("SDF_DIVISIONS", None)?;
     if !(9.9..600.1).contains(&cmd_arg_sdf_divisions) {
         return Err(HallrError::InvalidInputData(format!(
             "The valid range of SDF_DIVISIONS is [{}..{}[% :({})",
@@ -347,16 +371,28 @@ pub(crate) fn process_command(
         aabb,
         true,
     )?;
+    let world_to_local = input_model.get_world_to_local_transform()?;
+    if world_to_local.is_some() {
+        println!(
+            "Rust: applying world-local transformation 1/{:?}",
+            input_model.world_orientation
+        );
+    } else {
+        println!(
+            "Rust: *not* applying world-local transformation 1/{:?}",
+            input_model.world_orientation
+        );
+    };
 
-    let output_model = build_output_model(voxel_size, mesh, true)?;
+    let output_model = build_output_model(voxel_size, mesh, world_to_local, true)?;
 
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
     let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
-    if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {
+    if let Some(value) = input_config.get("REMOVE_DOUBLES_THRESHOLD") {
         let _ = return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());
     }
     println!(

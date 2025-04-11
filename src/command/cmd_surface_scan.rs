@@ -73,7 +73,7 @@ where
     let mut return_config = ConfigType::new();
 
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::LineWindows.to_string(),
     );
 
@@ -130,14 +130,14 @@ where
         .get_mesh_data()?;
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
     Ok((results.vertices, results.indices, return_config))
 }
 
 pub(crate) fn process_command<T>(
-    config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
@@ -158,22 +158,23 @@ where
     let model = &models[0];
     let world_matrix = model.world_orientation.to_vec();
     let bounding_shape = &models[1];
-    let _bounding_shape_world_matrix = bounding_shape.world_orientation.to_vec();
-    // todo: actually use the matrices
+
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Triangulated)?;
+    input_config.confirm_mesh_packaging(1, ffi::MeshFormat::PointCloud)?;
 
     let mesh_analyzer = MeshAnalyzerBuilder::<T, FFIVector3>::default()
         .load_from_ref(model.vertices, model.indices)?
         .build()?;
     let bounding_vertices = bounding_shape.vertices;
 
-    let probe_radius = config.get_mandatory_parsed_option("probe_radius", None)?;
-    let minimum_z = config.get_mandatory_parsed_option("minimum_z", None)?;
-    let step = config.get_mandatory_parsed_option("step", None)?;
-    let probe: Box<dyn Probe<T, FFIVector3>> = match config.get_mandatory_option("probe")? {
+    let probe_radius = input_config.get_mandatory_parsed_option("probe_radius", None)?;
+    let minimum_z = input_config.get_mandatory_parsed_option("minimum_z", None)?;
+    let step = input_config.get_mandatory_parsed_option("step", None)?;
+    let probe: Box<dyn Probe<T, FFIVector3>> = match input_config.get_mandatory_option("probe")? {
         "SQUARE_END" => Box::new(SquareEndProbe::new(&mesh_analyzer, probe_radius)?),
         "BALL_NOSE" => Box::new(BallNoseProbe::new(&mesh_analyzer, probe_radius)?),
         "TAPERED_END" => {
-            let angle = config.get_mandatory_parsed_option("probe_angle", None)?;
+            let angle = input_config.get_mandatory_parsed_option("probe_angle", None)?;
             Box::new(TaperedProbe::new(&mesh_analyzer, probe_radius, angle)?)
         }
         probe_name => Err(HronnError::InvalidParameter(format!(
@@ -182,9 +183,9 @@ where
         )))?,
     };
 
-    let rv = match config.get_mandatory_option("pattern")? {
+    let rv = match input_config.get_mandatory_option("pattern")? {
         "MEANDER" => do_meander_scan::<T>(
-            config,
+            input_config,
             bounding_vertices,
             &mesh_analyzer,
             probe.as_ref(),
@@ -192,7 +193,7 @@ where
             step,
         ),
         "TRIANGULATION" => do_triangulation_scan::<T>(
-            config,
+            input_config,
             bounding_vertices,
             &mesh_analyzer,
             probe.as_ref(),

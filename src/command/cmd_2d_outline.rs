@@ -4,7 +4,7 @@
 
 use crate::{
     HallrError,
-    command::{ConfigType, Model, OwnedModel},
+    command::{ConfigType, Model, Options, OwnedModel},
     ffi,
     prelude::FFIVector3,
 };
@@ -143,6 +143,18 @@ where
         // v0 and v1 now contains the translated vertex indices.
         rv_lines.push((v0, v1));
     }
+    if let Some(world_to_local) = model.get_world_to_local_transform()? {
+        println!(
+            "Rust: applying world-local transformation 1/{:?}",
+            model.world_orientation
+        );
+        rv_vertices.iter_mut().for_each(|v| *v = world_to_local(*v));
+    } else {
+        println!(
+            "Rust: *not* applying world-local transformation 1/{:?}",
+            model.world_orientation
+        );
+    };
     println!("Output edges: {:?}", rv_lines.len());
     println!("Output vertices: {:?}", rv_vertices.len());
 
@@ -151,7 +163,7 @@ where
 
 /// Run the 2d_outline command
 pub(crate) fn process_command<T>(
-    _config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
@@ -164,6 +176,8 @@ where
             "This operation only supports one model as input".to_string(),
         ));
     }
+
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Triangulated)?;
 
     /*for model in models.iter() {
         //println!("model.name:{:?}, ", model.name);
@@ -192,7 +206,7 @@ where
         }
         let mut return_config = ConfigType::new();
         let _ = return_config.insert(
-            ffi::MESH_FORMAT_TAG.to_string(),
+            ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
             ffi::MeshFormat::LineChunks.to_string(),
         );
 

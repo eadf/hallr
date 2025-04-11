@@ -154,10 +154,12 @@ pub(crate) fn compute_voronoi_diagram(
 
 /// Run the voronoi_mesh command
 pub(crate) fn process_command(
-    config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError> {
     type Scalar = f32;
+
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
 
     if models.is_empty() {
         return Err(HallrError::InvalidInputData(
@@ -171,7 +173,7 @@ pub(crate) fn process_command(
         ));
     }
 
-    let cmd_arg_max_voronoi_dimension: Scalar = config.get_mandatory_parsed_option(
+    let cmd_arg_max_voronoi_dimension: Scalar = input_config.get_mandatory_parsed_option(
         "MAX_VORONOI_DIMENSION",
         Some(super::DEFAULT_MAX_VORONOI_DIMENSION.as_()),
     )?;
@@ -185,7 +187,7 @@ pub(crate) fn process_command(
             cmd_arg_max_voronoi_dimension
         )));
     }
-    let cmd_arg_discretization_distance: Scalar = config.get_mandatory_parsed_option(
+    let cmd_arg_discretization_distance: Scalar = input_config.get_mandatory_parsed_option(
         "DISTANCE",
         Some(super::DEFAULT_VORONOI_DISCRETE_DISTANCE.as_()),
     )?;
@@ -200,19 +202,15 @@ pub(crate) fn process_command(
         )));
     }
 
-    let cmd_arg_keep_input = config.get_parsed_option("KEEP_INPUT")?.unwrap_or(false);
+    let cmd_arg_keep_input = input_config
+        .get_parsed_option("KEEP_INPUT")?
+        .unwrap_or(false);
 
     // used for simplification and discretization distance
     let max_distance: Scalar =
         cmd_arg_max_voronoi_dimension * cmd_arg_discretization_distance / 100.0;
     // we already tested a_command.models.len()
     let input_model = &models[0];
-    if !input_model.has_identity_orientation() {
-        return Err(HallrError::InvalidInputData(
-            "The cmd_voronoi_diagram mesh operation currently requires identify world orientation"
-                .to_string(),
-        ));
-    }
 
     // we already tested that there is only one model
     println!();
@@ -242,25 +240,45 @@ pub(crate) fn process_command(
         cmd_arg_discretization_distance,
         cmd_arg_keep_input,
     )?;
-    let output_model = OwnedModel {
-        world_orientation: Model::copy_world_orientation(input_model)?,
-        indices,
-        vertices: vertices
+    let vertices = if let Some(world_to_local) = input_model.get_world_to_local_transform()? {
+        println!(
+            "Rust: applying world-local transformation 1/{:?}",
+            input_model.world_orientation
+        );
+        // Transform to local
+        vertices
+            .into_iter()
+            .map(|mut v: Vec3A| {
+                v.set_z(0.0);
+                world_to_local(v.to())
+            })
+            .collect()
+    } else {
+        println!(
+            "Rust: *not* applying world-local transformation 1/{:?}",
+            input_model.world_orientation
+        );
+        vertices
             .into_iter()
             .map(|mut v: Vec3A| {
                 v.set_z(0.0);
                 v.to()
             })
-            .collect(),
+            .collect()
+    };
+    let output_model = OwnedModel {
+        world_orientation: Model::copy_world_orientation(input_model)?,
+        indices,
+        vertices,
     };
 
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::LineChunks.to_string(),
     );
     let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
-    if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {
+    if let Some(value) = input_config.get("REMOVE_DOUBLES_THRESHOLD") {
         let _ = return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());
     }
 

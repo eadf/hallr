@@ -42,7 +42,7 @@ where
 }
 
 pub(crate) fn process_command<T>(
-    config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
@@ -52,16 +52,13 @@ where
     f32: AsPrimitive<T::Scalar>,
 {
     let cmd_simplify_distance: T::Scalar =
-        config.get_mandatory_parsed_option("simplify_distance", None)?;
-    //println!("rust: vertices.len():{}", vertices.len());
-    //println!("rust: indices.len():{}", indices.len());
-    //println!("rust: indices:{:?}", indices);
-    //let result = divide_into_shapes(models[0].indices);
-    //for group in result {
-    //    println!("***group:{:?}", group);
-    //}
+        input_config.get_mandatory_parsed_option("simplify_distance", None)?;
 
-    let simplify_in_3d = config.get_parsed_option("simplify_3d")?.unwrap_or(false);
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
+
+    let simplify_in_3d = input_config
+        .get_parsed_option("simplify_3d")?
+        .unwrap_or(false);
     let mut output_vertices = Vec::<FFIVector3>::default();
     let mut output_indices = Vec::<usize>::default();
     let output_matrix;
@@ -108,12 +105,27 @@ where
             }
             output_vertices = vdd.vertices;
         }
+        if let Some(world_to_local) = model.get_world_to_local_transform()? {
+            println!(
+                "Rust: applying world-local transformation 1/{:?}",
+                model.world_orientation
+            );
+            // Transform to local
+            output_vertices
+                .iter_mut()
+                .for_each(|v| *v = world_to_local(*v));
+        } else {
+            println!(
+                "Rust: *not* applying world-local transformation 1/{:?}",
+                model.world_orientation
+            );
+        }
     } else {
         output_matrix = vec![];
     }
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::LineChunks.to_string(),
     );
     let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "false".to_string());

@@ -5,16 +5,16 @@
 use crate::{
     HallrError,
     command::{ConfigType, OwnedModel},
-    ffi::{MESH_FORMAT_TAG, MeshFormat},
+    ffi::MeshFormat,
 };
 
 #[test]
 fn test_voronoi_mesh_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("command".to_string(), "voronoi_mesh".to_string());
+    let _ = config.insert("▶".to_string(), "voronoi_mesh".to_string());
     let _ = config.insert("DISTANCE".to_string(), "0.2864788911621093".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::LineChunks.to_string(),
     );
     let _ = config.insert("first_index_model_0".to_string(), "0".to_string());
@@ -35,7 +35,7 @@ fn test_voronoi_mesh_1() -> Result<(), HallrError> {
     assert_eq!(5, result.0.len()); // vertices
     assert_eq!(12, result.1.len()); // indices
     assert_eq!(
-        *result.3.get(MESH_FORMAT_TAG).unwrap(),
+        *result.3.get(MeshFormat::MESH_FORMAT_TAG).unwrap(),
         MeshFormat::Triangulated.to_string()
     );
     Ok(())
@@ -46,10 +46,10 @@ fn test_voronoi_mesh_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("DISTANCE".to_string(), "0.2864788911621093".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::LineChunks.to_string(),
     );
-    let _ = config.insert("command".to_string(), "voronoi_mesh".to_string());
+    let _ = config.insert("▶".to_string(), "voronoi_mesh".to_string());
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -76,10 +76,10 @@ fn test_voronoi_mesh_3() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("DISTANCE".to_string(), "0.2864788911621093".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::LineChunks.to_string(),
     );
-    let _ = config.insert("command".to_string(), "voronoi_mesh".to_string());
+    let _ = config.insert("▶".to_string(), "voronoi_mesh".to_string());
 
     let owned_model_0 = OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
@@ -103,11 +103,11 @@ fn test_voronoi_mesh_3() -> Result<(), HallrError> {
 #[test]
 fn test_voronoi_mesh4() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
-    let _ = config.insert("command".to_string(), "voronoi_mesh".to_string());
+    let _ = config.insert("▶".to_string(), "voronoi_mesh".to_string());
     let _ = config.insert("NEGATIVE_RADIUS".to_string(), "true".to_string());
     let _ = config.insert("DISTANCE".to_string(), "1.0".to_string());
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::LineChunks.to_string(),
     );
 

@@ -9,7 +9,7 @@ mod tests;
 use super::{ConfigType, Model, Options};
 use crate::{
     command::cmd_lsystems::lsystems::{Turtle, TurtleRules},
-    ffi::{MESH_FORMAT_TAG, MeshFormat},
+    ffi::MeshFormat,
     prelude::*,
 };
 use std::time;
@@ -80,7 +80,7 @@ pub(crate) fn process_command(
 
     let mut config = ConfigType::new();
     let _ = config.insert(
-        MESH_FORMAT_TAG.to_string(),
+        MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::LineChunks.to_string(),
     );
     let _ = config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());

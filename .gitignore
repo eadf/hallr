@@ -33,9 +33,10 @@ Icon
 *.mtl
 *.blend*
 *.pyc
-blender_addon_exported
+/blender_addon_exported
 hallr_cnc_engravingpanel.py
-sync_versions.py
+/sync_versions.py
 blender_icons.py
-update_version.py
-hallr.zip
+/update_version.py
+/hallr.zip
+/search_files.py

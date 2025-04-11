@@ -3,7 +3,7 @@
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, OwnedModel};
-use crate::{HallrError, ffi, ffi::FFIVector3};
+use crate::{HallrError, command::Options, ffi, ffi::FFIVector3};
 use hronn::prelude::ConvertTo;
 use itertools::Itertools;
 use linestring::{
@@ -33,11 +33,11 @@ where
     }
 
     let plane = Plane::get_plane_relaxed::<T>(aabb, f32::default_epsilon().as_(), f32::default_max_ulps()).ok_or_else(|| {
-        let aabbe_d:T = aabb.get_high().unwrap() - aabb.get_low().unwrap();
-        let aabbe_c:T = (aabb.get_high().unwrap() + aabb.get_low().unwrap())/T::Scalar::TWO;
+        let aabbe_d: T = aabb.get_high().unwrap() - aabb.get_low().unwrap();
+        let aabbe_c: T = (aabb.get_high().unwrap() + aabb.get_low().unwrap()) / T::Scalar::TWO;
         HallrError::InputNotPLane(format!(
             "Input data not in one plane and/or plane not intersecting origin: Δ({},{},{}) C({},{},{})",
-            aabbe_d.x(), aabbe_d.y(), aabbe_d.z(),aabbe_c.x(), aabbe_c.y(), aabbe_c.z()
+            aabbe_d.x(), aabbe_d.y(), aabbe_d.z(), aabbe_c.x(), aabbe_c.y(), aabbe_c.z()
         ))
     })?;
     if plane != Plane::XY {
@@ -109,15 +109,35 @@ where
 
     let estimated_edges = input_edges.len() * 2 + edge_split.len();
 
-    let mut output_model = OwnedModel {
-        world_orientation: input_model.copy_world_orientation()?,
-        // process all the vertices at once
-        vertices: new_vertices
-            .into_iter()
-            .map(|v| plane.point_to_3d::<T>(v).to())
-            .collect(),
-        // estimate the size of the indices list
-        indices: Vec::<usize>::with_capacity(estimated_edges),
+    let mut output_model = {
+        let world_orientation = input_model.copy_world_orientation()?;
+
+        // Create vertices with the appropriate transformation
+        let vertices = if let Some(world_to_local) = input_model.get_world_to_local_transform()? {
+            println!(
+                "Rust: applying world-local transformation 1/{:?}",
+                input_model.world_orientation
+            );
+            new_vertices
+                .into_iter()
+                .map(|v| world_to_local(plane.point_to_3d::<T>(v).to()))
+                .collect()
+        } else {
+            println!(
+                "Rust: *not* applying world-local transformation 1/{:?}",
+                input_model.world_orientation
+            );
+            new_vertices
+                .into_iter()
+                .map(|v| plane.point_to_3d::<T>(v).to())
+                .collect()
+        };
+
+        OwnedModel {
+            world_orientation,
+            vertices,
+            indices: Vec::<usize>::with_capacity(estimated_edges),
+        }
     };
 
     // insert the un-affected edges into the output
@@ -176,7 +196,7 @@ where
 }
 
 pub(crate) fn process_command<T>(
-    _config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
@@ -191,13 +211,15 @@ where
             "No models detected".to_string(),
         ));
     }
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
+
     let input_model = &models[0];
-    if !input_model.has_identity_orientation() {
+    /*if !input_model.has_xy_transform_only() {
         return Err(HallrError::InvalidInputData(
-            "The knife_intersect operation currently requires identity world orientation"
+            "The knife_intersect operation currently only supports world transformations in the XY plane"
                 .to_string(),
         ));
-    }
+    }*/
     println!(
         "knife_intersect receiving {} vertices, {} indices, {} edges",
         input_model.vertices.len(),
@@ -209,7 +231,7 @@ where
 
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
-        ffi::MESH_FORMAT_TAG.to_string(),
+        ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::LineChunks.to_string(),
     );
     println!(

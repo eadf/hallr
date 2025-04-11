@@ -446,7 +446,7 @@ impl TurtleRules {
             Timeout(Option<u64>),
         }
 
-        println!("Will try to parse custom_turtle : {:?}", cmd_custom_turtle);
+        println!("Will try to parse the custom 🐢: {:?}", cmd_custom_turtle);
 
         let mut lex = ParseToken::lexer(cmd_custom_turtle);
         let mut state = ParseState::Start;
