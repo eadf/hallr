@@ -35,11 +35,13 @@ def angle_between_edges(p0, p1, p2):
     angle = math.degrees(math.acos(max(-1.0, min(res, 1.0))))
     return angle
 
+
 class BaseOperatorMixin:
     @classmethod
     def poll(cls, context):
         ob = context.active_object
         return ob is not None and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
+
 
 class MESH_OT_hallr_2d_outline(bpy.types.Operator, BaseOperatorMixin):
     """Generates the 2d outline from 2D mesh objects"""
@@ -640,6 +642,22 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
         subtype='UNSIGNED'
     )
 
+    sdf_radius_multiplier_prop: bpy.props.FloatProperty(
+        name="Radius multiplier",
+        description="Radius multiplier",
+        default=1.0,
+        min=0.01,
+        max=5.0,
+        precision=6,
+    )
+
+    backend_variant_items = (
+        ("sdf_mesh_2½_fsn", "Fast Surface Nets", "use fast_surface_nets backend"),
+        ("sdf_mesh_2½_saft", "Saft", "use saft backend"),
+    )
+
+    cmd_backend_prop: bpy.props.EnumProperty(name="Backend", items=backend_variant_items, default="sdf_mesh_2½_fsn")
+
     remove_doubles_threshold_prop: bpy.props.FloatProperty(
         name="Merge Distance",
         description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
@@ -656,8 +674,9 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        config = {hallr_ffi_utils.COMMAND_TAG: "sdf_mesh_2_5",
+        config = {hallr_ffi_utils.COMMAND_TAG: self.cmd_backend_prop,
                   "SDF_DIVISIONS": str(self.sdf_divisions_prop),
+                  "SDF_RADIUS_MULTIPLIER": str(self.sdf_radius_multiplier_prop),
                   "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
         try:
@@ -679,6 +698,10 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
         row = layout.row()
         row.label(icon='DRIVER_DISTANCE')
         row.prop(self, "sdf_divisions_prop")
+        row = layout.row()
+        row.prop(self, "sdf_radius_multiplier_prop")
+        row = layout.row()
+        row.prop(self, "cmd_backend_prop")
         row = layout.row()
         row.label(icon='SNAP_MIDPOINT')
         row.prop(self, "remove_doubles_threshold_prop")
@@ -749,7 +772,7 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
                   }
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format= MeshFormat.LINE_CHUNKS, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -766,7 +789,8 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
         row = layout.row()
         row.label(icon='DRIVER_DISTANCE')
         row.prop(self, "sdf_divisions_prop")
-        layout.prop(self, "sdf_radius_prop")
+        row = layout.row()
+        row.prop(self, "sdf_radius_prop")
         row = layout.row()
         row.prop(self, "cmd_backend_prop")
         row = layout.row()

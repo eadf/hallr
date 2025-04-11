@@ -59,9 +59,9 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "baby_shark"
-version = "0.3.7"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ae14458cca362ce97ba707ca30d1fd3034c229b49ba15b514631bcfb251cd2e"
+checksum = "14b5dc2cd7080c612bccce80e4719aed6b34cd9c9d04a1e4d0b146dcfcca3eb6"
 dependencies = [
  "bitflags",
  "nalgebra",

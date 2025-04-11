@@ -18,13 +18,15 @@ mod cmd_delaunay_triangulation_2d;
 mod cmd_discretize;
 mod cmd_knife_intersect;
 mod cmd_lsystems;
-mod cmd_sdf_mesh_2_5;
+mod cmd_sdf_mesh_2_5_fsn;
+mod cmd_sdf_mesh_2_5_saft;
 mod cmd_sdf_mesh_fsn;
 mod cmd_sdf_mesh_saft;
 mod cmd_simplify_rdp;
 pub mod cmd_surface_scan;
 mod cmd_voronoi_diagram;
 mod cmd_voronoi_mesh;
+
 #[cfg(feature = "generate_test_case_from_input")]
 #[cfg(not(test))]
 mod cmd_wavefront_obj_logger;
@@ -371,7 +373,8 @@ pub(crate) fn process_command(
         "knife_intersect" => cmd_knife_intersect::process_command::<T>(config, models)?,
         "voronoi_mesh" => cmd_voronoi_mesh::process_command(config, models)?,
         "voronoi_diagram" => cmd_voronoi_diagram::process_command(config, models)?,
-        "sdf_mesh_2_5" => cmd_sdf_mesh_2_5::process_command(config, models)?,
+        "sdf_mesh_2½_fsn" => cmd_sdf_mesh_2_5_fsn::process_command(config, models)?,
+        "sdf_mesh_2½_saft" => cmd_sdf_mesh_2_5_saft::process_command(config, models)?,
         "sdf_mesh" => cmd_sdf_mesh_fsn::process_command(config, models)?,
         "sdf_mesh_saft" => cmd_sdf_mesh_saft::process_command(config, models)?,
         "discretize" => cmd_discretize::process_command(config, models)?,

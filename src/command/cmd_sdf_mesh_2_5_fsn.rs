@@ -200,6 +200,7 @@ fn generate_and_process_sdf_chunk(
 /// Build the chunk lattice and spawn off thread tasks for each chunk
 fn build_voxel(
     divisions: f32,
+    radius_multiplier: f32,
     vertices: Vec<(iglam::Vec2, f32)>,
     indices: &[usize],
     aabb: Extent<iglam::Vec3A>,
@@ -239,12 +240,18 @@ fn build_voxel(
 
             let (v0, r0) = {
                 let (v0, r0) = vertices[e0];
-                (iglam::vec2(v0.x, v0.y) * scale, r0 * scale)
+                (
+                    iglam::vec2(v0.x, v0.y) * scale,
+                    r0 * scale * radius_multiplier,
+                )
             };
 
             let (v1, r1) = {
                 let (v1, r1) = vertices[e1];
-                (iglam::vec2(v1.x, v1.y) * scale, r1 * scale)
+                (
+                    iglam::vec2(v1.x, v1.y) * scale,
+                    r1 * scale * radius_multiplier,
+                )
             };
 
             let ex0 =
@@ -272,13 +279,22 @@ fn build_voxel(
         })
         .collect();
 
-    let chunks_extent = {
+    let max_z_radius = aabb
+        .minimum
+        .z
+        .abs()
+        .max((aabb.minimum.z + aabb.shape.z).abs());
+    let max_radius = scale * radius_multiplier * max_z_radius;
+    let padding_voxels = max_radius * (UN_PADDED_CHUNK_SIDE as f32 / scale);
+    //println!("max_z_radius:{}, max_radius:{}, padding_voxels:{}", max_z_radius, max_radius, padding_voxels);
+
+    let chunks_extent =
         // pad with the radius + one voxel
         (aabb * (scale / (UN_PADDED_CHUNK_SIDE as f32)))
-            .padded(1.0 / (UN_PADDED_CHUNK_SIDE as f32))
-            .containing_integer_extent()
-    };
-    println!("chunks_extent:{:?}", chunks_extent);
+            .padded(padding_voxels)
+            .containing_integer_extent();
+
+    //println!("chunks_extent padded:{:?} scale:{} UN_PADDED_CHUNK_SIDE:{}", chunks_extent, scale, UN_PADDED_CHUNK_SIDE);
     let now = time::Instant::now();
 
     let sdf_chunks: Vec<_> = {
@@ -487,6 +503,9 @@ pub(crate) fn process_command(
         )));
     }
 
+    let cmd_arg_sdf_radius_multiplier =
+        input_config.get_mandatory_parsed_option::<f32>("SDF_RADIUS_MULTIPLIER", None)?;
+
     // we already tested a_command.models.len()
     let input_model = &models[0];
 
@@ -496,6 +515,7 @@ pub(crate) fn process_command(
     let (vertices, aabb) = parse_input(input_model, plane)?;
     let (voxel_size, mesh) = build_voxel(
         cmd_arg_sdf_divisions,
+        cmd_arg_sdf_radius_multiplier,
         vertices,
         input_model.indices,
         aabb,
