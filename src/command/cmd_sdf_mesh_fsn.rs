@@ -148,10 +148,12 @@ fn generate_and_process_sdf_chunk(
         .par_chunks_exact(2)
         .filter_map(|edge| {
             let (e0, e1) = (edge[0], edge[1]);
+            let v0 = vertices[e0];
+            let v1 = vertices[e1];
 
             let tube_extent = Extent::from_min_and_lub(
-                vertices[e0].min(vertices[e1]) - iglam::Vec3A::splat(thickness),
-                vertices[e0].max(vertices[e1]) + iglam::Vec3A::splat(thickness),
+                v0.min(v1) - iglam::Vec3A::splat(thickness),
+                v0.max(v1) + iglam::Vec3A::splat(thickness),
             )
             .containing_integer_extent();
             if !padded_chunk_extent.intersection(&tube_extent).is_empty() {

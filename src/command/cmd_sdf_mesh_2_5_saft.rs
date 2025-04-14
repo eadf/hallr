@@ -2,8 +2,8 @@
 // Copyright (c) 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
-//#[cfg(test)]
-//mod tests;
+#[cfg(test)]
+mod tests;
 
 use crate::{
     HallrError,
@@ -21,7 +21,6 @@ fn build_voxel(
     divisions: f32,
     vertices: &[FFIVector3],
     edges: &[usize],
-    verbose: bool,
 ) -> Result<
     (
         f32, // <- voxel_size
@@ -45,68 +44,44 @@ fn build_voxel(
     let dimensions = aabb.max - aabb.min;
     let max_dimension = dimensions.x.max(dimensions.y).max(dimensions.z);
 
-    let radius = max_dimension * radius_multiplier; // unscaled
-    let thickness = radius * 2.0; // unscaled
     let scale = divisions / max_dimension;
 
-    if verbose {
-        println!(
-            "Voxelizing using tube thickness. {} = {}*{}*{}",
-            thickness, max_dimension, radius_multiplier, scale
-        );
-
-        println!(
-            "Voxelizing using divisions = {}, max dimension = {}, scale factor={} (max_dimension*scale={})",
-            divisions,
-            max_dimension,
-            scale,
-            max_dimension * scale
-        );
-        println!();
-
-        println!("aabb.high:{:?}", aabb.max);
-        println!("aabb.low:{:?}", aabb.min);
-        println!("delta:{:?}", aabb.max - aabb.min);
-    }
     let mean_resolution = max_dimension * scale;
-    if verbose {
-        println!("mean_resolution:{:?}", mean_resolution);
-    }
     let mesh_options = saft::MeshOptions {
         mean_resolution,
         max_resolution: mean_resolution,
         min_resolution: 8.0,
     };
 
-    let vertices: Vec<_> = vertices
-        .iter()
-        .map(|v| macaw::Vec3::new(v.x, v.y, v.z) * scale)
-        .collect();
-
-    // let radius = radius * scale; // now scaled
     let now = time::Instant::now();
     let mut graph = saft::Graph::default();
 
     let capsules: Vec<_> = edges
         .chunks_exact(2)
-        .map(|e| {
-            let mut v0 = vertices[e[0]];
-            let mut v1 = vertices[e[1]];
-            let z0 = v0.z.abs() * radius_multiplier;
-            let z1 = v1.z.abs() * radius_multiplier;
-            v0.z = 0.0;
-            v1.z = 0.0;
-            //tapered_capsule(&mut self, points: [Vec3; 2], radii: [f32; 2])
-            graph.tapered_capsule([v0, v1], [z0, z1])
+        .filter_map(|e| {
+            let v0 = vertices[e[0]];
+            let v1 = vertices[e[1]];
+
+            // Early check for zero radii before any expensive computations
+            let z0_abs = v0.z.abs();
+            let z1_abs = v1.z.abs();
+            if z0_abs <= f32::EPSILON && z1_abs <= f32::EPSILON {
+                None
+            } else {
+                // Only compute these if we know we'll use them
+                let z0 = z0_abs * radius_multiplier * scale;
+                let z1 = z1_abs * radius_multiplier * scale;
+                let v0 = macaw::Vec3::new(v0.x * scale, v0.y * scale, 0.0);
+                let v1 = macaw::Vec3::new(v1.x * scale, v1.y * scale, 0.0);
+                Some(graph.tapered_capsule([v0, v1], [z0, z1]))
+            }
         })
         .collect();
 
     let root = graph.op_union_multi(capsules);
     let mesh = saft::mesh_from_sdf(&graph, root, mesh_options)?;
 
-    if verbose {
-        println!("mesh_from_sdf() duration: {:?}", now.elapsed());
-    }
+    println!("mesh_from_sdf_saft() duration: {:?}", now.elapsed());
     Ok((1.0 / scale, mesh))
 }
 
@@ -195,7 +170,6 @@ pub(crate) fn process_command(
         cmd_arg_sdf_divisions,
         input_model.vertices,
         input_model.indices,
-        true,
     )?;
 
     let output_model = build_output_model(input_model, voxel_size, mesh)?;

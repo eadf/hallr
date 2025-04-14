@@ -204,7 +204,6 @@ fn build_voxel(
     vertices: Vec<(iglam::Vec2, f32)>,
     indices: &[usize],
     aabb: Extent<iglam::Vec3A>,
-    verbose: bool,
 ) -> Result<
     (
         f32, // voxel_size
@@ -221,38 +220,20 @@ fn build_voxel(
 
     let scale = divisions / max_dimension;
 
-    if verbose {
-        println!(
-            "Voxelizing using divisions = {}, max dimension = {}, scale factor={} (max_dimension*scale={})",
-            divisions,
-            max_dimension,
-            scale,
-            max_dimension * scale
-        );
-        println!();
-    }
-    println!("indices.len():{:?}", indices.len());
-
     let rounded_cones: Vec<(RoundedCone, Extent3i)> = indices
         .par_chunks_exact(2)
-        .map(|edge| {
-            let (e0, e1) = (edge[0], edge[1]);
+        .filter_map(|edge| {
+            let (v0, r0) = vertices[edge[0]];
+            let (v1, r1) = vertices[edge[1]];
+            if r0 <= f32::EPSILON && r1 <= f32::EPSILON {
+                return None;
+            }
 
-            let (v0, r0) = {
-                let (v0, r0) = vertices[e0];
-                (
-                    iglam::vec2(v0.x, v0.y) * scale,
-                    r0 * scale * radius_multiplier,
-                )
-            };
+            let v0 = iglam::vec2(v0.x, v0.y) * scale;
+            let r0 = r0 * scale * radius_multiplier;
 
-            let (v1, r1) = {
-                let (v1, r1) = vertices[e1];
-                (
-                    iglam::vec2(v1.x, v1.y) * scale,
-                    r1 * scale * radius_multiplier,
-                )
-            };
+            let v1 = iglam::vec2(v1.x, v1.y) * scale;
+            let r1 = r1 * scale * radius_multiplier;
 
             let ex0 =
                 Extent::<iglam::Vec3A>::from_min_and_shape(iglam::vec3a(v0.x, v0.y, 0.0), zero)
@@ -272,10 +253,10 @@ fn build_voxel(
             let translation = -iglam::vec3(translation.x(), translation.y(), 0.0);
             let m = iglam::Affine3A::from_mat3_translation(rotation, translation);
 
-            (
+            Some((
                 RoundedCone { r0, r1, h, b, a, m },
                 ex0.bound_union(&ex1).containing_integer_extent(),
-            )
+            ))
         })
         .collect();
 
@@ -315,13 +296,12 @@ fn build_voxel(
             })
             .collect()
     };
-    if verbose {
-        println!(
-            "process_chunks() duration: {:?} generated {} chunks",
-            now.elapsed(),
-            sdf_chunks.len()
-        );
-    }
+    println!(
+        "process_chunks() duration: {:?} generated {} chunks",
+        now.elapsed(),
+        sdf_chunks.len()
+    );
+
     Ok((1.0 / scale, sdf_chunks))
 }
 
@@ -519,7 +499,6 @@ pub(crate) fn process_command(
         vertices,
         input_model.indices,
         aabb,
-        true,
     )?;
 
     let output_model = build_output_model(input_model, voxel_size, mesh, plane, false)?;

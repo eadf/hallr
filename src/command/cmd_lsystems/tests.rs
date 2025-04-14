@@ -37,37 +37,8 @@ iterations(5)
     println!("{:?}", _result.0);
     println!("{:?}", _result.1);
 
-    /*assert_eq!(_result.1.len() % 3, 0);
-    assert!(!_result.1.is_empty());
-    let number_of_vertices = _result.0.len();
-    assert!(number_of_vertices>0);
-
-    for t in _result.1.chunks_exact(3) {
-        assert_ne!(t[0], t[1]);
-        assert_ne!(t[0], t[2]);
-        assert_ne!(t[1], t[2]);
-
-        assert!(
-            t[0] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[1] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[2] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        )
-    }*/
-    //assert_eq!(0,_result.0.len()); // vertices
-    //assert_eq!(0,_result.1.len()); // indices
+    assert_eq!(126, _result.0.len()); // vertices
+    assert_eq!(126, _result.1.len()); // indices
     Ok(())
 }
 
@@ -101,37 +72,9 @@ iterations(1)"###
     let models = vec![owned_model_0.as_model()];
 
     let _result = super::process_command(config, models)?;
-    /*assert_eq!(_result.1.len() % 3, 0);
-    assert!(!_result.1.is_empty());
-    let number_of_vertices = _result.0.len();
-    assert!(number_of_vertices>0);
 
-    for t in _result.1.chunks_exact(3) {
-        assert_ne!(t[0], t[1]);
-        assert_ne!(t[0], t[2]);
-        assert_ne!(t[1], t[2]);
-
-        assert!(
-            t[0] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[1] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[2] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        )
-    }*/
-    //assert_eq!(0,_result.0.len()); // vertices
-    //assert_eq!(0,_result.1.len()); // indices
+    assert_eq!(14, _result.0.len()); // vertices
+    assert_eq!(14, _result.1.len()); // indices
     Ok(())
 }
 
@@ -174,37 +117,9 @@ timeout(2)
     let models = vec![owned_model_0.as_model()];
 
     let _result = super::process_command(config, models)?;
-    /*assert_eq!(_result.1.len() % 3, 0);
-    assert!(!_result.1.is_empty());
-    let number_of_vertices = _result.0.len();
-    assert!(number_of_vertices>0);
 
-    for t in _result.1.chunks_exact(3) {
-        assert_ne!(t[0], t[1]);
-        assert_ne!(t[0], t[2]);
-        assert_ne!(t[1], t[2]);
-
-        assert!(
-            t[0] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[1] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[2] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        )
-    }*/
-    //assert_eq!(0,_result.0.len()); // vertices
-    //assert_eq!(0,_result.1.len()); // indices
+    assert_eq!(1022, _result.0.len()); // vertices
+    assert_eq!(1022, _result.1.len()); // indices
     Ok(())
 }
 
@@ -243,48 +158,8 @@ timeout(2)
 
     let _result = super::process_command(config, models)?;
 
-    //println!("v:{:?}", _result.0);
-    //println!();
-    //for p in _result.0.chunks_exact(2) {
-    //    println!("{:?}-{:?}", p[0], p[1]);
-    //}
-    //println!("i:{:?}", _result.1);
-    //println!();
-    //for p in _result.1.chunks_exact(2) {
-    //    println!("{:?}-{:?}", _result.0[p[0]], _result.0[p[1]]);
-    //}
-
-    /*assert_eq!(_result.1.len() % 3, 0);
-    assert!(!_result.1.is_empty());
-    let number_of_vertices = _result.0.len();
-    assert!(number_of_vertices>0);
-
-    for t in _result.1.chunks_exact(3) {
-        assert_ne!(t[0], t[1]);
-        assert_ne!(t[0], t[2]);
-        assert_ne!(t[1], t[2]);
-
-        assert!(
-            t[0] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[1] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[2] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        )
-    }*/
-    //assert_eq!(0,_result.0.len()); // vertices
-    //assert_eq!(0,_result.1.len()); // indices
+    assert_eq!(16, _result.0.len()); // vertices
+    assert_eq!(16, _result.1.len()); // indices
     Ok(())
 }
 
@@ -347,8 +222,8 @@ timeout(1)
             number_of_vertices
         )
     }*/
-    //assert_eq!(0,_result.0.len()); // vertices
-    //assert_eq!(0,_result.1.len()); // indices
+    assert_eq!(312, _result.0.len()); // vertices
+    assert_eq!(312, _result.1.len()); // indices
     Ok(())
 }
 
@@ -414,8 +289,8 @@ timeout(1)
             number_of_vertices
         )
     }*/
-    //assert_eq!(0,_result.0.len()); // vertices
-    //assert_eq!(0,_result.1.len()); // indices
+    assert_eq!(16, _result.0.len()); // vertices
+    assert_eq!(16, _result.1.len()); // indices
     Ok(())
 }
 

@@ -109,20 +109,6 @@ impl FFIVector3 {
     }
 }
 
-// Static initialization control
-static PANIC_HOOK: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-// Setup panic hook just once
-fn ensure_panic_hook_initialized() {
-    let _ = PANIC_HOOK.get_or_init(|| {
-        let original_hook = std::panic::take_hook();
-        std::panic::set_hook(Box::new(move |panic_info| {
-            // Log the panic info somewhere if needed
-            original_hook(panic_info);
-        }));
-        true
-    });
-}
-
 /// A struct representing the geometry output for FFI (Foreign Function Interface) usage.
 ///
 /// This struct is used to return geometry-related data from Rust to other programming languages
@@ -241,8 +227,6 @@ fn process_command_error_handler(
     Vec<f32>,
     HashMap<String, String>,
 ) {
-    ensure_panic_hook_initialized();
-
     let start = Instant::now();
     let return_value = std::panic::catch_unwind(|| {
         match crate::command::process_command(vertices, indices, matrix, config) {
@@ -308,7 +292,6 @@ pub unsafe extern "C" fn process_geometry(
     );
 
     let count = unsafe { (*config).count };
-    println!("Rust: received config of size:{:?}", count);
 
     assert!(
         count < 1000,
@@ -338,9 +321,12 @@ pub unsafe extern "C" fn process_geometry(
     let input_indices = unsafe { slice::from_raw_parts(input_ffi_indices, indices_count) };
     let input_matrix = unsafe { slice::from_raw_parts(input_ffi_matrix, matrix_count) };
 
-    println!("Rust: received {} vertices", input_vertices.len());
-    println!("Rust: received {} indices", input_indices.len());
-    println!("Rust: received {} matrix", input_matrix.len());
+    println!(
+        "Rust: received {} vertices, {} indices, {} matrix",
+        input_vertices.len(),
+        input_indices.len(),
+        input_matrix.len()
+    );
 
     // Safe code: Processing the data
     let (output_vertices, output_indices, output_matrix, output_config) =
@@ -414,13 +400,6 @@ pub unsafe extern "C" fn free_process_results(result: *mut ProcessResult) {
         !result.is_null(),
         "Rust: free_process_results(): result ptr was null"
     );
-    /*println!(
-        "Rust releasing memory: vertices:{}, indices:{}, matrices:{}, map items:{}",
-        (*result).geometry.vertex_count,
-        (*result).geometry.indices_count,
-        (*result).geometry.matrices_count,
-        (*result).map.count
-    );*/
     unsafe {
         (*result).geometry.free();
         (*result).map.free();

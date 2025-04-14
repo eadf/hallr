@@ -16,12 +16,11 @@ use saft::BoundingBox;
 use std::time;
 
 /// initialize the sdf capsules and generate the mesh
-fn build_voxel(
+fn build_saft_voxels(
     radius_multiplier: f32,
     divisions: f32,
     vertices: &[FFIVector3],
     edges: &[usize],
-    verbose: bool,
 ) -> Result<
     (
         f32, // <- voxel_size
@@ -46,42 +45,15 @@ fn build_voxel(
     let max_dimension = dimensions.x.max(dimensions.y).max(dimensions.z);
 
     let radius = max_dimension * radius_multiplier; // unscaled
-    let thickness = radius * 2.0; // unscaled
     let scale = divisions / max_dimension;
 
-    if verbose {
-        println!(
-            "Voxelizing using tube thickness. {} = {}*{}*{}",
-            thickness, max_dimension, radius_multiplier, scale
-        );
-
-        println!(
-            "Voxelizing using divisions = {}, max dimension = {}, scale factor={} (max_dimension*scale={})",
-            divisions,
-            max_dimension,
-            scale,
-            max_dimension * scale
-        );
-        println!();
-
-        println!("aabb.high:{:?}", aabb.max);
-        println!("aabb.low:{:?}", aabb.min);
-        println!("delta:{:?}", aabb.max - aabb.min);
-    }
     let mean_resolution = max_dimension * scale;
-    if verbose {
-        println!("mean_resolution:{:?}", mean_resolution);
-    }
+
     let mesh_options = saft::MeshOptions {
         mean_resolution,
         max_resolution: mean_resolution,
         min_resolution: 8.0,
     };
-
-    let vertices: Vec<_> = vertices
-        .iter()
-        .map(|v| macaw::Vec3::new(v.x, v.y, v.z) * scale)
-        .collect();
 
     let radius = radius * scale; // now scaled
     let now = time::Instant::now();
@@ -89,15 +61,19 @@ fn build_voxel(
 
     let capsules: Vec<_> = edges
         .chunks_exact(2)
-        .map(|e| graph.capsule([vertices[e[0]], vertices[e[1]]], radius))
+        .map(|e| {
+            let v0 = vertices[e[0]];
+            let v0 = macaw::Vec3::new(v0.x, v0.y, v0.z) * scale;
+            let v1 = vertices[e[1]];
+            let v1 = macaw::Vec3::new(v1.x, v1.y, v1.z) * scale;
+            graph.capsule([v0, v1], radius)
+        })
         .collect();
 
     let root = graph.op_union_multi(capsules);
     let mesh = saft::mesh_from_sdf(&graph, root, mesh_options)?;
+    println!("mesh_from_sdf_saft() duration: {:?}", now.elapsed());
 
-    if verbose {
-        println!("mesh_from_sdf() duration: {:?}", now.elapsed());
-    }
     Ok((1.0 / scale, mesh))
 }
 
@@ -182,12 +158,11 @@ pub(crate) fn process_command(
 
     println!("model.vertices:{:?}, ", input_model.vertices.len());
 
-    let (voxel_size, mesh) = build_voxel(
+    let (voxel_size, mesh) = build_saft_voxels(
         cmd_arg_sdf_radius_multiplier,
         cmd_arg_sdf_divisions,
         input_model.vertices,
         input_model.indices,
-        false,
     )?;
 
     let output_model = build_output_model(input_model, voxel_size, mesh)?;

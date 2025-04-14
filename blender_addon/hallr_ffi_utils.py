@@ -117,15 +117,14 @@ COMMAND_TAG = "▶"
 
 IDENTITY_FFI_MATRIX = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
-def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.TRIANGULATED,
-                      only_selected_vertices: bool = False) -> Tuple[List, List]:
+
+def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.TRIANGULATED) -> Tuple[List, List]:
     """
     Extract vertices and indices from a Blender mesh object in a consistent format.
 
     Args:
         mesh_obj: The Blender mesh object to extract data from
         mesh_format: The format to interpret the mesh data
-        only_selected_vertices: If True, only include selected vertices
 
     Returns:
         tuple: (vertices, indices) in the format specified
@@ -134,16 +133,10 @@ def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.
     world_matrix = mesh_obj.matrix_world
     if world_matrix.is_identity:
         print(f"Python: applying *no* local-world transformation {get_matrices_col_major(mesh_obj)}")
-        if only_selected_vertices:
-            vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in mesh_obj.data.vertices if v.select]
-        else:
-            vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in mesh_obj.data.vertices]
+        vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in mesh_obj.data.vertices]
     else:
         print(f"Python: applying local-world transformation: {get_matrices_col_major(mesh_obj)}")
-        if only_selected_vertices:
-            vertices = [Vector3(*(world_matrix @ v.co)[:]) for v in mesh_obj.data.vertices if v.select]
-        else:
-            vertices = [Vector3(*(world_matrix @ v.co)[:]) for v in mesh_obj.data.vertices]
+        vertices = [Vector3(*(world_matrix @ v.co)[:]) for v in mesh_obj.data.vertices]
 
     # Handle indices based on mesh_format
     indices = []
@@ -183,6 +176,10 @@ def handle_new_object(return_options: Dict[str, str], mesh_obj: bpy.types.Object
     if select_new_mesh:
         # Make the new object active
         bpy.context.view_layer.objects.active = mesh_obj
+
+        bpy.ops.object.mode_set(mode='EDIT')
+        
+        bpy.ops.mesh.faces_shade_flat()
 
         # Ensure object mode
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -277,8 +274,6 @@ def process_mesh_from_ffi(ffi_vertices_ptr, ffi_indices_ptr, vertex_count, index
                 print("Warning: Length of indices is odd. The last value may not form a valid edge pair.")
 
     elif mesh_format == MeshFormat.POINT_CLOUD:
-        # Point cloud - only vertices, no edges or faces
-        # print("Processing point cloud mesh (vertices only)")
         # No additional processing needed - vertices are already set
         pass
     else:
@@ -406,8 +401,7 @@ def process_mesh_with_rust(config: Dict[str, str],
                            secondary_object: Optional[bpy.types.Object] = None,
                            primary_format: Optional[str] = None,
                            secondary_format: Optional[str] = None,
-                           create_new: bool = True,
-                           only_selected_vertices: bool = False) -> Optional[bpy.types.Object]:
+                           create_new: bool = True) -> Optional[bpy.types.Object]:
     """
     Process mesh data with the Rust library.
 
@@ -418,7 +412,6 @@ def process_mesh_with_rust(config: Dict[str, str],
         primary_format: Optional Format for the primary mesh
         secondary_format: Optional Format for the secondary mesh
         create_new: If True, create a new object; if False, modify the active object
-        only_selected_vertices: If True, only process selected vertices in the primary mesh
 
     Returns:
         If create_new is True: The newly created object
@@ -426,7 +419,6 @@ def process_mesh_with_rust(config: Dict[str, str],
     """
 
     if create_new:
-
         new_object = bpy.data.objects.new("New_Object", bpy.data.meshes.new("empty mesh"))
         bpy.context.collection.objects.link(new_object)
 
@@ -451,21 +443,15 @@ def process_mesh_with_rust(config: Dict[str, str],
     # selected_objects = [o for o in bpy.context.selected_objects]
 
     if primary_object:
-
         primary_obj_to_process = primary_object
 
         # Extract mesh data
-        if only_selected_vertices:
-            vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in primary_object.data.vertices if v.select]
-            indices = []
-        else:
-            primary_vertices, primary_indices = package_mesh_data(primary_obj_to_process, primary_format)
-            vertices.extend(primary_vertices)
-            indices.extend(primary_indices)
+        primary_vertices, primary_indices = package_mesh_data(primary_obj_to_process, primary_format)
+        vertices.extend(primary_vertices)
+        indices.extend(primary_indices)
 
         # Get transformation matrices
         matrices.extend(get_matrices_col_major(primary_object))
-
 
     if secondary_object:
         mesh_format += secondary_format
@@ -538,10 +524,8 @@ def process_mesh_with_rust(config: Dict[str, str],
         ctypes_close_library(rust_lib)
 
     print("Python: received config: ", return_options)
-    print(f"Python: received {len(new_mesh.vertices)} vertices")
-    print(f"Python: received {indices_count} indices")
-    print(f"Python: received {len(new_mesh.edges)} edges")
-    print(f"Python: received {len(new_mesh.polygons)} polygons")
+    print(
+        f"Python: received {len(new_mesh.vertices)} vertices, {indices_count} indices, {len(new_mesh.edges)} edges, {len(new_mesh.polygons)} polygons")
 
     # Create or update object based on results
     if create_new:
@@ -551,7 +535,6 @@ def process_mesh_with_rust(config: Dict[str, str],
         new_object.data = new_mesh
         # Handle the new object (link to scene, select, etc.)
         handle_new_object(return_options, new_object)
-
         return new_object
     else:
         print("Python: updating old object with new mesh")

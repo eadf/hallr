@@ -59,7 +59,7 @@ static TEST_CODE_GENERATION_ENABLED: std::sync::OnceLock<bool> = std::sync::Once
 #[cfg(feature = "generate_test_case_from_input")]
 pub fn is_test_code_generation_enabled() -> bool {
     *TEST_CODE_GENERATION_ENABLED
-        .get_or_init(|| std::env::var("HALLR_ENABLE_TEST_CODE_GENERATION").is_ok())
+        .get_or_init(|| std::env::var("HALLR_BUILD_TEST_FROM_INPUT").is_ok())
 }
 #[cfg(feature = "generate_test_case_from_input")]
 static HALLR_DATA_LOGGER_ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
@@ -390,4 +390,41 @@ pub(crate) fn process_command(
             illegal_command
         )))?,
     })
+}
+
+#[cfg(test)]
+fn test_3d_triangulated_mesh(result: &CommandResult) {
+    result
+        .3
+        .confirm_mesh_packaging(0, ffi::MeshFormat::Triangulated)
+        .unwrap();
+    assert_eq!(result.1.len() % 3, 0);
+    assert!(!result.1.is_empty());
+    let number_of_vertices = result.0.len();
+    assert!(number_of_vertices > 0);
+
+    for t in result.1.chunks_exact(3) {
+        assert_ne!(t[0], t[1]);
+        assert_ne!(t[0], t[2]);
+        assert_ne!(t[1], t[2]);
+
+        assert!(
+            t[0] < number_of_vertices,
+            "{:?} >= {}",
+            t[2],
+            number_of_vertices
+        );
+        assert!(
+            t[1] < number_of_vertices,
+            "{:?} >= {}",
+            t[2],
+            number_of_vertices
+        );
+        assert!(
+            t[2] < number_of_vertices,
+            "{:?} >= {}",
+            t[2],
+            number_of_vertices
+        )
+    }
 }

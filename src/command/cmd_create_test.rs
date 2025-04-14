@@ -28,15 +28,15 @@ pub(crate) fn process_command(config: &ConfigType, models: &[Model<'_>]) -> Resu
 // Copyright (c) 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
-use crate::command::{{ConfigType, Model, OwnedModel}};
-use crate::HallrError;
+use crate::command::{{ConfigType, OwnedModel}};
+use crate::{{HallrError,command}};
 "###
     );
     println!();
     println!(
         r###"#[test]
 fn test_{}_1() -> Result<(),HallrError> {{"###,
-        command
+        command.replace("½", "_5")
     );
 
     println!("    let mut config = ConfigType::default();");
@@ -56,10 +56,15 @@ fn test_{}_1() -> Result<(),HallrError> {{"###,
     }
     if !models.is_empty() {
         for (i, model) in models.iter().enumerate() {
+            let world_orientation = if model.has_identity_orientation() {
+                "OwnedModel::identity_matrix()".to_string()
+            } else {
+                format!("{:?}", model.copy_world_orientation()?).to_string()
+            };
             println!(
                 r###"
-    let owned_model_{} = OwnedModel{{world_orientation: OwnedModel::identity_matrix(), vertices:vec!["###,
-                i
+    let owned_model_{} = OwnedModel{{world_orientation: {}, vertices:vec!["###,
+                i, world_orientation
             );
             for v in model.vertices.iter() {
                 print!("({},{},{}).into(),", v.x.dr(), v.y.dr(), v.z.dr());
@@ -79,38 +84,10 @@ fn test_{}_1() -> Result<(),HallrError> {{"###,
         println!("];");
         //println!("assert_eq!({},_result.1.chunks(2).count());", 0);
         let s = r##"
-    let _result = super::process_command(config, models)?;
-    assert_eq!(_result.1.len() % 3, 0);
-    assert!(!_result.1.is_empty());
-    let number_of_vertices = _result.0.len();
-    assert!(number_of_vertices>0);
-
-    for t in _result.1.chunks_exact(3) {
-        assert_ne!(t[0], t[1]);
-        assert_ne!(t[0], t[2]);
-        assert_ne!(t[1], t[2]);
-
-        assert!(
-            t[0] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[1] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[2] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        )
-    }
-    //assert_eq!(0,_result.0.len()); // vertices
-    //assert_eq!(0,_result.1.len()); // indices
+    let result = super::process_command(config, models)?;
+    command::test_3d_triangulated_mesh(&result);
+    assert_eq!(0,result.0.len()); // vertices
+    assert_eq!(0,result.1.len()); // indices
     Ok(())
 }
 "##;

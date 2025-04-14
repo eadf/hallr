@@ -502,7 +502,7 @@ impl TurtleRules {
                     let text: &str = &lex.slice()[1..lex.slice().len() - 1];
                     match state {
                         ParseState::Axiom => {
-                            println!("Got .add_axiom(\"{}\")", text);
+                            println!("Accepted add_axiom(\"{}\")", text);
                             let _ = self.add_axiom(text.to_string());
                             state = ParseState::Start;
                         }
@@ -528,7 +528,7 @@ impl TurtleRules {
                             state = ParseState::Rule(Some(rule_id), None);
                         }
                         ParseState::Rule(Some(rule_id), None) => {
-                            println!("Got .add_rule('{}', \"{}\")", rule_id, text);
+                            println!("Accepted add_rule('{}', \"{}\")", rule_id, text);
                             let _ = self.add_rule(rule_id, text.to_string());
                             state = ParseState::Start;
                         }
@@ -620,7 +620,7 @@ impl TurtleRules {
                 },
                 ParseToken::TurtleActionPenDown => match state {
                     ParseState::Token(Some(text), None) => {
-                        println!("Got .add_token(\"{}\", TurtleAction::PenDown)", text);
+                        println!("Accepted add_token(\"{}\", TurtleAction::PenDown)", text);
                         let _ = self.add_token(text, TurtleCommand::PenDown);
                         state = ParseState::Start;
                     }
@@ -633,7 +633,7 @@ impl TurtleRules {
                 },
                 ParseToken::TurtleActionPenUp => match state {
                     ParseState::Token(Some(text), None) => {
-                        println!("Got .add_token(\"{}\", TurtleAction::PenUp)", text);
+                        println!("Accepted add_token(\"{}\", TurtleAction::PenUp)", text);
                         let _ = self.add_token(text, TurtleCommand::PenUp);
                         state = ParseState::Start;
                     }
@@ -646,7 +646,7 @@ impl TurtleRules {
                 },
                 ParseToken::TurtleActionNop | ParseToken::TurtleActionNothing => match state {
                     ParseState::Token(Some(text), None) => {
-                        println!("Got .add_token(\"{}\", TurtleAction::Nop)", text);
+                        println!("Accepted add_token(\"{}\", TurtleAction::Nop)", text);
                         let _ = self.add_token(text, TurtleCommand::Nop);
                         state = ParseState::Start;
                     }
@@ -659,7 +659,7 @@ impl TurtleRules {
                 },
                 ParseToken::TurtleActionPop => match state {
                     ParseState::Token(Some(text), None) => {
-                        println!("Got .add_token(\"{}\", TurtleAction::Pop)", text);
+                        println!("Accepted add_token(\"{}\", TurtleAction::Pop)", text);
                         let _ = self.add_token(text, TurtleCommand::Pop);
                         state = ParseState::Start;
                     }
@@ -672,7 +672,7 @@ impl TurtleRules {
                 },
                 ParseToken::TurtleActionPush => match state {
                     ParseState::Token(Some(text), None) => {
-                        println!("Got .add_token(\"{}\", TurtleAction::Push)", text);
+                        println!("Accepted add_token(\"{}\", TurtleAction::Push)", text);
                         let _ = self.add_token(text, TurtleCommand::Push);
                         state = ParseState::Start;
                     }
@@ -684,7 +684,7 @@ impl TurtleRules {
                     }
                 },
                 ParseToken::Round => {
-                    println!("Got .round()");
+                    println!("Accepted round()");
                     self.round = true;
                     state = ParseState::Start;
                 }
@@ -741,7 +741,7 @@ impl TurtleRules {
                     match state {
                         ParseState::Token(Some(text), Some(turtle)) => {
                             println!(
-                                "Got .add_token(\"{}\", TurtleAction::{:?}({}))",
+                                "Accepted add_token(\"{}\", TurtleAction::{:?}({}))",
                                 text,
                                 turtle,
                                 lex.slice()
@@ -783,7 +783,7 @@ impl TurtleRules {
                             // Third parameter (roll) - now we have all parameters
                             let roll = value;
                             println!(
-                                "Got .add_token(\"{}\", TurtleAction::Rotate({}, {}, {}))",
+                                "Accepted add_token(\"{}\", TurtleAction::Rotate({}, {}, {}))",
                                 text, yaw, pitch, roll
                             );
 
@@ -808,7 +808,7 @@ impl TurtleRules {
                             let roll = value.to_radians();
                             // present in degrees
                             println!(
-                                "Got .rotate({}, {}, {})",
+                                "Accepted rotate({}, {}, {})",
                                 yaw.to_degrees(),
                                 pitch.to_degrees(),
                                 roll.to_degrees()
@@ -818,18 +818,18 @@ impl TurtleRules {
                         }
                         ParseState::Iterations(None) => {
                             let iterations = value as u32;
-                            println!("Got .iterations({})", iterations);
+                            println!("Accepted iterations({})", iterations);
                             let _ = self.set_iterations(iterations);
                             state = ParseState::Start;
                         }
                         ParseState::GeodesicRadius(None) => {
-                            println!("Got .geodesic_radius({})", value);
+                            println!("Accepted geodesic_radius({})", value);
                             let _ = self.set_geodesic_radius(value);
                             state = ParseState::Start;
                         }
                         ParseState::Timeout(None) => {
                             let seconds = value as u64;
-                            println!("Got .timeout({})", seconds);
+                            println!("Accepted timeout({})", seconds);
                             let _ = self.set_timeout(seconds);
                             state = ParseState::Start;
                         }

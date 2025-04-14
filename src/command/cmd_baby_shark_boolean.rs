@@ -2,8 +2,8 @@
 // Copyright (c) 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
-//#[cfg(test)]
-//mod tests;
+#[cfg(test)]
+mod tests;
 
 use super::{ConfigType, Model};
 use crate::{HallrError, command::Options, ffi, prelude::FFIVector3};
