@@ -6,7 +6,6 @@ This file is part of the hallr crate.
 
 import bpy
 from . import hallr_ffi_utils
-from hallr_ffi_utils import MeshFormat
 
 # Define the choices for the search pattern property
 bounding_props_items = [
@@ -79,7 +78,8 @@ class HALLR_OT_D2TSelectBoundingShape(bpy.types.Operator):
             return {'CANCELLED'}
 
         if settings.point_cloud is not None and bpy.context.active_object == settings.point_cloud:
-            self.report({'ERROR'}, "This object is already selected as the point cloud. Please select a different object.")
+            self.report({'ERROR'},
+                        "This object is already selected as the point cloud. Please select a different object.")
             return {'CANCELLED'}
 
         settings.bounding_shape = bounding_shape
@@ -104,7 +104,8 @@ class HALLR_OT_D2TSelectPointCloud(bpy.types.Operator):
             return {'CANCELLED'}
 
         if settings.bounding_shape is not None and bpy.context.active_object == settings.bounding_shape:
-            self.report({'ERROR'}, "This object is already selected as the bounding shape. Please select a different object.")
+            self.report({'ERROR'},
+                        "This object is already selected as the bounding shape. Please select a different object.")
             return {'CANCELLED'}
 
         settings.point_cloud = bpy.context.active_object
@@ -135,8 +136,8 @@ class HALLR_OT_DT2GenerateMesh(bpy.types.Operator):
                 # Call the Rust function
                 hallr_ffi_utils.process_mesh_with_rust(config, primary_object=point_cloud,
                                                        secondary_object=bounding_shape,
-                                                       primary_format=MeshFormat.POINT_CLOUD,
-                                                       secondary_format=MeshFormat.POINT_CLOUD,
+                                                       primary_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,
+                                                       secondary_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,
                                                        create_new=True)
             except Exception as e:
                 import traceback

@@ -5,12 +5,9 @@ This file is part of the hallr crate.
 """
 
 import bpy
-import os
 import bmesh
-from . import hallr_ffi_utils
-from hallr_ffi_utils import MeshFormat
-
 import os
+from . import hallr_ffi_utils
 
 # Cache the boolean status of HALLR_ALLOW_NON_MANIFOLD (set or not)
 _DENY_NON_MANIFOLD = os.getenv("HALLR_ALLOW_NON_MANIFOLD") is None
@@ -25,11 +22,13 @@ def is_mesh_non_manifold(obj):
     bm.free()
     return not is_manifold
 
+
 class BaseOperatorMixin:
     @classmethod
     def poll(cls, context):
         ob = context.active_object
         return ob is not None and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
+
 
 # Baby Shark Decimate mesh operator
 class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
@@ -92,7 +91,8 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.TRIANGULATED, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
+                                                create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -208,7 +208,8 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin)
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.TRIANGULATED, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
+                                                create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -296,7 +297,8 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.TRIANGULATED, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
+                                                create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -399,8 +401,8 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
                 # Call the Rust function
                 hallr_ffi_utils.process_mesh_with_rust(config, primary_object=mesh_1,
                                                        secondary_object=mesh_2,
-                                                       primary_format=MeshFormat.TRIANGULATED,
-                                                       secondary_format=MeshFormat.TRIANGULATED,
+                                                       primary_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
+                                                       secondary_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
                                                        create_new=True)
             except Exception as e:
                 import traceback

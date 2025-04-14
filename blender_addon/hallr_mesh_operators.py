@@ -11,7 +11,6 @@ import math
 import array
 from collections import defaultdict
 from . import hallr_ffi_utils
-from hallr_ffi_utils import MeshFormat
 
 
 def angle_between_edges(p0, p1, p2):
@@ -63,7 +62,8 @@ class MESH_OT_hallr_2d_outline(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.TRIANGULATED, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
+                                                create_new=False)
         except Exception as e:
             self.report({'ERROR'}, f"Error: {e}")
             return {'CANCELLED'}
@@ -99,7 +99,8 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
+                                                create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -130,7 +131,8 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.POINT_CLOUD, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,
+                                                create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -178,7 +180,8 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
+                                                create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -511,7 +514,8 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
                   }
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
+                                                create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -591,7 +595,8 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
                   }
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
+                                                create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -681,7 +686,8 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
                   }
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
+                                                create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -772,7 +778,8 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
                   }
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
+                                                create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -925,7 +932,8 @@ class MESH_OT_hallr_discretize(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
+                                                create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -1042,7 +1050,8 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
                   }
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=MeshFormat.LINE_CHUNKS, create_new=False)
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
+                                                create_new=False)
         except Exception as e:
             import traceback
             traceback.print_exc()

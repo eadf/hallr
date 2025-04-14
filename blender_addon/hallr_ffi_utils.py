@@ -178,7 +178,7 @@ def handle_new_object(return_options: Dict[str, str], mesh_obj: bpy.types.Object
         bpy.context.view_layer.objects.active = mesh_obj
 
         bpy.ops.object.mode_set(mode='EDIT')
-        
+
         bpy.ops.mesh.faces_shade_flat()
 
         # Ensure object mode
@@ -485,10 +485,8 @@ def process_mesh_with_rust(config: Dict[str, str],
     values_array = (ctypes.c_char_p * len(values_list))(*[v.encode('utf-8') for v in values_list])
     map_data = StringMap(keys_array, values_array, len(keys_list))
 
-    print(f"Python: command: '{config.get('command', '')}'")
-    print(f"Python: sending {len(vertices)} vertices")
-    print(f"Python: sending {len(indices)} indices")
-    print(f"Python: sending {len(matrices)} matrices")
+    print(f"Python: {COMMAND_TAG} '{config.get(COMMAND_TAG, '')}'")
+    print(f"Python: sending {len(vertices)} vertices, {len(indices)} indices, {len(matrices)} matrices")
 
     # Fetch Rust library
     rust_lib = load_latest_dylib()

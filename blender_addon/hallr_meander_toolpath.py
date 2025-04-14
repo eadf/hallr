@@ -7,7 +7,6 @@ This file is part of the hallr crate.
 import bpy
 import math
 from . import hallr_ffi_utils
-from hallr_ffi_utils import MeshFormat
 
 # Define the choices for the tool/probe property
 probes_props_items = [
@@ -200,8 +199,8 @@ class OBJECT_OT_MT_GenerateMesh(bpy.types.Operator):
                 # Call the Rust function
                 hallr_ffi_utils.process_mesh_with_rust(config, primary_object=model,
                                                        secondary_object=bounding_shape,
-                                                       primary_format=MeshFormat.TRIANGULATED,
-                                                       secondary_format=MeshFormat.POINT_CLOUD,
+                                                       primary_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
+                                                       secondary_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,
                                                        create_new=True)
             except Exception as e:
                 import traceback
