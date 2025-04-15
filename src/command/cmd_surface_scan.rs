@@ -19,7 +19,7 @@ use vector_traits::{GenericVector3, HasXY, num_traits::AsPrimitive};
 #[cfg(test)]
 mod tests;
 fn do_meander_scan<T>(
-    config: ConfigType,
+    input_config: ConfigType,
     bounding_vertices: &[FFIVector3],
     mesh_analyzer: &MeshAnalyzer<'_, T, FFIVector3>,
     probe: &dyn Probe<T, FFIVector3>,
@@ -35,17 +35,17 @@ where
     u32: AsPrimitive<T::Scalar>,
     T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
 {
-    let search_config = if config.does_option_exist("xy_sample_dist_multiplier")? {
+    let search_config = if input_config.does_option_exist("xy_sample_dist_multiplier")? {
         SearchPatternConfig::<T, FFIVector3>::new(probe, minimum_z).with_adaptive_config(
             AdaptiveSearchConfig::new(
-                config
+                input_config
                     .get_mandatory_parsed_option::<T::Scalar>("xy_sample_dist_multiplier", None)?
                     * step,
-                config.get_mandatory_parsed_option::<T::Scalar>(
+                input_config.get_mandatory_parsed_option::<T::Scalar>(
                     "z_jump_threshold_multiplier",
                     None,
                 )? * step,
-                config.get_mandatory_parsed_option::<bool>("reduce_adaptive", None)?,
+                input_config.get_mandatory_parsed_option::<bool>("reduce_adaptive", None)?,
             ),
         )
     } else {
@@ -58,7 +58,7 @@ where
     //println!("bounding_indices {:?}", bounding_indices.len());
     //println!("bounding_vertices {:?}", bounding_vertices.len());
 
-    let (aabb, convex_hull) = match config.get_mandatory_option("bounds")? {
+    let (aabb, convex_hull) = match input_config.get_mandatory_option("bounds")? {
         "CONVEX_HULL" => generate_convex_hull_then_aabb(bounding_vertices),
         "AABB" => generate_aabb_then_convex_hull(bounding_vertices),
         bounds => Err(HronnError::InvalidParameter(format!(
@@ -76,6 +76,10 @@ where
         ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::LineWindows.to_string(),
     );
+    if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
+        // we take the easy way out here, and let blender do the de-duplication of the vertices.
+        let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
+    }
 
     let indices = results.lines.pop().unwrap_or_else(Vec::default);
 
@@ -83,7 +87,7 @@ where
 }
 
 fn do_triangulation_scan<T>(
-    config: ConfigType,
+    input_config: ConfigType,
     bounding_vertices: &[FFIVector3],
     mesh_analyzer: &MeshAnalyzer<'_, T, FFIVector3>,
     probe: &dyn Probe<T, FFIVector3>,
@@ -99,7 +103,7 @@ where
     u32: AsPrimitive<T::Scalar>,
     T::Scalar: AsPrimitive<<FFIVector3 as HasXY>::Scalar>,
 {
-    let (aabb, convex_hull) = match config.get_mandatory_option("bounds")? {
+    let (aabb, convex_hull) = match input_config.get_mandatory_option("bounds")? {
         "CONVEX_HULL" => generate_convex_hull_then_aabb(bounding_vertices),
         "AABB" => generate_aabb_then_convex_hull(bounding_vertices),
         bounds => Err(HronnError::InvalidParameter(format!(
@@ -108,17 +112,17 @@ where
         ))),
     }?;
 
-    let search_config = if config.does_option_exist("xy_sample_dist_multiplier")? {
+    let search_config = if input_config.does_option_exist("xy_sample_dist_multiplier")? {
         SearchPatternConfig::<T, FFIVector3>::new(probe, minimum_z).with_adaptive_config(
             AdaptiveSearchConfig::new(
-                config
+                input_config
                     .get_mandatory_parsed_option::<T::Scalar>("xy_sample_dist_multiplier", None)?
                     * step,
-                config.get_mandatory_parsed_option::<T::Scalar>(
+                input_config.get_mandatory_parsed_option::<T::Scalar>(
                     "z_jump_threshold_multiplier",
                     None,
                 )? * step,
-                config.get_mandatory_parsed_option::<bool>("reduce_adaptive", None)?,
+                input_config.get_mandatory_parsed_option::<bool>("reduce_adaptive", None)?,
             ),
         )
     } else {
@@ -133,6 +137,10 @@ where
         ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
+    if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
+        // we take the easy way out here, and let blender do the de-duplication of the vertices.
+        let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
+    }
     Ok((results.vertices, results.indices, return_config))
 }
 

@@ -107,10 +107,7 @@ pub(crate) fn build_output_model(
             indices: out_indices,
         })
     } else {
-        println!(
-            "Rust: *not* applying world-local transformation 1/{:?}",
-            model.world_orientation
-        );
+        println!("Rust: *not* applying world-local transformation");
         Ok(OwnedModel {
             world_orientation: OwnedModel::identity_matrix(),
             //name: pb_model_name,
@@ -166,10 +163,10 @@ pub(crate) fn process_command(
         ffi::MeshFormat::LineChunks.to_string(),
     );
 
-    //let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
-    //if let Some(value) = config.get("REMOVE_DOUBLES_THRESHOLD") {
-    //    return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());
-    //}
+    if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
+        // we take the easy way out here, and let blender do the de-duplication of the vertices.
+        let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
+    }
     println!(
         "cmd discretize returning {} vertices, {} indices",
         output_model.vertices.len(),

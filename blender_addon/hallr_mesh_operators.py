@@ -501,6 +501,12 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
         unit='LENGTH'
     )
 
+    use_remove_doubles_prop: bpy.props.BoolProperty(
+        name="Use remove doubled",
+        description="Activates the remove doubles feature",
+        default=True
+    )
+
     def execute(self, context):
         obj = context.active_object
 
@@ -510,8 +516,10 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
         config = {hallr_ffi_utils.COMMAND_TAG: "voronoi_mesh",
                   "DISTANCE": str(self.distance_prop),
                   "NEGATIVE_RADIUS": str(self.negative_radius_prop).lower(),
-                  "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
+        if self.use_remove_doubles_prop:
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG]= str(self.remove_doubles_threshold_prop)
+
         try:
             # Call the Rust function
             hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
@@ -534,8 +542,12 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
         row.prop(self, "distance_prop")
         layout.prop(self, "negative_radius_prop")
         row = layout.row()
-        row.label(icon='SNAP_MIDPOINT')
-        row.prop(self, "remove_doubles_threshold_prop")
+        row.prop(self, "use_remove_doubles_prop", text="")
+        right_side = row.split(factor=0.99)
+        icon_area = right_side.row(align=True)
+        icon_area.label(text="", icon='SNAP_MIDPOINT')
+        icon_area.prop(self, "remove_doubles_threshold_prop")
+        icon_area.enabled = self.use_remove_doubles_prop
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -578,6 +590,12 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
         unit='LENGTH'
     )
 
+    use_remove_doubles_prop: bpy.props.BoolProperty(
+        name="Use remove doubled",
+        description="Activates the remove doubles feature",
+        default=True
+    )
+
     def execute(self, context):
         obj = context.active_object
 
@@ -591,8 +609,10 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
         config = {hallr_ffi_utils.COMMAND_TAG: "voronoi_diagram",
                   "DISTANCE": str(self.distance_prop),
                   "KEEP_INPUT": str(self.keep_input_prop).lower(),
-                  "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
+        if self.use_remove_doubles_prop:
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG]= str(self.remove_doubles_threshold_prop)
+
         try:
             # Call the Rust function
             hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
@@ -615,8 +635,12 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
         row.prop(self, "distance_prop")
         layout.prop(self, "keep_input_prop")
         row = layout.row()
-        row.label(icon='SNAP_MIDPOINT')
-        row.prop(self, "remove_doubles_threshold_prop")
+        row.prop(self, "use_remove_doubles_prop", text="")
+        right_side = row.split(factor=0.99)
+        icon_area = right_side.row(align=True)
+        icon_area.label(text="", icon='SNAP_MIDPOINT')
+        icon_area.prop(self, "remove_doubles_threshold_prop")
+        icon_area.enabled = self.use_remove_doubles_prop
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -673,6 +697,12 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
         unit='LENGTH'
     )
 
+    use_remove_doubles_prop: bpy.props.BoolProperty(
+        name="Use remove doubled",
+        description="Activates the remove doubles feature",
+        default=True
+    )
+
     def execute(self, context):
         obj = context.active_object
 
@@ -682,8 +712,9 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
         config = {hallr_ffi_utils.COMMAND_TAG: self.cmd_backend_prop,
                   "SDF_DIVISIONS": str(self.sdf_divisions_prop),
                   "SDF_RADIUS_MULTIPLIER": str(self.sdf_radius_multiplier_prop),
-                  "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
+        if self.use_remove_doubles_prop:
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG]= str(self.remove_doubles_threshold_prop)
         try:
             # Call the Rust function
             hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
@@ -709,8 +740,12 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
         row = layout.row()
         row.prop(self, "cmd_backend_prop")
         row = layout.row()
-        row.label(icon='SNAP_MIDPOINT')
-        row.prop(self, "remove_doubles_threshold_prop")
+        row.prop(self, "use_remove_doubles_prop", text="")
+        right_side = row.split(factor=0.99)
+        icon_area = right_side.row(align=True)
+        icon_area.label(text="", icon='SNAP_MIDPOINT')
+        icon_area.prop(self, "remove_doubles_threshold_prop")
+        icon_area.enabled = self.use_remove_doubles_prop
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -765,6 +800,12 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
         unit='LENGTH'
     )
 
+    use_remove_doubles_prop: bpy.props.BoolProperty(
+        name="Use remove doubled",
+        description="Activates the remove doubles feature",
+        default=True
+    )
+
     def execute(self, context):
         obj = context.active_object
 
@@ -774,8 +815,9 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
         config = {hallr_ffi_utils.COMMAND_TAG: self.cmd_backend_prop,
                   "SDF_DIVISIONS": str(self.sdf_divisions_prop),
                   "SDF_RADIUS_MULTIPLIER": str(self.sdf_radius_prop),
-                  "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
+        if self.use_remove_doubles_prop:
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG]= str(self.remove_doubles_threshold_prop)
         try:
             # Call the Rust function
             hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
@@ -801,8 +843,12 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
         row = layout.row()
         row.prop(self, "cmd_backend_prop")
         row = layout.row()
-        row.label(icon='SNAP_MIDPOINT')
-        row.prop(self, "remove_doubles_threshold_prop")
+        row.prop(self, "use_remove_doubles_prop", text="")
+        right_side = row.split(factor=0.99)
+        icon_area = right_side.row(align=True)
+        icon_area.label(text="", icon='SNAP_MIDPOINT')
+        icon_area.prop(self, "remove_doubles_threshold_prop")
+        icon_area.enabled = self.use_remove_doubles_prop
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -849,6 +895,12 @@ class MESH_OT_hallr_random_vertices(bpy.types.Operator, BaseOperatorMixin):
         unit='LENGTH'
     )
 
+    use_remove_doubles_prop: bpy.props.BoolProperty(
+        name="Use remove doubled",
+        description="Activates the remove doubles feature",
+        default=True
+    )
+
     def execute(self, context):
         obj = context.active_object
 
@@ -879,7 +931,8 @@ class MESH_OT_hallr_random_vertices(bpy.types.Operator, BaseOperatorMixin):
                 vert.select = True
 
         # Merge vertices based on distance
-        bpy.ops.mesh.remove_doubles(threshold=self.remove_doubles_threshold_prop)
+        if self.use_remove_doubles_prop:
+            bpy.ops.mesh.remove_doubles(threshold=self.remove_doubles_threshold_prop)
 
         # Update the mesh
         bmesh.update_edit_mesh(mesh)
@@ -890,8 +943,12 @@ class MESH_OT_hallr_random_vertices(bpy.types.Operator, BaseOperatorMixin):
         layout.prop(self, "number_of_vertices_prop")
         layout.prop(self, "std_deviation_prop")
         row = layout.row()
-        row.label(icon='SNAP_MIDPOINT')
-        row.prop(self, "remove_doubles_threshold_prop")
+        row.prop(self, "use_remove_doubles_prop", text="")
+        right_side = row.split(factor=0.99)
+        icon_area = right_side.row(align=True)
+        icon_area.label(text="", icon='SNAP_MIDPOINT')
+        icon_area.prop(self, "remove_doubles_threshold_prop")
+        icon_area.enabled = self.use_remove_doubles_prop
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -974,15 +1031,9 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
         subtype='ANGLE',
     )
 
-    weld_prop: bpy.props.BoolProperty(
-        name="Weld the centerline to outline",
-        description="Centerline and outline will share vertices if they intersect",
-        default=True
-    )
-
     keep_input_prop: bpy.props.BoolProperty(
         name="Keep input edges",
-        description="Will keep the input edges in the output, will override the weld property if inactive",
+        description="Will keep the input edges in the output",
         default=True
     )
 
@@ -1026,6 +1077,12 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
         unit='LENGTH'
     )
 
+    use_remove_doubles_prop: bpy.props.BoolProperty(
+        name="Use remove doubled",
+        description="Activates the remove doubles feature",
+        default=True
+    )
+
     def execute(self, context):
         obj = context.active_object
 
@@ -1044,10 +1101,9 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
                   : str(self.distance_prop),
                   "SIMPLIFY"
                   : str(self.simplify_prop).lower(),
-                  "WELD"
-                  : str(self.weld_prop).lower(),
-                  "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                   }
+        if self.use_remove_doubles_prop:
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG]= str(self.remove_doubles_threshold_prop)
         try:
             # Call the Rust function
             hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
@@ -1072,8 +1128,6 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
         row = layout.row()
         row.label(icon='FILTER')
         row.prop(self, "angle_prop")
-        if self.keep_input_prop:
-            layout.prop(self, "weld_prop")
         layout.prop(self, "keep_input_prop")
         layout.prop(self, "negative_radius_prop")
         layout.prop(self, "remove_internals_prop")
@@ -1082,8 +1136,12 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
         row.prop(self, "distance_prop")
         layout.prop(self, "simplify_prop")
         row = layout.row()
-        row.label(icon='SNAP_MIDPOINT')
-        row.prop(self, "remove_doubles_threshold_prop")
+        row.prop(self, "use_remove_doubles_prop", text="")
+        right_side = row.split(factor=0.99)
+        icon_area = right_side.row(align=True)
+        icon_area.label(text="", icon='SNAP_MIDPOINT')
+        icon_area.prop(self, "remove_doubles_threshold_prop")
+        icon_area.enabled = self.use_remove_doubles_prop
 
 
 # menu containing all tools

@@ -6,11 +6,7 @@ This file is part of the hallr crate.
 
 import bpy
 import bmesh
-import os
 from . import hallr_ffi_utils
-
-# Cache the boolean status of HALLR_ALLOW_NON_MANIFOLD (set or not)
-_DENY_NON_MANIFOLD = os.getenv("HALLR_ALLOW_NON_MANIFOLD") is None
 
 
 def is_mesh_non_manifold(obj):
@@ -56,11 +52,32 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
         max=1000000
     )
 
+    remove_doubles_threshold_prop: bpy.props.FloatProperty(
+        name="Merge Distance",
+        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
+        default=0.0001,
+        min=0.000001,
+        max=0.1,
+        precision=6,
+        unit='LENGTH'
+    )
+
+    deny_non_manifold_prop: bpy.props.BoolProperty(
+        name="Deny non manifold mesh",
+        description="Check if the mesh is non-manifold before sending to baby_shark",
+        default=True
+    )
+
+    use_remove_doubles_prop: bpy.props.BoolProperty(
+        name="Use remove doubled",
+        description="Activates the remove doubles feature",
+        default=True
+    )
+
     def execute(self, context):
         obj = context.active_object
 
-        # no need to check for non-manifold mesh more than once.
-        if _DENY_NON_MANIFOLD and bpy.context.active_operator != self:
+        if self.deny_non_manifold_prop:
             # Switch to edit mode and select non-manifold geometry
             bpy.ops.object.mode_set(mode='EDIT')
             original_select_mode = context.tool_settings.mesh_select_mode[:]
@@ -88,6 +105,8 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
             "ERROR_THRESHOLD": str(self.error_threshold),
             "MIN_FACES_COUNT": str(self.min_faces_count)
         }
+        if self.use_remove_doubles_prop:
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
 
         try:
             # Call the Rust function
@@ -105,6 +124,15 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
         layout = self.layout
         layout.prop(self, "error_threshold")
         layout.prop(self, "min_faces_count")
+        row = layout.row()
+        row.prop(self, "deny_non_manifold_prop")
+        row = layout.row()
+        row.prop(self, "use_remove_doubles_prop", text="")
+        right_side = row.split(factor=0.99)
+        icon_area = right_side.row(align=True)
+        icon_area.label(text="", icon='SNAP_MIDPOINT')
+        icon_area.prop(self, "remove_doubles_threshold_prop")
+        icon_area.enabled = self.use_remove_doubles_prop
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -168,11 +196,32 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin)
         default=True
     )
 
+    deny_non_manifold_prop: bpy.props.BoolProperty(
+        name="Deny non manifold mesh",
+        description="Check if the mesh is non-manifold before sending to baby_shark",
+        default=True
+    )
+
+    remove_doubles_threshold_prop: bpy.props.FloatProperty(
+        name="Merge Distance",
+        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
+        default=0.0001,
+        min=0.000001,
+        max=0.1,
+        precision=6,
+        unit='LENGTH'
+    )
+
+    use_remove_doubles_prop: bpy.props.BoolProperty(
+        name="Use remove doubled",
+        description="Activates the remove doubles feature",
+        default=True
+    )
+
     def execute(self, context):
         obj = context.active_object
 
-        # no need to check for non-manifold mesh more than once.
-        if _DENY_NON_MANIFOLD and bpy.context.active_operator != self:
+        if self.deny_non_manifold_prop:
             # Switch to edit mode and select non-manifold geometry
             bpy.ops.object.mode_set(mode='EDIT')
             original_select_mode = context.tool_settings.mesh_select_mode[:]
@@ -205,6 +254,8 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin)
             "SHIFT_VERTICES": str(self.shift_vertices_prop),
             "PROJECT_VERTICES": str(self.project_vertices_prop)
         }
+        if self.use_remove_doubles_prop:
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
 
         try:
             # Call the Rust function
@@ -238,6 +289,15 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin)
         layout.prop(self, "flip_edges_prop")
         layout.prop(self, "shift_vertices_prop")
         layout.prop(self, "project_vertices_prop")
+        row = layout.row()
+        row.prop(self, "deny_non_manifold_prop")
+        row = layout.row()
+        row.prop(self, "use_remove_doubles_prop", text="")
+        right_side = row.split(factor=0.99)
+        icon_area = right_side.row(align=True)
+        icon_area.label(text="", icon='SNAP_MIDPOINT')
+        icon_area.prop(self, "remove_doubles_threshold_prop")
+        icon_area.enabled = self.use_remove_doubles_prop
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -266,9 +326,9 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
         name="Offset Amount",
         description="Distance to offset the mesh surface",
         default=1.5,
-        min=0.001,
+        min=0.0001,
         max=10.0,
-        precision=3,
+        precision=5,
         unit='LENGTH'
     )
 
@@ -279,11 +339,43 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
         min=0.000001,
         max=0.1,
         precision=6,
-        unit='LENGTH',
+        unit='LENGTH'
+    )
+
+    use_remove_doubles_prop: bpy.props.BoolProperty(
+        name="Use remove doubled",
+        description="Activates the remove doubles feature",
+        default=True
+    )
+
+    deny_non_manifold_prop: bpy.props.BoolProperty(
+        name="Deny non manifold mesh",
+        description="Check if the mesh is non-manifold before sending to baby_shark",
+        default=True
     )
 
     def execute(self, context):
         obj = context.active_object
+
+        if self.deny_non_manifold_prop:
+            # Switch to edit mode and select non-manifold geometry
+            bpy.ops.object.mode_set(mode='EDIT')
+            original_select_mode = context.tool_settings.mesh_select_mode[:]
+            bpy.ops.mesh.select_mode(type='VERT')
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.mesh.select_non_manifold()
+
+            # Get the selected elements count
+            bm = bmesh.from_edit_mesh(obj.data)
+            non_manifold_count = sum(1 for v in bm.verts if v.select)
+            bm.free()
+
+            if non_manifold_count > 0:
+                self.report({'ERROR'},
+                            f"Mesh is not manifold! Found {non_manifold_count} problem areas. Problem areas have been selected.")
+                return {'CANCELLED'}
+            else:
+                context.tool_settings.mesh_select_mode = original_select_mode
 
         # Ensure we're in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -292,8 +384,9 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
             hallr_ffi_utils.COMMAND_TAG: "baby_shark_mesh_offset",
             "VOXEL_SIZE": str(self.voxel_size_prop),
             "OFFSET_BY": str(self.offset_by_prop),
-            "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
         }
+        if self.use_remove_doubles_prop:
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG]= str(self.remove_doubles_threshold_prop)
 
         try:
             # Call the Rust function
@@ -314,8 +407,14 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
         row.prop(self, "voxel_size_prop")
         layout.prop(self, "offset_by_prop")
         row = layout.row()
-        row.label(icon='SNAP_MIDPOINT')
-        row.prop(self, "remove_doubles_threshold_prop")
+        row.prop(self, "deny_non_manifold_prop")
+        row = layout.row()
+        row.prop(self, "use_remove_doubles_prop", text="")
+        right_side = row.split(factor=0.99)
+        icon_area = right_side.row(align=True)
+        icon_area.label(text="", icon='SNAP_MIDPOINT')
+        icon_area.prop(self, "remove_doubles_threshold_prop")
+        icon_area.enabled = self.use_remove_doubles_prop
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -365,6 +464,18 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
         unit='LENGTH'
     )
 
+    use_remove_doubles_prop: bpy.props.BoolProperty(
+        name="Use remove doubled",
+        description="Activates the remove doubles feature",
+        default=True
+    )
+
+    deny_non_manifold_prop: bpy.props.BoolProperty(
+        name="Deny non manifold mesh",
+        description="Check if the mesh is non-manifold before sending to baby_shark",
+        default=True
+    )
+
     @classmethod
     def poll(cls, context):
         return (context.mode == 'OBJECT' and
@@ -377,14 +488,14 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
             mesh_1 = context.selected_objects[0]
             mesh_2 = context.selected_objects[1]
 
-            if _DENY_NON_MANIFOLD and bpy.context.active_operator != self and is_mesh_non_manifold(mesh_1):
+            if self.deny_non_manifold_prop and is_mesh_non_manifold(mesh_1):
                 self.report(
                     {'ERROR'},
                     f"Object '{mesh_1.name}' is non-manifold. Fix it before proceeding."
                 )
                 return {'CANCELLED'}
 
-            if _DENY_NON_MANIFOLD and bpy.context.active_operator != self and is_mesh_non_manifold(mesh_2):
+            if self.deny_non_manifold_prop and is_mesh_non_manifold(mesh_2):
                 self.report(
                     {'ERROR'},
                     f"Object '{mesh_2.name}' is non-manifold. Fix it before proceeding."
@@ -394,8 +505,10 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
             config = {"operation": str(self.operation_prop),
                       "swap": str(self.swap_operands_prop),
                       "voxel_size": str(self.voxel_size_prop),
-                      "REMOVE_DOUBLES_THRESHOLD": str(self.remove_doubles_threshold_prop),
                       hallr_ffi_utils.COMMAND_TAG: "baby_shark_boolean"}
+
+            if self.use_remove_doubles_prop:
+                config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
 
             try:
                 # Call the Rust function
@@ -424,8 +537,14 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
         row.prop(self, "voxel_size_prop")
         layout.prop(self, "swap_operands_prop")
         row = layout.row()
-        row.label(icon='SNAP_MIDPOINT')
-        row.prop(self, "remove_doubles_threshold_prop")
+        row.prop(self, "deny_non_manifold_prop")
+        row = layout.row()
+        row.prop(self, "use_remove_doubles_prop", text="")
+        right_side = row.split(factor=0.99)
+        icon_area = right_side.row(align=True)
+        icon_area.label(text="", icon='SNAP_MIDPOINT')
+        icon_area.prop(self, "remove_doubles_threshold_prop")
+        icon_area.enabled = self.use_remove_doubles_prop
 
 
 # Panel for redo-last (appears in F9 and Adjust Last Operation)

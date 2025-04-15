@@ -185,7 +185,8 @@ class OBJECT_OT_MT_GenerateMesh(bpy.types.Operator):
                       "pattern": str(settings.pattern_props),
                       "step": str(settings.step_props),
                       "minimum_z": str(settings.minimum_z_props),
-                      hallr_ffi_utils.COMMAND_TAG: "surface_scan"}
+                      hallr_ffi_utils.COMMAND_TAG: "surface_scan",
+                      hallr_ffi_utils.VERTEX_MERGE_TAG: str(0.00001),}
             if str(settings.probe_props) == "TAPERED_END":
                 config["probe_angle"] = str(settings.probe_angle_props)
 
@@ -194,7 +195,6 @@ class OBJECT_OT_MT_GenerateMesh(bpy.types.Operator):
                 config["xy_sample_dist_multiplier"] = str(settings.xy_sample_dist_multiplier_props)
                 config["reduce_adaptive"] = str(settings.enable_reduce_props).lower()
 
-            print("config:", config)
             try:
                 # Call the Rust function
                 hallr_ffi_utils.process_mesh_with_rust(config, primary_object=model,

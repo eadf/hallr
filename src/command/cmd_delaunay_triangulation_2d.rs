@@ -15,7 +15,7 @@ use vector_traits::{GenericVector3, HasXY, num_traits::AsPrimitive};
 mod tests;
 
 fn aabb_delaunay_triangulation_2d<T>(
-    _config: ConfigType,
+    input_config: ConfigType,
     models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError>
 where
@@ -52,6 +52,10 @@ where
         ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
+    if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
+        // we take the easy way out here, and let blender do the de-duplication of the vertices.
+        let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
+    }
     Ok((
         results.0,
         results.1,
@@ -102,6 +106,10 @@ where
         ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
+    if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
+        // we take the easy way out here, and let blender do the de-duplication of the vertices.
+        let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
+    }
     Ok((
         results.0,
         results.1,

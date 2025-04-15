@@ -48,6 +48,7 @@ pub enum MeshFormat {
 }
 
 pub const COMMAND_TAG: &str = "▶";
+pub const VERTEX_MERGE_TAG: &str = "≈";
 
 impl MeshFormat {
     pub(crate) const MESH_FORMAT_TAG: &str = "📦";
@@ -322,10 +323,10 @@ pub unsafe extern "C" fn process_geometry(
     let input_matrix = unsafe { slice::from_raw_parts(input_ffi_matrix, matrix_count) };
 
     println!(
-        "Rust: received {} vertices, {} indices, {} matrix",
+        "Rust: received {} vertices, {} indices, {} matrices",
         input_vertices.len(),
         input_indices.len(),
-        input_matrix.len()
+        input_matrix.len() / 16
     );
 
     // Safe code: Processing the data

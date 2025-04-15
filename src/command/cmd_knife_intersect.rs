@@ -123,10 +123,7 @@ where
                 .map(|v| world_to_local(plane.point_to_3d::<T>(v).to()))
                 .collect()
         } else {
-            println!(
-                "Rust: *not* applying world-local transformation 1/{:?}",
-                input_model.world_orientation
-            );
+            println!("Rust: *not* applying world-local transformation");
             new_vertices
                 .into_iter()
                 .map(|v| plane.point_to_3d::<T>(v).to())

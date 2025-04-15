@@ -9,6 +9,7 @@ mod tests;
 use super::{ConfigType, Model, Options};
 use crate::{
     command::cmd_lsystems::lsystems::{Turtle, TurtleRules},
+    ffi,
     ffi::MeshFormat,
     prelude::*,
 };
@@ -36,11 +37,11 @@ fn trim_lsystem_string(input: &str) -> String {
 }
 
 pub(crate) fn process_command(
-    config: ConfigType,
+    input_config: ConfigType,
     _models: Vec<Model<'_>>,
 ) -> Result<super::CommandResult, HallrError> {
     let processed_text = {
-        let cmd_custom_turtle = config.get_mandatory_option("🐢")?;
+        let cmd_custom_turtle = input_config.get_mandatory_option("🐢")?;
         trim_lsystem_string(cmd_custom_turtle)
     };
 
@@ -78,16 +79,20 @@ pub(crate) fn process_command(
 
     println!("build_custom_turtle render() duration: {:?}", now.elapsed());
 
-    let mut config = ConfigType::new();
-    let _ = config.insert(
+    let mut return_config = ConfigType::new();
+    let _ = return_config.insert(
         MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::LineChunks.to_string(),
     );
-    let _ = config.insert("REMOVE_DOUBLES".to_string(), "true".to_string());
-    let _ = config.insert(
-        "REMOVE_DOUBLES_THRESHOLD".to_string(),
-        "0.00001".to_string(),
-    );
+    if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
+        // we take the easy way out here, and let blender do the de-duplication of the vertices.
+        let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
+    }
 
-    Ok((output_vertices, output_indices, output_matrix, config))
+    Ok((
+        output_vertices,
+        output_indices,
+        output_matrix,
+        return_config,
+    ))
 }

@@ -109,10 +109,7 @@ pub(crate) fn process_command(
             .iter_mut()
             .for_each(|v| *v = world_to_local(*v));
     } else {
-        println!(
-            "Rust: *not* applying world-local transformation 1/{:?}",
-            model.world_orientation
-        );
+        println!("Rust: *not* applying world-local transformation");
     }
 
     // Get the final vertex array
@@ -123,9 +120,9 @@ pub(crate) fn process_command(
         ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
-    let _ = return_config.insert("REMOVE_DOUBLES".to_string(), "false".to_string());
-    if let Some(value) = input_config.get("REMOVE_DOUBLES_THRESHOLD") {
-        let _ = return_config.insert("REMOVE_DOUBLES_THRESHOLD".to_string(), value.clone());
+    if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
+        // we take the easy way out here, and let blender do the de-duplication of the vertices.
+        let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
     }
 
     Ok((ffi_vertices, ffi_indices, world_matrix, return_config))

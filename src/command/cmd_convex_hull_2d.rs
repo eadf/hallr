@@ -59,10 +59,7 @@ where
                 ))
             })
     } else {
-        println!(
-            "Rust: *not* applying world-local transformation 1/{:?}",
-            input_model.world_orientation
-        );
+        println!("Rust: *not* applying world-local transformation");
         convex_hull::convex_hull_par(&input, &all_indices, 400)?
             .iter()
             .for_each(|i| {

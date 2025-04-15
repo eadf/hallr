@@ -113,6 +113,7 @@ class MeshFormat:
 
 
 MESH_FORMAT_TAG = "📦"
+VERTEX_MERGE_TAG = "≈"
 COMMAND_TAG = "▶"
 
 IDENTITY_FFI_MATRIX = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
@@ -132,7 +133,7 @@ def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.
     # Handle vertices
     world_matrix = mesh_obj.matrix_world
     if world_matrix.is_identity:
-        print(f"Python: applying *no* local-world transformation {get_matrices_col_major(mesh_obj)}")
+        print(f"Python: applying *no* local-world transformation")
         vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in mesh_obj.data.vertices]
     else:
         print(f"Python: applying local-world transformation: {get_matrices_col_major(mesh_obj)}")
@@ -197,11 +198,10 @@ def handle_new_object(return_options: Dict[str, str], mesh_obj: bpy.types.Object
     for key, value in return_options.items():
         if key == "ERROR":
             raise HallrException(str(value))
-        if key == "REMOVE_DOUBLES" and value.lower() == "true":
-            remove_doubles = True
-        if key == "REMOVE_DOUBLES_THRESHOLD":
+        if key == VERTEX_MERGE_TAG:
             try:
                 remove_doubles_threshold = float(value)
+                remove_doubles = True
             except ValueError:
                 pass
 
@@ -285,60 +285,32 @@ def process_mesh_from_ffi(ffi_vertices_ptr, ffi_indices_ptr, vertex_count, index
     return new_mesh
 
 
-def create_object_from_mesh_data(return_options: Dict[str, str],
-                                 new_mesh,
-                                 name: str = "New_Object") -> bpy.types.Object:
-    """
-    Create a new Blender object from vertices and indices.
-
-    Args:
-        return_options: Dictionary of options for post-processing
-        new_mesh: the mesh created from the FFI data
-        name: Name for the new object
-
-    Returns:
-        The newly created object
-    """
-
-    # Create mesh object
-    # mesh_obj = create_mesh_object(vertices, edges, faces, name)
-    mesh_obj = bpy.data.objects.new(name, new_mesh)
-    # Handle the new object (link to scene, select, etc.)
-    handle_new_object(return_options, mesh_obj)
-
-    return mesh_obj
-
-
 def update_existing_object(active_obj: bpy.types.Object,
                            return_options: Dict[str, str],
                            new_mesh) -> None:
     # Store reference to old mesh
     old_mesh = active_obj.data
+
     active_obj.select_set(True)
     # Switch to object mode for mesh operations
     bpy.ops.object.mode_set(mode='OBJECT')
 
     active_obj.data = new_mesh
+    bpy.ops.object.shade_flat()
 
     # Now the old mesh should have one fewer user
     if old_mesh.users == 0 and not old_mesh.use_fake_user:
         bpy.data.meshes.remove(old_mesh)
 
-    # Handle other operations in object mode first
-    if "matrix" in return_options:
-        try:
-            # TODO handle matrix
-            pass
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            raise HallrException(f"Error applying matrix: {e}")
-
     # Handle remove doubles if needed
-    remove_doubles = return_options.get("REMOVE_DOUBLES", "").lower() == "true"
-    if remove_doubles:
+    if VERTEX_MERGE_TAG in return_options:
         bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.remove_doubles(threshold=float(return_options.get("REMOVE_DOUBLES_THRESHOLD", "0.00001")))
+        try:
+            remove_doubles_threshold = float(return_options.get(VERTEX_MERGE_TAG))
+            print(f"Python: removing doubles by {remove_doubles_threshold} (blender op)")
+            bpy.ops.mesh.remove_doubles(remove_doubles_threshold)
+        except ValueError:
+            pass
         bpy.ops.object.mode_set(mode='OBJECT')
 
     # Return to edit mode if that's where we started
@@ -486,7 +458,7 @@ def process_mesh_with_rust(config: Dict[str, str],
     map_data = StringMap(keys_array, values_array, len(keys_list))
 
     print(f"Python: {COMMAND_TAG} '{config.get(COMMAND_TAG, '')}'")
-    print(f"Python: sending {len(vertices)} vertices, {len(indices)} indices, {len(matrices)} matrices")
+    print(f"Python: sending {len(vertices)} vertices, {len(indices)} indices, {len(matrices) / 16.0} matrices")
 
     # Fetch Rust library
     rust_lib = load_latest_dylib()

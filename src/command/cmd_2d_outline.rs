@@ -77,23 +77,6 @@ where
     println!("Input vertices : {:?}", model.vertices.len());
     println!("Input internal edges: {:?}", internal_edges.len());
     println!("Input all edges: {:?}", all_edges.len());
-    /*println!("Vertices: ");
-    for (n, v) in obj.vertices.iter().enumerate() {
-        println!("#{}, {:?}", n, v);
-    }
-
-    println!("All edges pre: ");
-    for (n, v) in all_edges.iter().enumerate() {
-        println!("#{}, {:?}", n, v);
-    }
-    println!("single_edges pre: ");
-    for (n, v) in single_edges.iter().enumerate() {
-        println!("#{}, {:?}", n, v);
-    }
-    println!("internal_edges edges: ");
-    for (n, v) in internal_edges.iter().enumerate() {
-        println!("#{}, {:?}", n, v);
-    }*/
 
     let kept_edges = all_edges
         .into_iter()
@@ -150,13 +133,8 @@ where
         );
         rv_vertices.iter_mut().for_each(|v| *v = world_to_local(*v));
     } else {
-        println!(
-            "Rust: *not* applying world-local transformation 1/{:?}",
-            model.world_orientation
-        );
+        println!("Rust: *not* applying world-local transformation");
     };
-    println!("Output edges: {:?}", rv_lines.len());
-    println!("Output vertices: {:?}", rv_vertices.len());
 
     Ok((rv_lines, rv_vertices))
 }
