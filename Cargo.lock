@@ -260,7 +260,7 @@ checksum = "bf3aa70d918d2b234126ff4f850f628f172542bf0603ded26b8ee36e5e22d5f9"
 
 [[package]]
 name = "hallr"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "ahash",
  "baby_shark",
