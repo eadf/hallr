@@ -10,6 +10,8 @@ import bmesh
 import math
 import array
 from collections import defaultdict
+import mathutils
+
 from . import hallr_ffi_utils
 
 
@@ -40,6 +42,146 @@ class BaseOperatorMixin:
     def poll(cls, context):
         ob = context.active_object
         return ob is not None and ob.type == 'MESH' and context.mode == 'EDIT_MESH'
+
+
+def get_rotation_to(from_vn, to_vn):
+    """Returns the rotation quaternion needed when rotating fromVn to toVn. fromVn and toVn should be normalized."""
+    if from_vn[0] == to_vn[0] and from_vn[1] == to_vn[1] and from_vn[2] == to_vn[2]:
+        return mathutils.Quaternion((1.0, 0, 0, 0))
+    cross_product = from_vn.cross(to_vn)
+    cross_product.normalize()
+    angle = math.acos(from_vn.dot(to_vn))
+    return mathutils.Quaternion(cross_product, angle)
+
+
+class MESH_OT_hallr_meta_volume(bpy.types.Operator):
+    """Volumetric edge fill using meta capsules"""
+    bl_idname = "mesh.hallr_metavolume"
+    bl_label = "Hallr Metavolume from edges"
+    bl_icon = "MESH_ICOSPHERE"
+    bl_description = 'Generates volume from a lattice of edges using metaballs (pure blender/python operator)'
+    bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
+
+    CAPSULE_VECTOR = mathutils.Vector((1.0, 0.0, 0.0))  # capsule orientation
+
+    radius_prop: bpy.props.FloatProperty(name="Radius", default=1.0, min=0.0001, max=1000,
+                                         description="Radius of the meta capsules")
+    resolution_prop: bpy.props.FloatProperty(name="Resolution", default=0.25, min=0.05, max=1,
+                                             description="Resolution of the meta capsules")
+    threshold_prop: bpy.props.FloatProperty(name="Threshold", default=0.05, min=0.001, max=1.99999,
+                                            description="Threshold of the meta capsules")
+    convert_to_mesh_prop: bpy.props.BoolProperty(name="Convert to mesh", default=False,
+                                                 description="Convert the metaballs to mesh directly")
+
+    # Store the source object name to retrieve it during redo operations
+    source_object_name: bpy.props.StringProperty()
+
+    original_matrix = None
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def new_capsule(self, meta_factory, v0, v1, radius):
+        segment = v1 - v0
+        capsule = meta_factory.new()
+        capsule.co = (v1 + v0) / 2.0
+        capsule.type = 'CAPSULE'
+        capsule.radius = radius
+        capsule.size_x = segment.length / 2.0
+        direction = segment.normalized()
+        quaternion = get_rotation_to(self.CAPSULE_VECTOR, direction)
+        capsule.rotation = quaternion
+        return capsule
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.prop(self, "radius_prop")
+        row = layout.row()
+        row.prop(self, "resolution_prop")
+        row = layout.row()
+        row.prop(self, "threshold_prop")
+        row = layout.row()
+        row.prop(self, "convert_to_mesh_prop")
+
+    def invoke(self, context, event):
+        # This runs before the first execution, capturing the source object
+        source_obj = context.active_object
+        self.source_object_name = source_obj.name
+
+        # Store the original matrix directly
+        self.original_matrix = source_obj.matrix_world.copy()
+
+        return self.execute(context)
+
+    def execute(self, context):
+
+        # Get the source object by name, which works even during redo operations
+        source_obj = bpy.data.objects.get(self.source_object_name)
+        if not source_obj:
+            self.report({'ERROR'}, f"Source object '{self.source_object_name}' not found")
+            return {'CANCELLED'}
+
+        # Create the bmesh from the source object
+        source_bm = bmesh.new()
+        source_bm.from_mesh(source_obj.data)
+
+        # Remove any existing metaball objects with the same name
+        meta_name = f"Metavolume_{source_obj.name}"
+        for obj in bpy.data.objects:
+            if obj.name.startswith(meta_name):
+                bpy.data.objects.remove(obj)
+
+        # Clean up old metaballs to avoid data blocks accumulation
+        for mb in bpy.data.metaballs:
+            if mb.name.startswith(meta_name) and mb.users == 0:
+                bpy.data.metaballs.remove(mb)
+
+        # Create new metaball
+        mball = bpy.data.metaballs.new(meta_name)
+        mball.resolution = self.resolution_prop
+        mball.threshold = self.threshold_prop
+
+        # Create a custom undo step - this will just delete the new object when undone
+        bpy.ops.ed.undo_push(message="Create New Object")
+
+        meta_obj = bpy.data.objects.new(meta_name, mball)
+
+        for edge in source_bm.edges:
+            fromV = mathutils.Vector(edge.verts[0].co)
+            toV = mathutils.Vector(edge.verts[1].co)
+            self.new_capsule(mball.elements, fromV, toV, self.radius_prop)
+
+        bpy.context.scene.collection.objects.link(meta_obj)
+
+        # Set the meta object's world matrix
+        if self.original_matrix is not None:
+            meta_obj.matrix_world = self.original_matrix
+
+        if self.convert_to_mesh_prop:
+            # Deselect all objects
+            for obj in bpy.context.selected_objects:
+                obj.select_set(False)
+
+            # Select and make the metaball object active
+            meta_obj.select_set(True)
+            bpy.context.view_layer.objects.active = meta_obj
+
+            # Convert metaball to mesh
+            bpy.ops.object.convert(target='MESH')
+
+            # Rename the converted object
+            converted_obj = bpy.context.active_object
+            converted_obj.name = f"Volume_{source_obj.name}"
+        else:
+            # Just select the metaball object
+            source_obj.select_set(False)
+            meta_obj.select_set(True)
+            bpy.context.view_layer.objects.active = meta_obj
+
+        source_bm.free()
+        return {'FINISHED'}
 
 
 class MESH_OT_hallr_2d_outline(bpy.types.Operator, BaseOperatorMixin):
@@ -169,6 +311,10 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator, BaseOperatorMixin):
         subtype='PERCENTAGE'
     )
 
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
     def execute(self, context):
         obj = context.active_object
 
@@ -192,10 +338,6 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator, BaseOperatorMixin):
         bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
 
     def draw(self, context):
         layout = self.layout
@@ -259,11 +401,11 @@ class MESH_OT_hallr_triangulate_and_flatten(bpy.types.Operator, BaseOperatorMixi
 
 
 class MESH_OT_hallr_select_end_vertices(bpy.types.Operator, BaseOperatorMixin):
-    """Selects all vertices that are only connected to one other vertex or none (offline plugin)"""
+    """Selects all vertices that are only connected to one other vertex or none (blender/python plugin)"""
     bl_idname = "mesh.hallr_meshtools_select_end_vertices"
     bl_label = "Select end vertices"
     bl_icon = "EVENT_END"
-    bl_description = "Selects all vertices that are only connected to one other vertex (offline plugin)"
+    bl_description = "Selects all vertices that are only connected to one other vertex (blender/python plugin)"
     bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
 
     def execute(self, context):
@@ -302,7 +444,7 @@ class MESH_OT_hallr_select_collinear_edges(bpy.types.Operator, BaseOperatorMixin
     bl_icon = "SNAP_EDGE"
     bl_label = "Select collinear edges"
     bl_description = ("Selects edges that are connected to the selected edges, but limit by an angle constraint ("
-                      "offline plugin)")
+                      "blender/python plugin)")
     bl_options = {'REGISTER', 'UNDO'}  # enable undo for the operator.
 
     angle_prop: bpy.props.FloatProperty(
@@ -507,6 +649,10 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
         default=True
     )
 
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
     def execute(self, context):
         obj = context.active_object
 
@@ -518,7 +664,7 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
                   "NEGATIVE_RADIUS": str(self.negative_radius_prop).lower(),
                   }
         if self.use_remove_doubles_prop:
-            config[hallr_ffi_utils.VERTEX_MERGE_TAG]= str(self.remove_doubles_threshold_prop)
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
 
         try:
             # Call the Rust function
@@ -548,10 +694,6 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
         icon_area.label(text="", icon='SNAP_MIDPOINT')
         icon_area.prop(self, "remove_doubles_threshold_prop")
         icon_area.enabled = self.use_remove_doubles_prop
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
 
 
 # Voronoi operator
@@ -596,6 +738,10 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
         default=True
     )
 
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
     def execute(self, context):
         obj = context.active_object
 
@@ -611,7 +757,7 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
                   "KEEP_INPUT": str(self.keep_input_prop).lower(),
                   }
         if self.use_remove_doubles_prop:
-            config[hallr_ffi_utils.VERTEX_MERGE_TAG]= str(self.remove_doubles_threshold_prop)
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
 
         try:
             # Call the Rust function
@@ -641,10 +787,6 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
         icon_area.label(text="", icon='SNAP_MIDPOINT')
         icon_area.prop(self, "remove_doubles_threshold_prop")
         icon_area.enabled = self.use_remove_doubles_prop
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
 
 
 # SDF mesh 2½D operator
@@ -703,6 +845,10 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
         default=True
     )
 
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
     def execute(self, context):
         obj = context.active_object
 
@@ -714,7 +860,7 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
                   "SDF_RADIUS_MULTIPLIER": str(self.sdf_radius_multiplier_prop),
                   }
         if self.use_remove_doubles_prop:
-            config[hallr_ffi_utils.VERTEX_MERGE_TAG]= str(self.remove_doubles_threshold_prop)
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
         try:
             # Call the Rust function
             hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
@@ -746,10 +892,6 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
         icon_area.label(text="", icon='SNAP_MIDPOINT')
         icon_area.prop(self, "remove_doubles_threshold_prop")
         icon_area.enabled = self.use_remove_doubles_prop
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
 
 
 # SDF mesh operator
@@ -806,6 +948,10 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
         default=True
     )
 
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
     def execute(self, context):
         obj = context.active_object
 
@@ -817,7 +963,7 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
                   "SDF_RADIUS_MULTIPLIER": str(self.sdf_radius_prop),
                   }
         if self.use_remove_doubles_prop:
-            config[hallr_ffi_utils.VERTEX_MERGE_TAG]= str(self.remove_doubles_threshold_prop)
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
         try:
             # Call the Rust function
             hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
@@ -849,10 +995,6 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
         icon_area.label(text="", icon='SNAP_MIDPOINT')
         icon_area.prop(self, "remove_doubles_threshold_prop")
         icon_area.enabled = self.use_remove_doubles_prop
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
 
 
 # Random vertices operation
@@ -900,6 +1042,10 @@ class MESH_OT_hallr_random_vertices(bpy.types.Operator, BaseOperatorMixin):
         description="Activates the remove doubles feature",
         default=True
     )
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
 
     def execute(self, context):
         obj = context.active_object
@@ -950,10 +1096,6 @@ class MESH_OT_hallr_random_vertices(bpy.types.Operator, BaseOperatorMixin):
         icon_area.prop(self, "remove_doubles_threshold_prop")
         icon_area.enabled = self.use_remove_doubles_prop
 
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
-
 
 # Discretize operator
 class MESH_OT_hallr_discretize(bpy.types.Operator, BaseOperatorMixin):
@@ -976,6 +1118,10 @@ class MESH_OT_hallr_discretize(bpy.types.Operator, BaseOperatorMixin):
         precision=3,
         subtype='PERCENTAGE'
     )
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
 
     def execute(self, context):
         obj = context.active_object
@@ -1007,10 +1153,6 @@ class MESH_OT_hallr_discretize(bpy.types.Operator, BaseOperatorMixin):
         row = layout.row()
         row.label(icon='FIXED_SIZE')
         row.prop(self, "discretize_length_prop")
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
 
 
 class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
@@ -1083,6 +1225,10 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
         default=True
     )
 
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
     def execute(self, context):
         obj = context.active_object
 
@@ -1103,7 +1249,7 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
                   : str(self.simplify_prop).lower(),
                   }
         if self.use_remove_doubles_prop:
-            config[hallr_ffi_utils.VERTEX_MERGE_TAG]= str(self.remove_doubles_threshold_prop)
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
         try:
             # Call the Rust function
             hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.LINE_CHUNKS,
@@ -1118,10 +1264,6 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
         bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
 
     def draw(self, context):
         layout = self.layout
@@ -1156,6 +1298,7 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
         layout.operator(MESH_OT_hallr_voronoi_diagram.bl_idname, icon=MESH_OT_hallr_voronoi_diagram.bl_icon)
         layout.operator(MESH_OT_hallr_sdf_mesh_25D.bl_idname, icon=MESH_OT_hallr_sdf_mesh_25D.bl_icon)
         layout.operator(MESH_OT_hallr_sdf_mesh.bl_idname, icon=MESH_OT_hallr_sdf_mesh.bl_icon)
+        layout.operator(MESH_OT_hallr_meta_volume.bl_idname, icon=MESH_OT_hallr_sdf_mesh.bl_icon)
         layout.operator(MESH_OT_hallr_simplify_rdp.bl_idname, icon=MESH_OT_hallr_simplify_rdp.bl_icon)
         layout.operator(MESH_OT_hallr_centerline.bl_idname, icon=MESH_OT_hallr_centerline.bl_icon)
         layout.operator(MESH_OT_hallr_discretize.bl_idname, icon=MESH_OT_hallr_discretize.bl_icon)
@@ -1199,6 +1342,7 @@ classes = (
     MESH_OT_hallr_centerline,
     MESH_OT_hallr_discretize,
     MESH_OT_hallr_random_vertices,
+    MESH_OT_hallr_meta_volume,
 )
 
 

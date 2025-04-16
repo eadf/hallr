@@ -326,7 +326,7 @@ pub unsafe extern "C" fn process_geometry(
         "Rust: received {} vertices, {} indices, {} matrices",
         input_vertices.len(),
         input_indices.len(),
-        input_matrix.len() / 16
+        input_matrix.len() as f32 / 16.0
     );
 
     // Safe code: Processing the data

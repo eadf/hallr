@@ -26,7 +26,6 @@ pub(crate) fn process_command(
     }
     input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Triangulated)?;
     let model = &models[0];
-    // todo: actually use the matrices
     let world_matrix = model.world_orientation.to_vec();
 
     let input_mesh = {

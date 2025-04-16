@@ -82,7 +82,7 @@ def run_cargo_build(dev_mode, debug, generate_tests):
     feature_args = []
     if generate_tests:
         if not dev_mode:
-            print("Warning: Test generation is only available in dev_mode. Ignoring generate_tests.")
+            print("Warning: Test generation is only available in dev_mode. Ignoring --generate_tests flag.")
         else:
             feature_args = ["--features", "generate_test_case_from_input"]
 

@@ -74,10 +74,17 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
         default=True
     )
 
+    manifold_not_checked = True
+
+    def invoke(self, context, event):
+        self.manifold_not_checked = True
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
     def execute(self, context):
         obj = context.active_object
 
-        if self.deny_non_manifold_prop:
+        if self.manifold_not_checked and self.deny_non_manifold_prop:
             # Switch to edit mode and select non-manifold geometry
             bpy.ops.object.mode_set(mode='EDIT')
             original_select_mode = context.tool_settings.mesh_select_mode[:]
@@ -89,6 +96,7 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
             bm = bmesh.from_edit_mesh(obj.data)
             non_manifold_count = sum(1 for v in bm.verts if v.select)
             bm.free()
+            self.manifold_not_checked = False
 
             if non_manifold_count > 0:
                 self.report({'ERROR'},
@@ -133,10 +141,6 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
         icon_area.label(text="", icon='SNAP_MIDPOINT')
         icon_area.prop(self, "remove_doubles_threshold_prop")
         icon_area.enabled = self.use_remove_doubles_prop
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
 
 
 # Baby Shark Isotropic Remeshing mesh operator
@@ -218,6 +222,13 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin)
         default=True
     )
 
+    manifold_not_checked = True
+
+    def invoke(self, context, event):
+        self.manifold_not_checked = True
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
     def execute(self, context):
         obj = context.active_object
 
@@ -233,6 +244,7 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin)
             bm = bmesh.from_edit_mesh(obj.data)
             non_manifold_count = sum(1 for v in bm.verts if v.select)
             bm.free()
+            self.manifold_not_checked = False
 
             if non_manifold_count > 0:
                 self.report({'ERROR'},
@@ -299,10 +311,6 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin)
         icon_area.prop(self, "remove_doubles_threshold_prop")
         icon_area.enabled = self.use_remove_doubles_prop
 
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
-
 
 # Mesh Offset Operator
 class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
@@ -354,10 +362,17 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
         default=True
     )
 
+    manifold_not_checked = True
+
+    def invoke(self, context, event):
+        self.manifold_not_checked = True
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
     def execute(self, context):
         obj = context.active_object
 
-        if self.deny_non_manifold_prop:
+        if self.manifold_not_checked and self.deny_non_manifold_prop:
             # Switch to edit mode and select non-manifold geometry
             bpy.ops.object.mode_set(mode='EDIT')
             original_select_mode = context.tool_settings.mesh_select_mode[:]
@@ -369,6 +384,7 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
             bm = bmesh.from_edit_mesh(obj.data)
             non_manifold_count = sum(1 for v in bm.verts if v.select)
             bm.free()
+            self.manifold_not_checked = False
 
             if non_manifold_count > 0:
                 self.report({'ERROR'},
@@ -416,9 +432,7 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
         icon_area.prop(self, "remove_doubles_threshold_prop")
         icon_area.enabled = self.use_remove_doubles_prop
 
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
+
 
 
 class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
@@ -476,6 +490,8 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
         default=True
     )
 
+    manifold_not_checked = True
+
     @classmethod
     def poll(cls, context):
         return (context.mode == 'OBJECT' and
@@ -483,25 +499,32 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
                 all(obj.type == 'MESH' for obj in context.selected_objects) and
                 context.active_object is not None)
 
+    def invoke(self, context, event):
+        self.manifold_not_checked = True
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
     def execute(self, context):
         if len(context.selected_objects) == 2:
             mesh_1 = context.selected_objects[0]
             mesh_2 = context.selected_objects[1]
 
-            if self.deny_non_manifold_prop and is_mesh_non_manifold(mesh_1):
+            if self.manifold_not_checked and self.deny_non_manifold_prop and is_mesh_non_manifold(mesh_1):
                 self.report(
                     {'ERROR'},
                     f"Object '{mesh_1.name}' is non-manifold. Fix it before proceeding."
                 )
                 return {'CANCELLED'}
 
-            if self.deny_non_manifold_prop and is_mesh_non_manifold(mesh_2):
+            if self.manifold_not_checked and self.deny_non_manifold_prop and is_mesh_non_manifold(mesh_2):
                 self.report(
                     {'ERROR'},
                     f"Object '{mesh_2.name}' is non-manifold. Fix it before proceeding."
                 )
                 return {'CANCELLED'}
 
+            self.manifold_not_checked = False
+            
             config = {"operation": str(self.operation_prop),
                       "swap": str(self.swap_operands_prop),
                       "voxel_size": str(self.voxel_size_prop),
@@ -525,9 +548,6 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
 
         return {'FINISHED'}
 
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self, width=300)
 
     def draw(self, context):
         layout = self.layout

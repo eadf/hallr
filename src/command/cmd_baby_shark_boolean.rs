@@ -25,7 +25,6 @@ pub(crate) fn process_command(
         ))?
     }
 
-    // todo: actually use the matrices
     let world_matrix = models[0].world_orientation.to_vec();
 
     let voxel_size = input_config.get_mandatory_parsed_option("voxel_size", None)?;

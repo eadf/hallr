@@ -343,6 +343,10 @@ pub(crate) fn process_command(
     // the type we use for the internal processing
     type T = Vec3A;
 
+    if matrix.len() % 16 != 0 {
+        return Err(HallrError::InvalidInputData("The matrix field must be a multiple of 16".to_string()));
+    }
+
     validate_input_data::<T>(vertices, indices, &config)?;
     let models = collect_models::<T>(vertices, indices, matrix, &config)?;
 
