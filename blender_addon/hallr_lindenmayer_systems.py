@@ -324,6 +324,28 @@ iterations(3)
 timeout(1)
 ''',
 
+    "Penrose snowflake": '''
+# Penrose snowflake
+token("F", Turtle::Forward(1))
+token("+", Turtle::Yaw(36.0))
+token("-", Turtle::Yaw(-36.0))
+axiom("F++F++F++F++F")
+rule("F","F++F++F+++++F-F++F")
+iterations(3)
+timeout(1)
+''',
+
+    "Triangulated Gosper Curve": '''
+# Hexagonal Gosper Curve, but triangulated
+token("F", Turtle::Forward(1))
+token("+", Turtle::Yaw(120.0))
+token("-", Turtle::Yaw(-120.0))
+axiom("F")
+rule("F","F+F-F")
+iterations(8)
+timeout(1)
+''',
+
     "Demo curve": '''
 # you can use these chars as tokens =<>^?∧\→←↑↓↻↺↕↶↷⥀⥁⇐⇒⇑⇓⇕×∘+-[]
 # and also [a-z][A-Z][0-9]
