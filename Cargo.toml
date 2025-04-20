@@ -7,6 +7,7 @@ description = "An experimental Blender addon"
 repository = "https://github.com/eadf/hallr"
 license = "AGPL-3.0-or-later"
 authors = ["eadf"]
+rust-version = "1.85.1"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

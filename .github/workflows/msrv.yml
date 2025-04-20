@@ -1,0 +1,36 @@
+name: Find MSRV
+on:
+  workflow_dispatch:  # Only manual triggers
+
+jobs:
+  find_msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Install Rust (stable) + cargo-msrv
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy  # Optional
+
+      - name: Install cargo-msrv
+        run: cargo install cargo-msrv
+
+      # List MSRV of deps (outputs JSON for clarity)
+      - name: Run cargo-msrv list
+        run: cargo msrv list --output-format json | tee msrv_list_output.json
+
+      # Find MSRV (outputs JSON for clarity)
+      - name: Run cargo-msrv find
+        run: cargo msrv find --output-format json | tee msrv_find_output.json
+
+      # (Optional) Upload result as an artifact
+      - name: Upload MSRV result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: msrv-results
+          path: |
+            msrv_list_output.json
+            msrv_find_output.json
