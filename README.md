@@ -1,8 +1,7 @@
 # Hallr
 
 [![crates.io](https://img.shields.io/crates/v/hallr.svg)](https://crates.io/crates/hallr)
-[![Workflow](https://github.com/eadf/hallr/workflows/Rust/badge.svg)](https://github.com/eadf/hallr.rs/workflows/Rust/badge.svg)
-![License](https://img.shields.io/crates/l/hallr)
+[![Rust](https://github.com/eadf/hallr/actions/workflows/rust_test.yml/badge.svg)](https://github.com/eadf/hallr/actions/workflows/rust_test.yml)![License](https://img.shields.io/crates/l/hallr)
 [![Sponsor](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/eadf)
 
 Hallr is a Blender add-on written in Rust and Python. Python is used for the blender add-on system glue, sending and receiving data to the rust implementation.
