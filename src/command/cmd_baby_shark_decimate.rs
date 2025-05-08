@@ -6,10 +6,10 @@
 mod tests;
 
 use super::{ConfigType, Model};
-use crate::{HallrError, command::Options, ffi, prelude::FFIVector3, utils::IndexCompressor};
+use crate::{HallrError, command::Options, ffi, utils::IndexCompressor};
 use baby_shark::{
-    decimation::{edge_decimation::ConstantErrorDecimationCriteria, prelude::EdgeDecimator},
-    mesh::{corner_table::prelude::CornerTableF, traits::Mesh},
+    decimation::{EdgeDecimator, edge_decimation::ConstantErrorDecimationCriteria},
+    mesh::{corner_table::CornerTableF, traits::FromIndexed},
 };
 use hronn::HronnError;
 use std::time::Instant;
@@ -57,7 +57,7 @@ pub(crate) fn process_command(
     let mut ffi_indices = Vec::with_capacity(mesh.faces().count() * 3);
 
     for face_descriptor in mesh.faces() {
-        let (i0, i1, i2) = mesh.face_vertices(&face_descriptor);
+        let (i0, i1, i2) = mesh.face_vertices(face_descriptor);
 
         // Skip degenerate triangles
         if i0 == i1 || i0 == i2 || i1 == i2 {
@@ -65,20 +65,9 @@ pub(crate) fn process_command(
         }
 
         // Map each vertex to a new compressed index
-        let ni0 = compressor.get_or_create_mapping(i0, || {
-            let pos = mesh.vertex_position(&i0);
-            FFIVector3::new(pos.x, pos.y, pos.z)
-        });
-
-        let ni1 = compressor.get_or_create_mapping(i1, || {
-            let pos = mesh.vertex_position(&i1);
-            FFIVector3::new(pos.x, pos.y, pos.z)
-        });
-
-        let ni2 = compressor.get_or_create_mapping(i2, || {
-            let pos = mesh.vertex_position(&i2);
-            FFIVector3::new(pos.x, pos.y, pos.z)
-        });
+        let ni0 = compressor.get_or_create_mapping(i0, || mesh.vertex_position(i0).into());
+        let ni1 = compressor.get_or_create_mapping(i1, || mesh.vertex_position(i1).into());
+        let ni2 = compressor.get_or_create_mapping(i2, || mesh.vertex_position(i2).into());
 
         // Push directly to the output vector
         ffi_indices.push(ni0);

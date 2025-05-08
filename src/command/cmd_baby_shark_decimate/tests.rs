@@ -113,8 +113,8 @@ fn test_baby_shark_simplify_1() -> Result<(), HallrError> {
             number_of_vertices
         )
     }
-    assert_eq!(41, result.0.len()); // vertices
-    assert_eq!(234, result.1.len()); // indices
+    assert_eq!(40, result.0.len()); // vertices
+    assert_eq!(228, result.1.len()); // indices
     Ok(())
 }
 

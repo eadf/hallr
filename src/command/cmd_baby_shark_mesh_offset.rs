@@ -9,7 +9,7 @@ use super::{ConfigType, Model};
 use crate::{HallrError, command::Options, ffi, prelude::FFIVector3};
 use baby_shark::{
     exports::nalgebra::Vector3,
-    mesh::{polygon_soup::data_structure::PolygonSoup, traits::Mesh},
+    mesh::polygon_soup::data_structure::PolygonSoup,
     voxel::prelude::{MarchingCubesMesher, MeshToVolume},
 };
 use hronn::HronnError;
@@ -60,12 +60,12 @@ pub(crate) fn process_command(
             model.world_orientation
         );
         mesh.vertices()
-            .map(|i| world_to_local((*mesh.vertex_position(&i)).into()))
+            .map(|i| world_to_local(i.into()))
             .collect::<Vec<FFIVector3>>()
     } else {
         println!("Rust: *not* applying world-local transformation");
         mesh.vertices()
-            .map(|i| (*mesh.vertex_position(&i)).into())
+            .map(|i| i.into())
             .collect::<Vec<FFIVector3>>()
     };
 

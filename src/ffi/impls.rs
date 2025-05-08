@@ -2,7 +2,7 @@
 // Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
-//! A module containing boiler-plate implementations of standard traits such as Default, From etc etc
+//! A module containing boilerplate implementations of standard traits such as Default, From etc etc
 
 use super::FFIVector3;
 use baby_shark::exports::nalgebra;
@@ -331,6 +331,13 @@ impl From<&FFIVector3> for nalgebra::Vector3<f32> {
 impl From<nalgebra::Vector3<f32>> for FFIVector3 {
     #[inline(always)]
     fn from(v: nalgebra::Vector3<f32>) -> Self {
+        FFIVector3::new(v.x, v.y, v.z)
+    }
+}
+
+impl From<&nalgebra::Vector3<f32>> for FFIVector3 {
+    #[inline(always)]
+    fn from(v: &nalgebra::Vector3<f32>) -> Self {
         FFIVector3::new(v.x, v.y, v.z)
     }
 }
