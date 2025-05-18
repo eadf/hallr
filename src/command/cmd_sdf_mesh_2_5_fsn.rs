@@ -16,9 +16,9 @@ use ilattice::{
     glam as iglam,
     prelude::{Extent, Vector2},
 };
-use linestring::linestring_3d::Plane;
 use rayon::prelude::*;
 use std::{borrow::Borrow, time};
+use vector_traits::prelude::Plane;
 
 // The un-padded chunk side, it will become 16*16*16
 const UN_PADDED_CHUNK_SIDE: u32 = 14_u32;
@@ -324,15 +324,13 @@ pub(crate) fn build_output_model(
             });
         if vertex_capacity >= u32::MAX as usize {
             return Err(HallrError::Overflow(format!(
-                "Generated mesh contains too many vertices to be referenced by u32: {}. Reduce the resolution.",
-                vertex_capacity
+                "Generated mesh contains too many vertices to be referenced by u32: {vertex_capacity}. Reduce the resolution.",
             )));
         }
 
         if face_capacity >= u32::MAX as usize {
             return Err(HallrError::Overflow(format!(
-                "Generated mesh contains too many faces to be referenced by u32: {}. Reduce the resolution.",
-                vertex_capacity
+                "Generated mesh contains too many faces to be referenced by u32: {vertex_capacity}. Reduce the resolution.",
             )));
         }
         (

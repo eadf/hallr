@@ -51,7 +51,7 @@ pub const COMMAND_TAG: &str = "▶";
 pub const VERTEX_MERGE_TAG: &str = "≈";
 
 impl MeshFormat {
-    pub(crate) const MESH_FORMAT_TAG: &str = "📦";
+    pub(crate) const MESH_FORMAT_TAG: &'static str = "📦";
     pub(crate) const TRIANGULATED_CHAR: char = '△';
     pub(crate) const LINE_WINDOWS_CHAR: char = '∧';
     pub(crate) const LINE_CHUNKS_CHAR: char = '⸗';
@@ -76,8 +76,7 @@ impl MeshFormat {
             Self::LINE_CHUNKS_CHAR => Ok(MeshFormat::LineChunks),
             Self::POINT_CLOUD_CHAR => Ok(MeshFormat::PointCloud),
             _ => Err(HallrError::InvalidInputData(format!(
-                "Invalid char for MeshFormat conversion: '{}'",
-                c
+                "Invalid char for MeshFormat conversion: '{c}'",
             ))),
         }
     }
@@ -233,9 +232,9 @@ fn process_command_error_handler(
         match crate::command::process_command(vertices, indices, matrix, config) {
             Ok(rv) => rv,
             Err(err) => {
-                eprintln!("{:?}", err);
+                eprintln!("{err:?}");
                 for cause in successors(Some(&err as &(dyn std::error::Error)), |e| e.source()) {
-                    eprintln!("Caused by: {:?}", cause);
+                    eprintln!("Caused by: {cause:?}");
                 }
                 let mut config = HashMap::new();
                 let _ = config.insert("ERROR".to_string(), err.to_string());
@@ -252,7 +251,7 @@ fn process_command_error_handler(
         } else {
             "Unknown panic occurred".to_string()
         };
-        eprintln!("{:?}", err_message);
+        eprintln!("{err_message:?}");
         let mut config = HashMap::new();
         let _ = config.insert("ERROR".to_string(), err_message);
         (vec![], vec![], vec![], config)
@@ -296,8 +295,7 @@ pub unsafe extern "C" fn process_geometry(
 
     assert!(
         count < 1000,
-        "Rust: process_geometry(): Number of configuration parameters was too large: {} (limit is 999)",
-        count
+        "Rust: process_geometry(): Number of configuration parameters was too large: {count} (limit is 999)",
     );
 
     // Use (*config).keys and (*config).values to access the arrays.
@@ -316,7 +314,7 @@ pub unsafe extern "C" fn process_geometry(
             .to_string();
         let _ = input_config.insert(key, value);
     }
-    println!("Rust: received config:{:?}", input_config);
+    println!("Rust: received config:{input_config:?}",);
 
     let input_vertices = unsafe { slice::from_raw_parts(input_ffi_vertices, vertex_count) };
     let input_indices = unsafe { slice::from_raw_parts(input_ffi_indices, indices_count) };

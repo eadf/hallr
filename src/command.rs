@@ -30,15 +30,14 @@ mod cmd_voronoi_mesh;
 #[cfg(feature = "generate_test_case_from_input")]
 #[cfg(not(test))]
 mod cmd_wavefront_obj_logger;
-mod impls;
+mod trait_impl;
 
 use crate::{ffi, ffi::FFIVector3, prelude::*};
-use centerline::Matrix4;
 use std::collections::HashMap;
 use vector_traits::{
-    GenericVector3,
     approx::ulps_eq,
     glam::{Vec3A, Vec4Swizzles},
+    prelude::{Affine3D, GenericVector3},
 };
 
 /// The largest dimension of the voronoi input, totally arbitrarily selected.
@@ -193,7 +192,7 @@ impl Model<'_> {
         };
 
         // Calculate inverse matrix for the reverse transformation
-        match <Mat4 as Matrix4<Vec3>>::safe_inverse(&world_matrix) {
+        match <Mat4 as Affine3D>::try_inverse(&world_matrix) {
             Some(inverse_matrix) => {
                 // Return closure that applies the inverse transform
                 Ok(Some(move |v: FFIVector3| -> FFIVector3 {
@@ -290,7 +289,7 @@ pub fn collect_models<'a, T: GenericVector3>(
 
     loop {
         // Construct the keys based on the model number
-        let vertices_key = format!("first_vertex_model_{}", model_counter);
+        let vertices_key = format!("first_vertex_model_{model_counter}",);
         let (default_vertex_index, default_index) = if model_counter == 0 {
             (Some(0), Some(0))
         } else {
@@ -306,7 +305,7 @@ pub fn collect_models<'a, T: GenericVector3>(
             let vertices_idx: usize =
                 config.get_mandatory_parsed_option(&vertices_key, default_vertex_index)?;
             let indices_idx: usize = config.get_mandatory_parsed_option(
-                &format!("first_index_model_{}", model_counter),
+                &format!("first_index_model_{model_counter}",),
                 default_index,
             )?;
             let vertices_end_idx: usize = config
@@ -392,8 +391,7 @@ pub(crate) fn process_command(
         "baby_shark_boolean" => cmd_baby_shark_boolean::process_command(config, models)?,
         "lsystems" => cmd_lsystems::process_command(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(
-            "Invalid command:{}",
-            illegal_command
+            "Invalid command:{illegal_command}",
         )))?,
     })
 }

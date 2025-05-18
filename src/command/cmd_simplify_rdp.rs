@@ -6,23 +6,26 @@ use super::{ConfigType, Model, Options};
 use crate::{ffi, prelude::*, utils::IndexDeduplicator};
 use hronn::prelude::ConvertTo;
 use linestring::{
-    linestring_3d::{Aabb3, LineString3, Plane},
+    linestring_3d::LineString3,
     prelude::{divide_into_shapes, indexed_simplify_rdp_2d, indexed_simplify_rdp_3d},
 };
 use vector_traits::{
-    GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ, num_traits::AsPrimitive,
+    num_traits::AsPrimitive,
+    prelude::{Aabb3, GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ, Plane},
 };
 
 #[cfg(test)]
 mod tests;
 
 /// reformat the input from FFIVector3 to <GenericVector3> vertices.
-fn parse_input<T: GenericVector3>(model: &Model<'_>) -> Result<(Vec<T>, Aabb3<T>), HallrError>
+fn parse_input<T: GenericVector3>(
+    model: &Model<'_>,
+) -> Result<(Vec<T>, <T as GenericVector3>::Aabb), HallrError>
 where
     FFIVector3: ConvertTo<T>,
 {
     let mut converted_vertices = Vec::<T>::with_capacity(model.vertices.len());
-    let mut aabb = Aabb3::<T>::default();
+    let mut aabb = <T as GenericVector3>::Aabb::default();
     for p in model.vertices.iter() {
         if !p.x().is_finite() || !p.y().is_finite() || !p.z().is_finite() {
             return Err(HallrError::InvalidInputData(format!(
@@ -33,7 +36,7 @@ where
             )));
         } else {
             let p: T = p.to();
-            aabb.update_with_point(p);
+            aabb.add_point(p);
             converted_vertices.push(p)
         }
     }
@@ -67,9 +70,8 @@ where
         output_indices.reserve(model.indices.len());
         output_matrix = model.world_orientation.to_vec();
         let (vertices, aabb) = parse_input(&models[0])?;
-        let simplify_distance = (aabb.get_high().unwrap() - aabb.get_low().unwrap()).magnitude()
-            * cmd_simplify_distance
-            / 100.0.into();
+        let simplify_distance =
+            (aabb.max() - aabb.min()).magnitude() * cmd_simplify_distance / 100.0.into();
 
         if simplify_in_3d {
             // in 3d mode

@@ -79,15 +79,11 @@ fn build_voxel(
 
     if verbose {
         println!(
-            "Voxelizing using tube radius. {} = {}*{}*{}",
-            radius, max_dimension, radius_multiplier, scale
+            "Voxelizing using tube radius. {radius} = {max_dimension}*{radius_multiplier}*{scale}"
         );
 
         println!(
-            "Voxelizing using divisions = {}, max dimension = {}, scale factor={} (max_dimension*scale={})",
-            divisions,
-            max_dimension,
-            scale,
+            "Voxelizing using divisions = {divisions}, max dimension = {max_dimension}, scale factor={scale} (max_dimension*scale={})",
             max_dimension * scale
         );
         println!();
@@ -259,15 +255,13 @@ pub(crate) fn build_output_model(
             });
         if vertex_capacity >= u32::MAX as usize {
             return Err(HallrError::Overflow(format!(
-                "Generated mesh contains too many vertices to be referenced by u32: {}. Reduce the resolution.",
-                vertex_capacity
+                "Generated mesh contains too many vertices to be referenced by u32: {vertex_capacity}. Reduce the resolution."
             )));
         }
 
         if face_capacity >= u32::MAX as usize {
             return Err(HallrError::Overflow(format!(
-                "Generated mesh contains too many faces to be referenced by u32: {}. Reduce the resolution.",
-                vertex_capacity
+                "Generated mesh contains too many faces to be referenced by u32: {vertex_capacity}. Reduce the resolution."
             )));
         }
         (

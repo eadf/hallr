@@ -6,7 +6,7 @@
 
 use super::VertexDeduplicator3D;
 use ahash::AHashMap;
-use vector_traits::GenericVector3;
+use vector_traits::prelude::GenericVector3;
 
 // for some reason the derived Default impl requires T to be Default
 impl<T: GenericVector3> Default for VertexDeduplicator3D<T> {

@@ -86,7 +86,7 @@ pub(crate) fn process_command(
             "UNION" => mesh_0_volume.union(mesh_1_volume),
             "INTERSECT" => mesh_0_volume.intersect(mesh_1_volume),
             _ => Err(HallrError::InvalidParameter(
-                format!("Invalid option: {}", operation).to_string(),
+                format!("Invalid option: {operation}").to_string(),
             ))?,
         };
         MarchingCubesMesher::default()

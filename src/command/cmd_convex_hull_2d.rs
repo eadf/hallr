@@ -7,7 +7,10 @@ use crate::{HallrError, command::Options, ffi, ffi::FFIVector3};
 use hronn::prelude::ConvertTo;
 use krakel::PointTrait;
 use linestring::linestring_2d::convex_hull;
-use vector_traits::{GenericScalar, GenericVector2, GenericVector3, approx::UlpsEq};
+use vector_traits::{
+    approx::UlpsEq,
+    prelude::{GenericScalar, GenericVector2, GenericVector3},
+};
 
 #[cfg(test)]
 mod tests;

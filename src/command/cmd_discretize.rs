@@ -13,9 +13,12 @@ use crate::{
     utils::VertexDeduplicator3D,
 };
 use itertools::Itertools;
-use linestring::linestring_3d::{Aabb3, LineString3};
+use linestring::linestring_3d::LineString3;
 use std::time;
-use vector_traits::glam;
+use vector_traits::{
+    glam,
+    prelude::{Aabb3, GenericVector3},
+};
 
 /// Build the return model
 pub(crate) fn build_output_model(
@@ -26,7 +29,7 @@ pub(crate) fn build_output_model(
     let mut vertices = Vec::with_capacity(model.vertices.len());
     let indices = model.indices.to_vec();
     let mut v_dedup = VertexDeduplicator3D::with_capacity(vertices.len());
-    let mut aabb = Aabb3::default();
+    let mut aabb = <glam::Vec3 as GenericVector3>::Aabb::default();
 
     for vertex in model.vertices.iter() {
         if !vertex.x.is_finite() || !vertex.y.is_finite() || !vertex.z.is_finite() {
@@ -36,14 +39,14 @@ pub(crate) fn build_output_model(
             )))?
         } else {
             let point = glam::vec3(vertex.x, vertex.y, vertex.z);
-            aabb.update_with_point(point);
+            aabb.add_point(point);
             vertices.push(point);
         }
     }
 
     let now = time::Instant::now();
     let descretization_length = {
-        let extent = aabb.extents().unwrap().2;
+        let extent = aabb.extents().2;
         extent.x.max(extent.y).max(extent.z) * descretization_length_factor
     };
 

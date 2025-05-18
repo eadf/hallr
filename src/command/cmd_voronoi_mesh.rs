@@ -10,48 +10,44 @@ use crate::{
     utils::{GrowingVob, voronoi_utils},
 };
 use boostvoronoi as BV;
-use centerline::{HasMatrix4, Matrix4};
 use hronn::prelude::ConvertTo;
-use linestring::{linestring_2d::Aabb2, linestring_3d::Plane};
 use vector_traits::{
-    GenericVector2, GenericVector3, HasXY,
     approx::{AbsDiffEq, UlpsEq},
     glam::Vec3A,
-    num_traits::AsPrimitive,
+    num_traits::{AsPrimitive, Float},
+    prelude::{Aabb2, Aabb3, Affine3D, GenericVector2, GenericVector3, HasXY, Plane},
 };
 
 #[cfg(test)]
 mod tests;
 
 #[allow(clippy::type_complexity)]
-fn parse_input<T: GenericVector3 + HasMatrix4>(
+fn parse_input<T: GenericVector3>(
     input_model: &Model<'_>,
     cmd_arg_max_voronoi_dimension: T::Scalar,
 ) -> Result<
     (
         Vec<BV::Point<i64>>,
         Vec<BV::Line<i64>>,
-        Aabb2<T::Vector2>,
-        T::Matrix4Type,
+        <<T as GenericVector3>::Vector2 as GenericVector2>::Aabb,
+        <T as GenericVector3>::Affine,
     ),
     HallrError,
 >
 where
     FFIVector3: ConvertTo<T>,
 {
-    let mut aabb = linestring::linestring_3d::Aabb3::<T>::default();
-    for v in input_model.vertices.iter() {
-        aabb.update_with_point(v.to())
-    }
+    let aabb =
+        <T as GenericVector3>::Aabb::from_points(input_model.vertices.iter().map(|v| v.to()));
 
-    let (plane, transform, vor_aabb)= centerline::get_transform_relaxed(
+    let (plane, transform, vor_aabb)= centerline::get_transform_relaxed::<T>(
         aabb,
         cmd_arg_max_voronoi_dimension,
         T::Scalar::default_epsilon(),
         T::Scalar::default_max_ulps(),
     ).map_err(|_|{
-        let aabb_d:T = aabb.get_high().unwrap() - aabb.get_low().unwrap();
-        let aabb_c:T = (aabb.get_high().unwrap() + aabb.get_low().unwrap())/2.0.into();
+        let aabb_d:T = aabb.max() - aabb.min();
+        let aabb_c:T = aabb.center();
         HallrError::InputNotPLane(format!(
             "Input data not in one plane and/or plane not intersecting origin: Δ({},{},{}) C({},{},{})",
             aabb_d.x(), aabb_d.y(), aabb_d.z(), aabb_c.x(), aabb_c.y(), aabb_c.z()))
@@ -59,16 +55,15 @@ where
 
     if plane != Plane::XY {
         return Err(HallrError::InvalidInputData(format!(
-            "At the moment the voronoi mesh operation only supports input data in the XY plane. {:?}",
-            plane
+            "At the moment the voronoi mesh operation only supports input data in the XY plane. {plane:?}",
         )));
     }
 
-    let inverse_transform = transform.safe_inverse().ok_or(HallrError::InternalError(
+    let inverse_transform = transform.try_inverse().ok_or(HallrError::InternalError(
         "Could not calculate inverse matrix".to_string(),
     ))?;
 
-    println!("voronoi: data was in plane:{:?} aabb:{:?}", plane, aabb);
+    println!("voronoi: data was in plane:{plane:?} aabb:{aabb:?}");
 
     //println!("input Lines:{:?}", input_model.vertices);
 
@@ -81,8 +76,8 @@ where
                 .transform_point3(T::new_3d(vertex.x.into(), vertex.y.into(), vertex.z.into()))
                 .to_2d();
             BV::Point {
-                x: p.x().as_(),
-                y: p.y().as_(),
+                x: p.x().round().as_(),
+                y: p.y().round().as_(),
             }
         })
         .collect();
@@ -126,8 +121,7 @@ pub(crate) fn compute_voronoi_mesh(
     };
 
     let discretization_distance: f32 = {
-        let max_dist: <Vec3A as GenericVector3>::Vector2 =
-            vor_aabb2.high().unwrap() - vor_aabb2.low().unwrap();
+        let max_dist: <Vec3A as GenericVector3>::Vector2 = vor_aabb2.max() - vor_aabb2.min();
         cmd_discretization_distance * max_dist.magnitude() / 100.0
     };
 
@@ -219,13 +213,10 @@ pub(crate) fn process_command(
         input_model.world_orientation,
         input_model.has_identity_orientation()
     );
-    println!("MAX_VORONOI_DIMENSION:{:?}", cmd_arg_max_voronoi_dimension);
-    println!(
-        "VORONOI_DISCRETE_DISTANCE:{:?}%",
-        cmd_arg_discretization_distance
-    );
-    println!("max_distance:{:?}", max_distance);
-    println!("NEGATIVE_RADIUS:{:?}", cmd_arg_negative_radius);
+    println!("MAX_VORONOI_DIMENSION:{cmd_arg_max_voronoi_dimension:?}");
+    println!("VORONOI_DISCRETE_DISTANCE:{cmd_arg_discretization_distance:?}%");
+    println!("max_distance:{max_distance:?}",);
+    println!("NEGATIVE_RADIUS:{cmd_arg_negative_radius:?}",);
     println!();
 
     // do the actual operation

@@ -8,8 +8,11 @@ use hronn::prelude::{ConvertTo, triangulate_vertices};
 
 use crate::ffi;
 use krakel::PointTrait;
-use linestring::linestring_2d::{Aabb2, convex_hull};
-use vector_traits::{GenericVector3, HasXY, num_traits::AsPrimitive};
+use linestring::linestring_2d::convex_hull;
+use vector_traits::{
+    num_traits::AsPrimitive,
+    prelude::{Aabb2, GenericVector2, GenericVector3, HasXY},
+};
 
 #[cfg(test)]
 mod tests;
@@ -32,19 +35,14 @@ where
     }
     // compute the AABB of the bounding_vertices regardless of interconnection
     let aabb = {
-        let mut aabb = Aabb2::<T::Vector2>::default();
+        let mut aabb = <<T as GenericVector3>::Vector2 as GenericVector2>::Aabb::default();
         for v in bounding_shape.vertices {
-            aabb.update_with_point(v.to().to_2d());
+            aabb.add_point(v.to().to_2d());
         }
         aabb
     };
     // Use the AABB to generate a convex hull
-    let hull: Vec<T::Vector2> = aabb
-        .convex_hull::<T::Vector2>()
-        .unwrap_or(Vec::<T::Vector2>::default())
-        .into_iter()
-        //.map(|v| v.to_3d(T::Scalar::ZERO).to())
-        .collect();
+    let hull: Vec<T::Vector2> = aabb.convex_hull();
 
     let results = triangulate_vertices::<T, FFIVector3>(aabb, &hull, model.vertices)?;
     let mut return_config = ConfigType::new();
@@ -98,7 +96,7 @@ where
             .collect();
         convex_hull::graham_scan(&point_cloud)?
     };
-    let aabb = Aabb2::with_points(&convex_hull);
+    let aabb = <<T as GenericVector3>::Vector2 as GenericVector2>::Aabb::from_points(&convex_hull);
 
     let results = triangulate_vertices::<T, FFIVector3>(aabb, &convex_hull, model.vertices)?;
     let mut return_config = ConfigType::new();
@@ -140,8 +138,7 @@ where
         "CONVEX_HULL" => convex_hull_delaunay_triangulation_2d::<T>(config, models),
         "AABB" => aabb_delaunay_triangulation_2d::<T>(config, models),
         bounds => Err(HallrError::InvalidParameter(format!(
-            "{} is not a valid \"bounds\" parameter",
-            bounds
+            "{bounds} is not a valid \"bounds\" parameter",
         ))),
     }
 }

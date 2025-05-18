@@ -14,7 +14,10 @@ use hronn::{
 
 use crate::{HallrError, command::Options, ffi, prelude::FFIVector3};
 use krakel::PointTrait;
-use vector_traits::{GenericVector3, HasXY, num_traits::AsPrimitive};
+use vector_traits::{
+    num_traits::AsPrimitive,
+    prelude::{GenericVector3, HasXY},
+};
 
 #[cfg(test)]
 mod tests;
@@ -62,8 +65,7 @@ where
         "CONVEX_HULL" => generate_convex_hull_then_aabb(bounding_vertices),
         "AABB" => generate_aabb_then_convex_hull(bounding_vertices),
         bounds => Err(HronnError::InvalidParameter(format!(
-            "{} is not a valid \"bounds\" parameter",
-            bounds
+            "{bounds} is not a valid \"bounds\" parameter",
         ))),
     }?;
 
@@ -107,8 +109,7 @@ where
         "CONVEX_HULL" => generate_convex_hull_then_aabb(bounding_vertices),
         "AABB" => generate_aabb_then_convex_hull(bounding_vertices),
         bounds => Err(HronnError::InvalidParameter(format!(
-            "{} is not a valid \"bounds\" parameter",
-            bounds
+            "{bounds} is not a valid \"bounds\" parameter",
         ))),
     }?;
 
@@ -186,8 +187,7 @@ where
             Box::new(TaperedProbe::new(&mesh_analyzer, probe_radius, angle)?)
         }
         probe_name => Err(HronnError::InvalidParameter(format!(
-            "{} is not a valid \"probe\" parameter",
-            probe_name
+            "{probe_name} is not a valid \"probe\" parameter",
         )))?,
     };
 
@@ -210,8 +210,7 @@ where
         ),
 
         pattern => Err(HallrError::InvalidParameter(format!(
-            "{} is not a valid option for the \"probe\" parameter",
-            pattern
+            "{pattern} is not a valid option for the \"probe\" parameter",
         ))),
     }?;
     Ok((rv.0, rv.1, world_matrix, rv.2))

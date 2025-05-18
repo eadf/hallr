@@ -6,21 +6,19 @@ use super::{ConfigType, Model, Options, OwnedModel};
 use crate::{HallrError, ffi, ffi::FFIVector3, utils};
 use boostvoronoi as BV;
 use boostvoronoi::OutputType;
-use centerline::{HasMatrix4, Matrix4};
 use hronn::prelude::*;
 use itertools::Itertools;
-use linestring::{
-    linestring_3d::{Aabb3, LineString3, Plane},
-    prelude::LineString2,
-};
+use linestring::{linestring_3d::LineString3, prelude::LineString2};
 use rayon::{
     iter::ParallelIterator,
     prelude::{IntoParallelIterator, IntoParallelRefIterator},
 };
 use vector_traits::{
-    GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ,
     approx::{AbsDiffEq, UlpsEq},
     num_traits::{AsPrimitive, NumCast, real::Real},
+    prelude::{
+        Aabb3, Affine3D, GenericScalar, GenericVector2, GenericVector3, HasXY, HasXYZ, Plane,
+    },
 };
 
 #[cfg(test)]
@@ -36,28 +34,32 @@ fn make_edge_key(v0: usize, v1: usize) -> (usize, usize) {
 #[allow(clippy::type_complexity)]
 fn parse_input<T: GenericVector3>(
     model: &Model<'_>,
-) -> Result<(ahash::AHashSet<(usize, usize)>, Vec<T>, Aabb3<T>), HallrError>
+) -> Result<
+    (
+        ahash::AHashSet<(usize, usize)>,
+        Vec<T>,
+        <T as GenericVector3>::Aabb,
+    ),
+    HallrError,
+>
 where
     FFIVector3: ConvertTo<T>,
 {
-    let mut aabb = Aabb3::<T>::default();
+    let mut aabb = <T as GenericVector3>::Aabb::default();
     for v in model.vertices.iter() {
-        aabb.update_with_point(v.to())
+        aabb.add_point(v.to())
     }
 
     let plane =
-        Plane::get_plane_relaxed(aabb, T::Scalar::default_epsilon(), T::Scalar::default_max_ulps()).ok_or_else(|| {
-            let aabbe_d = aabb.get_high().unwrap() - aabb.get_low().unwrap();
-            let aabbe_c = (aabb.get_high().unwrap() + aabb.get_low().unwrap())/T::Scalar::TWO;
+        aabb.get_plane_relaxed(T::Scalar::default_epsilon(), T::Scalar::default_max_ulps()).ok_or_else(|| {
+            let aabbe_d = aabb.max() - aabb.min();
+            let aabbe_c = aabb.center();
             HallrError::InputNotPLane(format!(
                 "Input data not in one plane and/or plane not intersecting origin: Δ({},{},{}) C({},{},{})",
                 aabbe_d.x(), aabbe_d.y(), aabbe_d.z(),aabbe_c.x(), aabbe_c.y(), aabbe_c.z()
             ))
         })?;
-    println!(
-        "Centerline op: data was in plane:{:?} aabb:{:?}",
-        plane, aabb
-    );
+    println!("Centerline op: data was in plane:{plane:?} aabb:{aabb:?}",);
     //println!("vertices:{:?}", model.vertices);
     //println!("indices:{:?}", model.indices);
     let mut edge_set = ahash::AHashSet::<(usize, usize)>::default();
@@ -94,14 +96,13 @@ fn build_output_model<T>(
         centerline::Centerline<i64, T>,
     )>,
     cmd_arg_weld: bool,
-    inverted_transform: T::Matrix4Type,
+    inverted_transform: T::Affine,
     cmd_arg_negative_radius: bool,
     cmd_arg_keep_input: bool,
     world_to_local: Option<impl Fn(FFIVector3) -> FFIVector3>,
 ) -> Result<OwnedModel, HallrError>
 where
-    T: GenericVector3,
-    T: HasMatrix4 + ConvertTo<FFIVector3>,
+    T: GenericVector3 + ConvertTo<FFIVector3>,
     T::Scalar: OutputType,
 {
     //let input_pb_model = &a_command.models[0];
@@ -171,8 +172,7 @@ where
 
             if v0_index == v1_index {
                 println!(
-                    "v0_index==v1_index, but v0!=v1 v0:{:?} v1:{:?} v0_index:{:?} v1_index:{:?}",
-                    v0, v1, v0_index, v1_index
+                    "v0_index==v1_index, but v0!=v1 v0:{v0:?} v1:{v1:?} v0_index:{v0_index:?} v1_index:{v1_index:?}",
                 );
                 continue;
             }
@@ -215,7 +215,7 @@ where
             output_pb_model_indices.push(a as usize);
             output_pb_model_indices.push(b as usize);
         } else {
-            println!("Something is wrong wanted to add edge {} to {}", a, b);
+            println!("Something is wrong wanted to add edge {a} to {b}");
         }
     }
     //println!("Resulting centerline model:{:?}", output_pb_model_indices);
@@ -272,7 +272,7 @@ pub(crate) fn process_command<T>(
 ) -> Result<super::CommandResult, HallrError>
 where
     T: GenericVector3,
-    T: ConvertTo<FFIVector3> + HasMatrix4,
+    T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
     T::Scalar: OutputType,
     i64: AsPrimitive<T::Scalar>,
@@ -287,8 +287,7 @@ where
     let cmd_arg_angle: T::Scalar = input_config.get_mandatory_parsed_option("ANGLE", None)?;
     if !(0.0.into()..=90.0.into()).contains(&cmd_arg_angle) {
         return Err(HallrError::InvalidInputData(format!(
-            "The valid range of ANGLE is [0..90] :({})",
-            cmd_arg_angle
+            "The valid range of ANGLE is [0..90] :({cmd_arg_angle})",
         )));
     }
     let cmd_arg_remove_internals = input_config
@@ -298,8 +297,7 @@ where
     let cmd_arg_discrete_distance = input_config.get_mandatory_parsed_option("DISTANCE", None)?;
     if !(0.001.into()..100.0.into()).contains(&cmd_arg_discrete_distance) {
         return Err(HallrError::InvalidInputData(format!(
-            "The valid range of DISTANCE is [0.001..100[% :({:?})",
-            cmd_arg_discrete_distance
+            "The valid range of DISTANCE is [0.001..100[% :({cmd_arg_discrete_distance:?})",
         )));
     }
     let cmd_arg_max_voronoi_dimension = input_config
@@ -367,17 +365,14 @@ where
         input_model.world_orientation,
         input_model.has_identity_orientation()
     );
-    println!("ANGLE:{:?}°, dot_limit:{:?}", cmd_arg_angle, dot_limit);
-    println!("REMOVE_INTERNALS:{:?}", cmd_arg_remove_internals);
-    println!("SIMPLIFY:{:?}", cmd_arg_simplify);
-    println!(
-        "KEEP_INPUT:{:?}, WELD:{:?}",
-        cmd_arg_keep_input, cmd_arg_weld
-    );
-    println!("DISTANCE:{:?}%", cmd_arg_discrete_distance);
-    println!("NEGATIVE_RADIUS:{:?}", cmd_arg_negative_radius);
-    println!("MAX_VORONOI_DIMENSION:{:?}", cmd_arg_max_voronoi_dimension);
-    println!("max_distance:{:?}", max_distance);
+    println!("ANGLE:{cmd_arg_angle:?}°, dot_limit:{dot_limit:?}");
+    println!("REMOVE_INTERNALS:{cmd_arg_remove_internals:?}");
+    println!("SIMPLIFY:{cmd_arg_simplify:?}");
+    println!("KEEP_INPUT:{cmd_arg_keep_input:?}, WELD:{cmd_arg_weld:?}",);
+    println!("DISTANCE:{cmd_arg_discrete_distance:?}%");
+    println!("NEGATIVE_RADIUS:{cmd_arg_negative_radius:?}");
+    println!("MAX_VORONOI_DIMENSION:{cmd_arg_max_voronoi_dimension:?}");
+    println!("max_distance:{max_distance:?}");
     println!();
 
     //let mut obj = Obj::<FFIVector3>::new("cmd_centerline");
@@ -395,14 +390,14 @@ where
     //println!("-> divide_into_shapes");
     let lines = centerline::divide_into_shapes(edges, vertices)?;
     //println!("-> get_transform_relaxed");
-    let (_plane, transform, _voronoi_input_aabb) = centerline::get_transform_relaxed(
+    let (_plane, transform, _voronoi_input_aabb) = centerline::get_transform_relaxed::<T>(
         total_aabb,
         cmd_arg_max_voronoi_dimension,
         T::Scalar::default_epsilon(),
         T::Scalar::default_max_ulps(),
     )?;
 
-    let inverted_transform = transform.safe_inverse().ok_or(HallrError::InternalError(
+    let inverted_transform = transform.try_inverse().ok_or(HallrError::InternalError(
         "Could not generate the inverse matrix.".to_string(),
     ))?;
 

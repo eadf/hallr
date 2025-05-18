@@ -6,14 +6,11 @@ use super::{ConfigType, Model, OwnedModel};
 use crate::{HallrError, command::Options, ffi, ffi::FFIVector3};
 use hronn::prelude::ConvertTo;
 use itertools::Itertools;
-use linestring::{
-    linestring_2d::indexed_intersection::IntersectionTester,
-    linestring_3d::{Aabb3, Plane},
-};
+use linestring::linestring_2d::indexed_intersection::IntersectionTester;
 use vector_traits::{
-    GenericScalar, GenericVector2, GenericVector3, HasXY,
     approx::{AbsDiffEq, UlpsEq},
     num_traits::{AsPrimitive, Float},
+    prelude::{Aabb3, GenericVector2, GenericVector3, HasXY, Plane},
 };
 
 #[cfg(test)]
@@ -27,14 +24,14 @@ where
     f32: AsPrimitive<T::Scalar>,
     T: ConvertTo<FFIVector3>,
 {
-    let mut aabb = Aabb3::<T>::default();
+    let mut aabb = <T as GenericVector3>::Aabb::default();
     for v in input_model.vertices.iter() {
-        aabb.update_with_point(v.to())
+        aabb.add_point(v.to())
     }
 
-    let plane = Plane::get_plane_relaxed::<T>(aabb, f32::default_epsilon().as_(), f32::default_max_ulps()).ok_or_else(|| {
-        let aabbe_d: T = aabb.get_high().unwrap() - aabb.get_low().unwrap();
-        let aabbe_c: T = (aabb.get_high().unwrap() + aabb.get_low().unwrap()) / T::Scalar::TWO;
+    let plane = aabb.get_plane_relaxed(f32::default_epsilon().as_(), f32::default_max_ulps()).ok_or_else(|| {
+        let aabbe_d: T = aabb.max() - aabb.min();
+        let aabbe_c: T =aabb.center();
         HallrError::InputNotPLane(format!(
             "Input data not in one plane and/or plane not intersecting origin: Δ({},{},{}) C({},{},{})",
             aabbe_d.x(), aabbe_d.y(), aabbe_d.z(), aabbe_c.x(), aabbe_c.y(), aabbe_c.z()
@@ -42,14 +39,10 @@ where
     })?;
     if plane != Plane::XY {
         return Err(HallrError::InvalidInputData(format!(
-            "At the moment the knife intersect operation only supports input data in the XY plane. {:?}",
-            plane
+            "At the moment the knife intersect operation only supports input data in the XY plane. {plane:?}",
         )));
     }
-    println!(
-        "knife_intersect: data was in plane:{:?} aabb:{:?}",
-        plane, aabb
-    );
+    println!("knife_intersect: data was in plane:{plane:?} aabb:{aabb:?}",);
     //println!("input Lines:{:?}", input_pb_model.vertices);
 
     let vertices_2d: Vec<T::Vector2> = input_model

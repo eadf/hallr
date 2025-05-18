@@ -216,8 +216,7 @@ impl TurtleRules {
     pub fn add_token(&mut self, token: char, ta: TurtleCommand) -> Result<&mut Self, HallrError> {
         if self.tokens.contains_key(&token) {
             return Err(HallrError::LSystems3D(format!(
-                "already contain the token {}",
-                token
+                "already contain the token {token}",
             )));
         }
         let _ = self.tokens.insert(token, ta);
@@ -232,8 +231,7 @@ impl TurtleRules {
     pub fn add_axiom(&mut self, axiom: String) -> Result<&mut Self, HallrError> {
         if !self.axiom.is_empty() {
             return Err(HallrError::LSystems3D(format!(
-                "already contains an axiom {}",
-                axiom
+                "already contains an axiom {axiom}",
             )));
         }
         // Remove spaces when adding the axiom
@@ -243,10 +241,7 @@ impl TurtleRules {
 
     pub fn add_rule(&mut self, rule_id: char, rule: String) -> Result<&mut Self, HallrError> {
         if rule.is_empty() {
-            return Err(HallrError::LSystems3D(format!(
-                "Rule too short {}",
-                rule_id
-            )));
+            return Err(HallrError::LSystems3D(format!("Rule too short {rule_id}",)));
         }
         // Remove spaces when adding the rule
         let cleaned_rule: String = rule.chars().filter(|c| *c != ' ').collect();
@@ -254,8 +249,7 @@ impl TurtleRules {
         //println!("Adding rule '{}' => '{}'", rule_id, &cleaned_rule);
         if self.rules.insert(rule_id, cleaned_rule).is_some() {
             return Err(HallrError::LSystems3D(format!(
-                "Rule {} overwriting previous rule",
-                rule_id
+                "Rule {rule_id} overwriting previous rule",
             )));
         }
         Ok(self)
@@ -446,7 +440,7 @@ impl TurtleRules {
             Timeout(Option<u64>),
         }
 
-        println!("Will try to parse the custom 🐢: {:?}", cmd_custom_turtle);
+        println!("Will try to parse the custom 🐢: {cmd_custom_turtle:?}");
 
         let mut lex = ParseToken::lexer(cmd_custom_turtle);
         let mut state = ParseState::Start;
@@ -502,7 +496,7 @@ impl TurtleRules {
                     let text: &str = &lex.slice()[1..lex.slice().len() - 1];
                     match state {
                         ParseState::Axiom => {
-                            println!("Accepted add_axiom(\"{}\")", text);
+                            println!("Accepted add_axiom(\"{text}\")");
                             let _ = self.add_axiom(text.to_string());
                             state = ParseState::Start;
                         }
@@ -510,8 +504,7 @@ impl TurtleRules {
                             state = ParseState::Token(
                                 Some(text.chars().next().ok_or_else(|| {
                                     HallrError::ParseError(format!(
-                                        "Could not get token id as line {}",
-                                        line
+                                        "Could not get token id as line {line}",
                                     ))
                                 })?),
                                 None,
@@ -520,22 +513,20 @@ impl TurtleRules {
                         ParseState::Rule(None, None) => {
                             if text.len() != 1 {
                                 return Err(HallrError::ParseError(format!(
-                                    "Rule id must be one single char, got '{}' at line {}",
-                                    text, line
+                                    "Rule id must be one single char, got '{text}' at line {line}",
                                 )));
                             }
                             let rule_id: char = text.chars().next().unwrap();
                             state = ParseState::Rule(Some(rule_id), None);
                         }
                         ParseState::Rule(Some(rule_id), None) => {
-                            println!("Accepted add_rule('{}', \"{}\")", rule_id, text);
+                            println!("Accepted add_rule('{rule_id}', \"{text}\")");
                             let _ = self.add_rule(rule_id, text.to_string());
                             state = ParseState::Start;
                         }
                         _ => {
                             return Err(HallrError::ParseError(format!(
-                                "Bad state for QuotedText:{:?} at line {}",
-                                state, line
+                                "Bad state for QuotedText:{state:?} at line {line}",
                             )));
                         }
                     }
@@ -546,8 +537,7 @@ impl TurtleRules {
                     }
                     _ => {
                         return Err(HallrError::ParseError(format!(
-                            "Bad state for TurtleActionForward:{:?} at line {}",
-                            state, line
+                            "Bad state for TurtleActionForward:{state:?} at line {line}",
                         )));
                     }
                 },
@@ -558,8 +548,7 @@ impl TurtleRules {
                     }
                     _ => {
                         return Err(HallrError::ParseError(format!(
-                            "Bad state for TurtleActionGeodesicForward:{:?} at line {}",
-                            state, line
+                            "Bad state for TurtleActionGeodesicForward:{state:?} at line {line}",
                         )));
                     }
                 },
@@ -569,8 +558,7 @@ impl TurtleRules {
                     }
                     _ => {
                         return Err(HallrError::ParseError(format!(
-                            "Bad state for TurtleActionYaw:{:?} at line {}",
-                            state, line
+                            "Bad state for TurtleActionYaw:{state:?} at line {line}",
                         )));
                     }
                 },
@@ -580,8 +568,7 @@ impl TurtleRules {
                     }
                     _ => {
                         return Err(HallrError::ParseError(format!(
-                            "Bad state for TurtleActionGeodesicYaw:{:?} at line {}",
-                            state, line
+                            "Bad state for TurtleActionGeodesicYaw:{state:?} at line {line}",
                         )));
                     }
                 },
@@ -591,8 +578,7 @@ impl TurtleRules {
                     }
                     _ => {
                         return Err(HallrError::ParseError(format!(
-                            "Bad state for TurtleActionPitch:{:?} at line {}",
-                            state, line
+                            "Bad state for TurtleActionPitch:{state:?} at line {line}",
                         )));
                     }
                 },
@@ -602,8 +588,7 @@ impl TurtleRules {
                     }
                     _ => {
                         return Err(HallrError::ParseError(format!(
-                            "Bad state for TurtleActionRoll:{:?} at line {}",
-                            state, line
+                            "Bad state for TurtleActionRoll:{state:?} at line {line}",
                         )));
                     }
                 },
@@ -613,73 +598,67 @@ impl TurtleRules {
                     }
                     _ => {
                         return Err(HallrError::ParseError(format!(
-                            "Bad state for TurtleActionRotate:{:?} at line {}",
-                            state, line
+                            "Bad state for TurtleActionRotate:{state:?} at line {line}",
                         )));
                     }
                 },
                 ParseToken::TurtleActionPenDown => match state {
                     ParseState::Token(Some(text), None) => {
-                        println!("Accepted add_token(\"{}\", TurtleAction::PenDown)", text);
+                        println!("Accepted add_token(\"{text}\", TurtleAction::PenDown)");
                         let _ = self.add_token(text, TurtleCommand::PenDown);
                         state = ParseState::Start;
                     }
                     _ => {
                         return Err(HallrError::ParseError(format!(
-                            "Bad state for TurtleActionPenDown:{:?} at line {}",
-                            state, line
+                            "Bad state for TurtleActionPenDown:{state:?} at line {line}",
                         )));
                     }
                 },
                 ParseToken::TurtleActionPenUp => match state {
                     ParseState::Token(Some(text), None) => {
-                        println!("Accepted add_token(\"{}\", TurtleAction::PenUp)", text);
+                        println!("Accepted add_token(\"{text}\", TurtleAction::PenUp)");
                         let _ = self.add_token(text, TurtleCommand::PenUp);
                         state = ParseState::Start;
                     }
                     _ => {
                         return Err(HallrError::ParseError(format!(
-                            "Bad state for TurtleActionPenUp:{:?} at line {}",
-                            state, line
+                            "Bad state for TurtleActionPenUp:{state:?} at line {line}",
                         )));
                     }
                 },
                 ParseToken::TurtleActionNop | ParseToken::TurtleActionNothing => match state {
                     ParseState::Token(Some(text), None) => {
-                        println!("Accepted add_token(\"{}\", TurtleAction::Nop)", text);
+                        println!("Accepted add_token(\"{text}\", TurtleAction::Nop)");
                         let _ = self.add_token(text, TurtleCommand::Nop);
                         state = ParseState::Start;
                     }
                     _ => {
                         return Err(HallrError::ParseError(format!(
-                            "Bad state for TurtleActionNop:{:?} at line {}",
-                            state, line
+                            "Bad state for TurtleActionNop:{state:?} at line {line}",
                         )));
                     }
                 },
                 ParseToken::TurtleActionPop => match state {
                     ParseState::Token(Some(text), None) => {
-                        println!("Accepted add_token(\"{}\", TurtleAction::Pop)", text);
+                        println!("Accepted add_token(\"{text}\", TurtleAction::Pop)");
                         let _ = self.add_token(text, TurtleCommand::Pop);
                         state = ParseState::Start;
                     }
                     _ => {
                         return Err(HallrError::ParseError(format!(
-                            "Bad state for TurtleActionPop:{:?} at line {}",
-                            state, line
+                            "Bad state for TurtleActionPop:{state:?} at line {line}",
                         )));
                     }
                 },
                 ParseToken::TurtleActionPush => match state {
                     ParseState::Token(Some(text), None) => {
-                        println!("Accepted add_token(\"{}\", TurtleAction::Push)", text);
+                        println!("Accepted add_token(\"{text}\", TurtleAction::Push)");
                         let _ = self.add_token(text, TurtleCommand::Push);
                         state = ParseState::Start;
                     }
                     _ => {
                         return Err(HallrError::ParseError(format!(
-                            "Bad state for TurtleActionPush:{:?} at line {}",
-                            state, line
+                            "Bad state for TurtleActionPush:{state:?} at line {line}"
                         )));
                     }
                 },
@@ -783,8 +762,7 @@ impl TurtleRules {
                             // Third parameter (roll) - now we have all parameters
                             let roll = value;
                             println!(
-                                "Accepted add_token(\"{}\", TurtleAction::Rotate({}, {}, {}))",
-                                text, yaw, pitch, roll
+                                "Accepted add_token(\"{text}\", TurtleAction::Rotate({yaw}, {pitch}, {roll}))"
                             );
 
                             let _ = self.add_token(
@@ -818,25 +796,24 @@ impl TurtleRules {
                         }
                         ParseState::Iterations(None) => {
                             let iterations = value as u32;
-                            println!("Accepted iterations({})", iterations);
+                            println!("Accepted iterations({iterations})");
                             let _ = self.set_iterations(iterations);
                             state = ParseState::Start;
                         }
                         ParseState::GeodesicRadius(None) => {
-                            println!("Accepted geodesic_radius({})", value);
+                            println!("Accepted geodesic_radius({value})");
                             let _ = self.set_geodesic_radius(value);
                             state = ParseState::Start;
                         }
                         ParseState::Timeout(None) => {
                             let seconds = value as u64;
-                            println!("Accepted timeout({})", seconds);
+                            println!("Accepted timeout({seconds})");
                             let _ = self.set_timeout(seconds);
                             state = ParseState::Start;
                         }
                         _ => {
                             return Err(HallrError::ParseError(format!(
-                                "Bad state for Integer:{:?} at line {}",
-                                state, line
+                                "Bad state for Integer:{state:?} at line {line}"
                             )));
                         }
                     }

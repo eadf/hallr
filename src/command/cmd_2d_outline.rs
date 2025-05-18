@@ -8,13 +8,11 @@ use crate::{
     ffi,
     prelude::FFIVector3,
 };
-use centerline::HasMatrix4;
 use hronn::prelude::ConvertTo;
 use itertools::Itertools;
-use linestring::linestring_3d;
 use vector_traits::{
-    GenericScalar, GenericVector3, HasXY, HasXYZ,
     approx::{AbsDiffEq, UlpsEq},
+    prelude::{Aabb3, GenericVector3, HasXY, HasXYZ},
 };
 
 #[cfg(test)]
@@ -39,21 +37,21 @@ where
     let mut internal_edges = ahash::AHashSet::<(u32, u32)>::default();
     //println!("Input faces : {:?}", obj.faces);
 
-    let mut aabb = linestring_3d::Aabb3::<T>::default();
+    let mut aabb = <T as GenericVector3>::Aabb::default();
     for v in model.vertices.iter() {
-        aabb.update_with_point(v.to())
+        aabb.add_point(v.to())
     }
     let plane =
-        linestring_3d::Plane::get_plane_relaxed(aabb, T::Scalar::default_epsilon(), T::Scalar::default_max_ulps()).ok_or_else(|| {
-            let aabbe_d = aabb.get_high().unwrap() - aabb.get_low().unwrap();
-            let aabbe_c = (aabb.get_high().unwrap() + aabb.get_low().unwrap())/T::Scalar::TWO;
+        aabb.get_plane_relaxed(T::Scalar::default_epsilon(), T::Scalar::default_max_ulps()).ok_or_else(|| {
+            let aabbe_d = aabb.max() - aabb.min();
+            let aabbe_c =aabb.center();
             HallrError::InputNotPLane(format!(
                 "Input data not in one plane and/or plane not intersecting origin: Δ({},{},{}) C({},{},{})",
                 aabbe_d.x(), aabbe_d.y(), aabbe_d.z(),aabbe_c.x(), aabbe_c.y(), aabbe_c.z()
             ))
         })?;
 
-    println!("2d_outline: data was in plane:{:?} aabb:{:?}", plane, aabb);
+    println!("2d_outline: data was in plane:{plane:?} aabb:{aabb:?}");
 
     for face in model.indices.chunks(3) {
         for (v0, v1) in face.iter().chain(face.first()).tuple_windows::<(_, _)>() {
@@ -146,7 +144,7 @@ pub(crate) fn process_command<T>(
 ) -> Result<super::CommandResult, HallrError>
 where
     T: GenericVector3,
-    T: ConvertTo<FFIVector3> + HasMatrix4,
+    T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
 {
     if models.len() > 1 {

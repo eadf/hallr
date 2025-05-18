@@ -393,7 +393,7 @@ fn test_lsystems_5() -> Result<(), HallrError> {
     let models = vec![owned_model_0.as_model()];
 
     let _result = super::process_command(config, models)?;
-    println!("result:{:?}", _result);
+    println!("result:{_result:?}");
     /*
     assert_eq!(result.1.len() % 3, 0);
     assert!(!result.1.is_empty());

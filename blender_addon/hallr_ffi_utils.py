@@ -150,7 +150,7 @@ def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.
         if len(indices) == 0:
             raise HallrException(f"No polygons found in '{mesh_obj.name}', maybe the mesh is not fully triangulated?")
 
-    elif mesh_format in [MeshFormat.LINE_WINDOWS, MeshFormat.LINE_CHUNKS]:
+    elif mesh_format == MeshFormat.LINE_CHUNKS:
         # Verify there are no polygons for line formats
         if len(mesh_obj.data.polygons) > 0:
             raise HallrException(
@@ -308,9 +308,11 @@ def update_existing_object(active_obj: bpy.types.Object,
         try:
             remove_doubles_threshold = float(return_options.get(VERTEX_MERGE_TAG))
             print(f"Python: removing doubles by {remove_doubles_threshold} (blender op)")
-            bpy.ops.mesh.remove_doubles(remove_doubles_threshold)
-        except ValueError:
-            pass
+            result = bpy.ops.mesh.remove_doubles(threshold=remove_doubles_threshold)
+        except ValueError as e:
+            print(f"ValueError details: {str(e)}")
+            print(f"Input value that caused error: {return_options.get(VERTEX_MERGE_TAG)}")
+            print(f"Converted to float: {float(return_options.get(VERTEX_MERGE_TAG))}")
         bpy.ops.object.mode_set(mode='OBJECT')
 
     # Return to edit mode if that's where we started

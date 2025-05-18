@@ -2,7 +2,7 @@
 // Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
-//! A module containing boiler-plate implementations of standard traits such as Default, From etc etc
+//! A module containing boilerplate implementations of standard traits such as Default, From etc etc
 
 use crate::{HallrError, command::Options, ffi::MeshFormat};
 use std::collections::HashMap;
@@ -18,8 +18,7 @@ impl Options for HashMap<String, String> {
             Some(v) => match v.to_lowercase().parse() {
                 Ok(val) => Ok(val),
                 Err(_) => Err(HallrError::InvalidParameter(format!(
-                    "Invalid value for parameter {{\"{}\"}}: {{\"{}\"}}",
-                    key, v
+                    "Invalid value for parameter {{\"{key}\"}}: {{\"{v}\"}}"
                 ))),
             },
             None => {
@@ -45,8 +44,7 @@ impl Options for HashMap<String, String> {
             Some(v) => match v.parse() {
                 Ok(val) => Ok(Some(val)),
                 Err(_) => Err(HallrError::InvalidParameter(format!(
-                    "Invalid value for parameter {{\"{}\"}}: {{\"{}\"}}",
-                    key, v
+                    "Invalid value for parameter {{\"{key}\"}}: {{\"{v}\"}}"
                 ))),
             },
             None => Ok(None),
@@ -82,12 +80,11 @@ impl Options for HashMap<String, String> {
             .chars()
             .nth(model_nr)
             .ok_or_else(|| {
-                HallrError::InvalidParameter(format!("Missing mesh format of model {}", model_nr))
+                HallrError::InvalidParameter(format!("Missing mesh format of model {model_nr}"))
             })?;
         if found_char != expected_format.as_char() {
             return Err(HallrError::InvalidParameter(format!(
-                "This operation requires a mesh format of {}, not {}",
-                expected_format, found_char
+                "This operation requires a mesh format of {expected_format}, not {found_char}"
             )));
         }
         Ok(())

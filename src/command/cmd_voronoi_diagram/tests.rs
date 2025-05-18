@@ -33,7 +33,7 @@ fn test_voronoi_diagram_1() -> Result<(), HallrError> {
 
     let models = vec![owned_model_0.as_model()];
     let result = super::process_command(config, models)?;
-    assert_eq!(18, result.0.len()); // vertices
+    assert_eq!(16, result.0.len()); // vertices
     assert_eq!(32, result.1.len()); // indices
     Ok(())
 }

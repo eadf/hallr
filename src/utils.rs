@@ -13,7 +13,8 @@ use hronn::prelude::MaximumTracker;
 use smallvec::SmallVec;
 use std::{cmp::Reverse, hash::Hash};
 use vector_traits::{
-    GenericScalar, GenericVector2, GenericVector3, HasXYZ, num_traits::float::FloatCore,
+    num_traits::float::FloatCore,
+    prelude::{GenericScalar, GenericVector2, GenericVector3, HasXYZ},
 };
 
 pub(crate) trait GrowingVob {
@@ -72,8 +73,7 @@ impl<T: GenericVector2> VertexDeduplicator2D<T> {
         let y: T::Scalar = vector.y() + T::Scalar::ZERO;
         if !(x.is_finite() && y.is_finite()) {
             return Err(HallrError::FloatNotFinite(format!(
-                "The vector was not finite {:?}, {:?}",
-                x, y
+                "The vector was not finite {x:?}, {y:?}"
             )));
         }
         let index = self
@@ -118,8 +118,7 @@ impl<T: GenericVector3> VertexDeduplicator3D<T> {
         let z: T::Scalar = vector.z() + T::Scalar::ZERO;
         if !(x.is_finite() && y.is_finite() && z.is_finite()) {
             return Err(HallrError::FloatNotFinite(format!(
-                "The vector was not finite ({:?},{:?},{:?})",
-                x, y, z
+                "The vector was not finite ({x:?},{y:?},{z:?})"
             )));
         }
         let index = self

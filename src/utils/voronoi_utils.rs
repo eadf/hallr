@@ -5,14 +5,13 @@
 use super::{GrowingVob, HallrError, VertexDeduplicator3D};
 use crate::ffi::FFIVector3;
 use boostvoronoi as BV;
-use centerline::{HasMatrix4, Matrix4};
 use hronn::prelude::ConvertTo;
 use itertools::Itertools;
 use linestring::linestring_2d::VoronoiParabolicArc;
 use std::collections::VecDeque;
 use vector_traits::{
-    GenericScalar, GenericVector2, GenericVector3, HasXY,
     num_traits::{AsPrimitive, Float},
+    prelude::{Affine3D, GenericScalar, GenericVector2, GenericVector3, HasXY},
 };
 
 /// Mark infinite edges and their adjacent edges as EXTERNAL.
@@ -197,7 +196,7 @@ where
 
 /// Helper structs that build vertices and indices from a voronoi diagram
 /// This construct contains the read-only items
-pub(crate) struct DiagramHelperRo<T: GenericVector3 + HasMatrix4>
+pub(crate) struct DiagramHelperRo<T: GenericVector3>
 where
     T::Scalar: BV::OutputType,
 {
@@ -209,12 +208,12 @@ where
     pub(crate) rejected_edges: vob::Vob<u32>,
     // this list uses the diagram::Vertex id as index
     pub(crate) internal_vertices: vob::Vob<u32>,
-    pub(crate) inverted_transform: T::Matrix4Type,
+    pub(crate) inverted_transform: <T as GenericVector3>::Affine,
 }
 
 impl<T: GenericVector3> DiagramHelperRo<T>
 where
-    T: HasMatrix4 + ConvertTo<FFIVector3>,
+    T: ConvertTo<FFIVector3>,
     T::Scalar: BV::OutputType,
     i64: AsPrimitive<T::Scalar>,
     f32: AsPrimitive<T::Scalar>,

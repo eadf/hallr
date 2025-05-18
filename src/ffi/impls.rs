@@ -10,18 +10,18 @@ use hronn::prelude::ConvertTo;
 use std::fmt;
 
 use vector_traits::{
-    Approx, GenericScalar, HasXY, HasXYZ,
     approx::{AbsDiffEq, UlpsEq},
     glam::{DVec3, Vec3, Vec3A, vec3a},
+    prelude::{Approx, GenericScalar, HasXY, HasXYZ},
 };
 
 impl fmt::Debug for FFIVector3 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fn format_float(value: f32) -> String {
             if value.fract() == 0.0 {
-                format!("{:.1}", value)
+                format!("{value:.1}",)
             } else {
-                format!("{}", value)
+                format!("{value}",)
             }
         }
 
