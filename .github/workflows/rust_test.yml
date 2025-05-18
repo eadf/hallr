@@ -17,7 +17,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        rust: [stable, nightly]
+        rust : [ stable ]
+        #rust: [stable, nightly]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
