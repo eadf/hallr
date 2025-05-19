@@ -370,6 +370,8 @@ iterations(3)
 timeout(1)
 # will round all float positions to the nearest integer
 round()
+# Removes duplicate vertices (calls Blender's 'remove_doubles(threshold)')
+dedup(0.05)
 '''}
 
 

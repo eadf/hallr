@@ -208,6 +208,7 @@ pub(crate) struct TurtleRules {
     roll: Option<f64>,
     round: bool,
     iterations: u32,
+    dedup_threshold: Option<f64>,
     timeout: Option<Duration>,
     geodesic_radius: Option<f64>,
 }
@@ -223,9 +224,9 @@ impl TurtleRules {
         Ok(self)
     }
 
-    pub fn set_timeout(&mut self, seconds: u64) -> Result<&mut Self, HallrError> {
+    pub fn set_timeout(&mut self, seconds: u64) -> Result<(), HallrError> {
         self.timeout = Some(Duration::from_secs(seconds));
-        Ok(self)
+        Ok(())
     }
 
     pub fn add_axiom(&mut self, axiom: String) -> Result<&mut Self, HallrError> {
@@ -274,9 +275,9 @@ impl TurtleRules {
         }
         Ok(self)
     }
-    pub fn set_geodesic_radius(&mut self, radius: f64) -> Result<&mut Self, HallrError> {
+    pub fn set_geodesic_radius(&mut self, radius: f64) -> Result<(), HallrError> {
         self.geodesic_radius = Some(radius);
-        Ok(self)
+        Ok(())
     }
 
     /// Expands the rules over the axiom 'n' times
@@ -320,7 +321,7 @@ impl TurtleRules {
     }
 
     /// sets the axioms, rules and tokens from a text string.
-    pub fn parse(&mut self, cmd_custom_turtle: &str) -> Result<&mut Self, HallrError> {
+    pub fn parse(mut self, cmd_custom_turtle: &str) -> Result<Self, HallrError> {
         #[derive(Debug, PartialEq, Eq)]
         enum ParseTurtleAction {
             Forward,
@@ -367,6 +368,9 @@ impl TurtleRules {
 
             #[regex("\\.?iterations")]
             Iterations,
+            
+            #[regex("\\.?dedup")]
+            DeDup,
 
             #[regex("\\.?timeout")]
             Timeout,
@@ -437,6 +441,7 @@ impl TurtleRules {
             Rotate(Option<f64>, Option<f64>, Option<f64>),
             Iterations(Option<i32>),
             GeodesicRadius(Option<f64>),
+            DeDup(Option<f64>),
             Timeout(Option<u64>),
         }
 
@@ -696,6 +701,17 @@ impl TurtleRules {
                     }
                     state = ParseState::Iterations(None);
                 }
+                ParseToken::DeDup => {
+                    if state != ParseState::Start {
+                        return Err(HallrError::ParseError(format!(
+                            "Expected to be in Start state, was in state:{:?} when reading:{} at line {}.",
+                            state,
+                            lex.slice(),
+                            line
+                        )));
+                    }
+                    state = ParseState::DeDup(None);
+                }
                 ParseToken::Timeout => {
                     if state != ParseState::Start {
                         return Err(HallrError::ParseError(format!(
@@ -797,12 +813,18 @@ impl TurtleRules {
                         ParseState::Iterations(None) => {
                             let iterations = value as u32;
                             println!("Accepted iterations({iterations})");
-                            let _ = self.set_iterations(iterations);
+                            self.set_iterations(iterations)?;
+                            state = ParseState::Start;
+                        }
+                        ParseState::DeDup(None) => {
+                            let threshold = value;
+                            println!("Accepted dedup({threshold})");
+                            self.set_dedup(threshold)?;
                             state = ParseState::Start;
                         }
                         ParseState::GeodesicRadius(None) => {
                             println!("Accepted geodesic_radius({value})");
-                            let _ = self.set_geodesic_radius(value);
+                            self.set_geodesic_radius(value)?;
                             state = ParseState::Start;
                         }
                         ParseState::Timeout(None) => {
@@ -900,8 +922,20 @@ impl TurtleRules {
         Ok(turtle.result)
     }
 
-    pub fn set_iterations(&mut self, n: u32) -> Result<&mut Self, HallrError> {
+    fn set_iterations(&mut self, n: u32) -> Result<(), HallrError> {
         self.iterations = n;
-        Ok(self)
+        Ok(())
+    }
+    
+    fn set_dedup(&mut self, threshold: f64) -> Result<(), HallrError> {
+        if threshold <= 0.0 {
+            Err(HallrError::InvalidInputData(format!("dedup threshold must be positive {threshold}").to_string()))?
+        }
+        self.dedup_threshold = Some(threshold);
+        Ok(())
+    }
+
+    pub fn get_dedup(&self ) -> Option<f64> {
+        self.dedup_threshold
     }
 }

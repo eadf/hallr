@@ -1317,9 +1317,9 @@ dependencies = [
 
 [[package]]
 name = "qd"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4f5e6e5312f7415999bb62c0891fb286a06b6dfaef820c1ab45ff448a9b8fef"
+checksum = "73940173cf92cd24f3650f5f388946524026712a6ca170762340acf5fb3fde0f"
 dependencies = [
  "bytemuck",
  "libm",

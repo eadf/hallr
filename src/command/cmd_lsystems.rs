@@ -49,9 +49,11 @@ pub(crate) fn process_command(
 
     //println!("Trimmed_TURTLE:\n{}", processed_text);
     let now = time::Instant::now();
-    let result = TurtleRules::default()
-        .parse(&processed_text)?
-        .exec(Turtle::default())?;
+    let (result, dedup) = {
+        let turtle_rules = TurtleRules::default().parse(&processed_text)?;
+        let dedup = turtle_rules.get_dedup();
+        (turtle_rules.exec(Turtle::default())?, dedup) 
+    };
     (!result.is_empty())
         .then_some(())
         .ok_or_else(|| HallrError::ParseError("Input did not generate any vertices".to_string()))?;
@@ -84,10 +86,16 @@ pub(crate) fn process_command(
         MeshFormat::MESH_FORMAT_TAG.to_string(),
         MeshFormat::LineChunks.to_string(),
     );
-    if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
-        // we take the easy way out here, and let blender do the de-duplication of the vertices.
-        let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
-    }
+    
+    let dedup_value = dedup
+        .filter(|&v| v > 0.0) // Only keep positive, > 0 dedup values
+        .or_else(|| input_config.get_parsed_option::<f64>(ffi::VERTEX_MERGE_TAG).ok()?)
+        .unwrap_or(0.0001);
+
+    let _ = return_config.insert(
+        ffi::VERTEX_MERGE_TAG.to_string(),
+        dedup_value.to_string()
+    );
 
     Ok((
         output_vertices,
