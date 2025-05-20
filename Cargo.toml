@@ -14,21 +14,21 @@ keywords = ["blender", "voronoi", "lsystems", "geometry"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-#vector-traits = { version="0.4.0", features = ["glam"]}
+vector-traits = { version="0.5.0", features = ["glam"]}
 #vector-traits = { path = "../vector-traits", features = ["glam"] }
-vector-traits = {git = "https://codeberg.org/eadf/vector_traits_rs.git", features = ["glam"]}
-#linestring = { version="0.14.0", features = ["glam"] }
+#vector-traits = {git = "https://codeberg.org/eadf/vector_traits_rs.git", features = ["glam"]}
+linestring = { version="0.15.0", features = ["glam"] }
 #linestring = { path="../linestring.rs", features = ["glam"]}
-linestring = {git = "https://codeberg.org/eadf/linestring_rs.git", features = ["glam"]}
-#centerline = { version="0.12.1", features = ["glam"]}
+#linestring = {git = "https://codeberg.org/eadf/linestring_rs.git", features = ["glam"]}
+centerline = { version="0.13.0", features = ["glam"]}
 #centerline = { path="../centerline.rs", features = ["glam"]}
-centerline = {git = "https://codeberg.org/eadf/centerline_rs.git", features = ["glam"]}
-#krakel = {version = "0.3.1", features = ["vector-traits", "glam"]}
+#centerline = {git = "https://codeberg.org/eadf/centerline_rs.git", features = ["glam"]}
+krakel = {version = "0.4.1", features = ["vector-traits", "glam"]}
 #krakel = {path = "../krakel", features = ["vector-traits", "glam"]}
-krakel = {git = "https://codeberg.org/eadf/krakel_rs.git", features = ["vector-traits", "glam"]}
-#hronn = { version = "0.5.4", features = ["glam"]}
+#krakel = {git = "https://codeberg.org/eadf/krakel_rs.git", features = ["vector-traits", "glam"]}
+hronn = { version = "0.6.0", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
-hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
+#hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
 boostvoronoi = { version = "0.11.1" }
 thiserror = "2.0.12"
 ahash = "0.8.11"

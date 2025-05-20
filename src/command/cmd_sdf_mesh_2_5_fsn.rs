@@ -247,17 +247,21 @@ fn build_voxel(
             //let _c = v0 + v * 0.5; // center
             let h = v.length();
             let b = (r0 - r1) / h;
-            let a = (1.0 - b * b).sqrt();
-            // todo: this can't be correct and/or efficient
-            let rotation = iglam::Mat3::from_rotation_z(v.angle_between(iglam::vec2(0.0, 1.0)));
-            let translation = rotation.transform_point2(v0);
-            let translation = -iglam::vec3(translation.x(), translation.y(), 0.0);
-            let m = iglam::Affine3A::from_mat3_translation(rotation, translation);
+            let bb = b*b;
+            if bb > 1.0 {
+                None
+            } else {
+                let a = (1.0 - bb).sqrt();
+                let rotation = iglam::Mat3::from_rotation_z(v.angle_between(iglam::Vec2::Y));
+                let translation = rotation.transform_point2(v0);
+                let translation = -iglam::vec3(translation.x(), translation.y(), 0.0);
+                let m = iglam::Affine3A::from_mat3_translation(rotation, translation);
 
-            Some((
-                TaperedCapsule { r0, r1, h, b, a, m },
-                ex0.bound_union(&ex1).containing_integer_extent(),
-            ))
+                Some((
+                    TaperedCapsule { r0, r1, h, b, a, m },
+                    ex0.bound_union(&ex1).containing_integer_extent(),
+                ))
+            }
         })
         .collect();
 

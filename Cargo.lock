@@ -178,8 +178,9 @@ dependencies = [
 
 [[package]]
 name = "centerline"
-version = "0.12.1"
-source = "git+https://codeberg.org/eadf/centerline_rs.git#56b8cd0ecbc87c4956d0e0839c2e6ada98363759"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b85dca278d5e00c70974423eeaa989dc467fd0d335762b8bc5ba3a77d8536b9b"
 dependencies = [
  "ahash",
  "bitflags",
@@ -726,8 +727,9 @@ checksum = "d231dfb89cfffdbc30e7fc41579ed6066ad03abda9e567ccafae602b97ec5024"
 
 [[package]]
 name = "hronn"
-version = "0.5.4"
-source = "git+https://codeberg.org/eadf/hronn_rs.git#b7b58f9d2dec5070789e4d805e07f77b7e1cdfa5"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07aaab8a30d5dee62cfa6b5c535835ff49ff3a52738a22dd8a4ae3d3a2855fcf"
 dependencies = [
  "krakel",
  "linestring",
@@ -809,8 +811,9 @@ dependencies = [
 
 [[package]]
 name = "krakel"
-version = "0.3.1"
-source = "git+https://codeberg.org/eadf/krakel_rs.git#fef0846b40abf1e75e2a91ab5de69b898f7f2e2c"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edf2cf2de00193739d56415ec2a8d24d7a65c37c88dedaa6cbcd6e34c8aecf4f"
 dependencies = [
  "approx",
  "num-traits",
@@ -838,8 +841,9 @@ checksum = "f9fbbcab51052fe104eb5e5d351cf728d30a5be1fe14d9be8a3b097481fb97de"
 
 [[package]]
 name = "linestring"
-version = "0.14.0"
-source = "git+https://codeberg.org/eadf/linestring_rs.git#4a7127cdafa4ec278e6abdddb2283ab75047c620"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb5802506203a1aa27afaba0cda956d228a185240fc323f14ac83e0348fef64b"
 dependencies = [
  "ahash",
  "itertools 0.14.0",
@@ -1852,7 +1856,8 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 [[package]]
 name = "vector-traits"
 version = "0.5.0"
-source = "git+https://codeberg.org/eadf/vector_traits_rs.git#d44f37870cc39a39ca84e625e2afc026ba5c8624"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b6a588fddca80889cf6e617f442bdd0dafd23871d82b3ce56df3cdd6d8beb28"
 dependencies = [
  "approx",
  "glam 0.30.3",
