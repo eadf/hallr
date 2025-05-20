@@ -47,7 +47,6 @@ macaw = { version="^0.19"} # macaw must be the same version that saft uses
 
 [dev-dependencies]
 rand = "0.9.1"
-# criterion = "0.5.1"
 
 [features]
 generate_test_case_from_input = ["dep:ryu"]
@@ -56,6 +55,7 @@ glam-fast-math = ["vector-traits/glam-fast-math"]
 display_sdf_chunks = []
 
 [profile.release]
+opt-level = 3
 lto = true
 
 [package.metadata.docs.rs]

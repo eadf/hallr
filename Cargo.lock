@@ -727,7 +727,7 @@ checksum = "d231dfb89cfffdbc30e7fc41579ed6066ad03abda9e567ccafae602b97ec5024"
 [[package]]
 name = "hronn"
 version = "0.5.4"
-source = "git+https://codeberg.org/eadf/hronn_rs.git#e2513a13c9a086a496c9546e178aafdc39952cf8"
+source = "git+https://codeberg.org/eadf/hronn_rs.git#b7b58f9d2dec5070789e4d805e07f77b7e1cdfa5"
 dependencies = [
  "krakel",
  "linestring",
@@ -810,7 +810,7 @@ dependencies = [
 [[package]]
 name = "krakel"
 version = "0.3.1"
-source = "git+https://codeberg.org/eadf/krakel_rs.git#2bed4a09940c05ad0c446d44c9da72fd7b0f8daf"
+source = "git+https://codeberg.org/eadf/krakel_rs.git#fef0846b40abf1e75e2a91ab5de69b898f7f2e2c"
 dependencies = [
  "approx",
  "num-traits",
@@ -1851,8 +1851,8 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 
 [[package]]
 name = "vector-traits"
-version = "0.4.1"
-source = "git+https://codeberg.org/eadf/vector_traits_rs.git#bb56c494bcf35563dfd50ecfcb99d23114c227e0"
+version = "0.5.0"
+source = "git+https://codeberg.org/eadf/vector_traits_rs.git#d44f37870cc39a39ca84e625e2afc026ba5c8624"
 dependencies = [
  "approx",
  "glam 0.30.3",
@@ -2022,9 +2022,9 @@ dependencies = [
 
 [[package]]
 name = "windows-core"
-version = "0.61.1"
+version = "0.61.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46ec44dc15085cea82cf9c78f85a9114c463a369786585ad2882d1ff0b0acf40"
+checksum = "c0fdd3ddb90610c7638aa2b3a3ab2904fb9e5cdbecc643ddb3647212781c4ae3"
 dependencies = [
  "windows-implement",
  "windows-interface",
@@ -2084,18 +2084,18 @@ dependencies = [
 
 [[package]]
 name = "windows-result"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b895b5356fc36103d0f64dd1e94dfa7ac5633f1c9dd6e80fe9ec4adef69e09d"
+checksum = "56f42bd332cc6c8eac5af113fc0c1fd6a8fd2aa08a0119358686e5160d0586c6"
 dependencies = [
  "windows-link",
 ]
 
 [[package]]
 name = "windows-strings"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a7ab927b2637c19b3dbe0965e75d8f2d30bdd697a1516191cad2ec4df8fb28a"
+checksum = "56e6c93f3a0c3b36176cb1327a4958a0353d5d166c2a35cb268ace15e91d3b57"
 dependencies = [
  "windows-link",
 ]

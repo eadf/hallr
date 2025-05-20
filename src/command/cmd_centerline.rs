@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// Copyright (c) 2023, 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, Options, OwnedModel};
@@ -72,7 +72,7 @@ where
     }
     let mut converted_vertices = Vec::<T>::with_capacity(model.vertices.len());
     for p in model.vertices.iter() {
-        if !p.x().is_finite() || !p.y().is_finite() || !p.z().is_finite() {
+        if !p.is_finite() {
             return Err(HallrError::InvalidInputData(format!(
                 "Only valid coordinates are allowed ({},{},{})",
                 p.x(),

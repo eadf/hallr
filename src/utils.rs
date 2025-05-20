@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// Copyright (c) 2023, 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
-mod impls;
 #[cfg(test)]
 mod tests;
+mod trait_impl;
 pub(crate) mod voronoi_utils;
 
 use crate::HallrError;
@@ -12,10 +12,7 @@ use ahash::{AHashMap, AHashSet};
 use hronn::prelude::MaximumTracker;
 use smallvec::SmallVec;
 use std::{cmp::Reverse, hash::Hash};
-use vector_traits::{
-    num_traits::float::FloatCore,
-    prelude::{GenericScalar, GenericVector2, GenericVector3, HasXYZ},
-};
+use vector_traits::prelude::{GenericScalar, GenericVector2, GenericVector3, HasXYZ};
 
 pub(crate) trait GrowingVob {
     fn fill_with_false(initial_size: usize) -> vob::Vob<u32>;
@@ -68,14 +65,14 @@ impl<T: GenericVector2> VertexDeduplicator2D<T> {
     }
 
     pub fn get_index_or_insert(&mut self, vector: T) -> Result<u32, HallrError> {
-        // try to get rid of the -0.0 value
-        let x: T::Scalar = vector.x() + T::Scalar::ZERO;
-        let y: T::Scalar = vector.y() + T::Scalar::ZERO;
-        if !(x.is_finite() && y.is_finite()) {
+        if !vector.is_finite() {
             return Err(HallrError::FloatNotFinite(format!(
-                "The vector was not finite {x:?}, {y:?}"
+                "The vector was not finite {vector:?}"
             )));
         }
+        // try to get rid of the -0.0 value by adding 0.0
+        let x: T::Scalar = vector.x() + T::Scalar::ZERO;
+        let y: T::Scalar = vector.y() + T::Scalar::ZERO;
         let index = self
             .set
             .entry((x.to_bits(), y.to_bits()))
@@ -112,15 +109,16 @@ impl<T: GenericVector3> VertexDeduplicator3D<T> {
 
     /// get a previously defined index, or insert the vertex and return the new index
     pub fn get_index_or_insert(&mut self, vector: T) -> Result<u32, HallrError> {
-        // try to get rid of the -0.0 value
+        if !vector.is_finite() {
+            return Err(HallrError::FloatNotFinite(format!(
+                "The vector was not finite ({vector:?})"
+            )));
+        }
+        // try to get rid of the -0.0 value by adding 0.0
         let x: T::Scalar = vector.x() + T::Scalar::ZERO;
         let y: T::Scalar = vector.y() + T::Scalar::ZERO;
         let z: T::Scalar = vector.z() + T::Scalar::ZERO;
-        if !(x.is_finite() && y.is_finite() && z.is_finite()) {
-            return Err(HallrError::FloatNotFinite(format!(
-                "The vector was not finite ({x:?},{y:?},{z:?})"
-            )));
-        }
+
         let index = self
             .set
             .entry((x.to_bits(), y.to_bits(), z.to_bits()))

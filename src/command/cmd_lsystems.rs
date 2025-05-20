@@ -2,11 +2,18 @@
 // Copyright (c) 2023 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
+mod fast_surface_nets;
 mod lsystems;
 #[cfg(test)]
 mod tests;
 
-use super::{ConfigType, Model, Options};
+use ilattice::{glam as iglam, prelude::Extent};
+use vector_traits::{
+    glam::{Vec3, Vec4Swizzles},
+    prelude::{Aabb3, GenericVector3},
+};
+
+use super::{ConfigType, Model, Options, OwnedModel};
 use crate::{
     command::cmd_lsystems::lsystems::{Turtle, TurtleRules},
     ffi,
@@ -49,57 +56,93 @@ pub(crate) fn process_command(
 
     //println!("Trimmed_TURTLE:\n{}", processed_text);
     let now = time::Instant::now();
-    let (result, dedup) = {
+    let (result, dedup, sdf_divisions) = {
         let turtle_rules = TurtleRules::default().parse(&processed_text)?;
+        let sdf_divisions = turtle_rules.get_sdf_divisions();
         let dedup = turtle_rules.get_dedup();
-        (turtle_rules.exec(Turtle::default())?, dedup) 
+        (turtle_rules.exec(Turtle::default())?, dedup, sdf_divisions)
     };
     (!result.is_empty())
         .then_some(())
         .ok_or_else(|| HallrError::ParseError("Input did not generate any vertices".to_string()))?;
 
-    let mut output_vertices = Vec::<FFIVector3>::with_capacity(result.len());
-    let mut output_indices = Vec::<usize>::with_capacity(result.len());
+    //
 
-    // println!("Turtle result: {:?}", _result);
+    let aabb = {
+        let mut aabb = <Vec3 as GenericVector3>::Aabb::default();
+        for [p0, p1] in result.iter() {
+            let mut aabb_point = <Vec3 as GenericVector3>::Aabb::from_point(p0.xyz());
+            aabb_point.pad(Vec3::splat(p0.w));
+            aabb.add_aabb(&aabb_point);
 
-    //println!("results:");
-    for [p0, p1] in result {
-        output_vertices.push(FFIVector3::new(p0.x as f32, p0.y as f32, p0.z as f32));
-        output_vertices.push(FFIVector3::new(p1.x as f32, p1.y as f32, p1.z as f32));
-        //println!("edge from {} to {}", p0, p1);
-        // Add indices for these two points (forming an edge)
-        let base_index = output_vertices.len() - 2;
-        output_indices.push(base_index);
-        output_indices.push(base_index + 1);
-    }
-    /*
-    println!("confirmation:");
-    for edge in output_indices.chunks_exact(2) {
-        println!("edge from {} to {}", output_vertices[edge[0]], output_vertices[edge[1]]);
-    }*/
-
+            let mut aabb_point = <Vec3 as GenericVector3>::Aabb::from_point(p1.xyz());
+            aabb_point.pad(Vec3::splat(p1.w));
+            aabb.add_aabb(&aabb_point);
+        }
+        aabb
+    };
     println!("build_custom_turtle render() duration: {:?}", now.elapsed());
 
+    println!("Turtle result: {aabb:?}");
     let mut return_config = ConfigType::new();
-    let _ = return_config.insert(
-        MeshFormat::MESH_FORMAT_TAG.to_string(),
-        MeshFormat::LineChunks.to_string(),
-    );
-    
+
+    let output_model = if let Some(_sdf_divisions) = sdf_divisions {
+        let (min, _, shape) = aabb.extents();
+        let extent = Extent::<iglam::Vec3A>::from_min_and_shape(
+            iglam::vec3a(min.x, min.y, min.z),
+            iglam::vec3a(shape.x, shape.y, shape.z),
+        );
+
+        let (voxel_size, mesh) =
+            fast_surface_nets::build_voxel(_sdf_divisions as f32, result, extent)?;
+        println!("mesh {:?}", mesh.len());
+        let _ = return_config.insert(
+            MeshFormat::MESH_FORMAT_TAG.to_string(),
+            MeshFormat::Triangulated.to_string(),
+        );
+        fast_surface_nets::build_output_model(voxel_size, mesh, false)?
+    } else {
+        let mut output_vertices = Vec::<FFIVector3>::with_capacity(result.len());
+        let mut output_indices = Vec::<usize>::with_capacity(result.len());
+
+        //println!("results:");
+        for [p0_4, p1_4] in result {
+            let p0_3 = p0_4.xyz();
+            let p1_3 = p1_4.xyz();
+            //println!("found edge : {p0_4:?} - {p1_4:?}");
+
+            output_indices.push(output_vertices.len());
+            output_vertices.push(p0_3.into());
+            output_indices.push(output_vertices.len());
+            output_vertices.push(p1_3.into());
+            //println!("edge from {} to {}", p0, p1);
+        }
+        println!("The aabb was : {aabb:?}");
+        let _ = return_config.insert(
+            MeshFormat::MESH_FORMAT_TAG.to_string(),
+            MeshFormat::LineChunks.to_string(),
+        );
+        OwnedModel {
+            vertices: output_vertices,
+            indices: output_indices,
+            world_orientation: OwnedModel::identity_matrix(),
+        }
+    };
+
     let dedup_value = dedup
         .filter(|&v| v > 0.0) // Only keep positive, > 0 dedup values
-        .or_else(|| input_config.get_parsed_option::<f64>(ffi::VERTEX_MERGE_TAG).ok()?)
+        .or_else(|| {
+            input_config
+                .get_parsed_option::<f64>(ffi::VERTEX_MERGE_TAG)
+                .ok()?
+        })
         .unwrap_or(0.0001);
 
-    let _ = return_config.insert(
-        ffi::VERTEX_MERGE_TAG.to_string(),
-        dedup_value.to_string()
-    );
+    let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), dedup_value.to_string());
 
     Ok((
-        output_vertices,
-        output_indices,
+        output_model.vertices,
+        output_model.indices,
         output_matrix,
         return_config,
     ))

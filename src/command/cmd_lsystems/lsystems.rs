@@ -5,32 +5,30 @@
 use crate::HallrError;
 use logos::Logos;
 use std::time::{Duration, Instant};
-use vector_traits::glam::{DQuat, DVec3};
+use vector_traits::glam::{DQuat, DVec3, DVec4, Vec4, Vec4Swizzles};
 
 pub(crate) struct Turtle {
     orientation: DQuat,
-    position: DVec3,
-    stack: Vec<(DQuat, DVec3)>,
-    result: Vec<[DVec3; 2]>,
+    position: DVec4,
+    stack: Vec<(DQuat, DVec4)>,
+    result: Vec<[Vec4; 2]>,
     /// Should the turtle draw while moving?
     pen_up: bool,
     /// should coordinates be rounded to int after each move?
     round: bool,
     sphere_radius: f64,
-    //normalize_cnt:u16
 }
 
 impl Default for Turtle {
     fn default() -> Self {
         Self {
             orientation: DQuat::IDENTITY,
-            position: DVec3::ZERO,
-            result: Vec::new(),
-            stack: Vec::new(),
+            position: DVec4::ZERO,
+            result: Vec::default(),
+            stack: Vec::default(),
             pen_up: false,
             round: false,
             sphere_radius: 1.0,
-            //normalize_cnt:0,
         }
     }
 }
@@ -38,10 +36,7 @@ impl Default for Turtle {
 impl Turtle {
     #[inline(always)]
     fn normalize_quaternion(&mut self) {
-        //self.normalize_cnt += 1;
-        //if self.normalize_cnt % 3   == 0 {
         self.orientation = self.orientation.normalize();
-        //}
     }
 
     // Current methods reimplemented with quaternions
@@ -55,7 +50,7 @@ impl Turtle {
     // Yaw: rotate heading within local tangent plane (around surface normal)
     fn geodesic_yaw(&mut self, angle: f64) {
         // self.position is normalized in each geodesic_forward()
-        let normal = self.position / self.sphere_radius;
+        let normal = self.position.xyz() / self.sphere_radius;
         let rotation = DQuat::from_axis_angle(normal, angle);
         self.orientation = rotation * self.orientation;
     }
@@ -89,7 +84,13 @@ impl Turtle {
     // Euclidean forward movement
     #[inline(always)]
     fn forward(&mut self, distance: f64) {
-        self.position += self.forward_vector() * distance;
+        self.position += (self.forward_vector() * distance).extend(0.0);
+    }
+
+    #[inline(always)]
+    fn tapered_forward(&mut self, distance: f64, reduction: f64) {
+        self.position += (self.forward_vector() * distance).extend(0.0);
+        self.position.w *= reduction;
     }
 
     // geodesic forward, hug the sphere and re-orient after move so "forward" tangents the surface
@@ -99,12 +100,13 @@ impl Turtle {
 
         let up = self.position / self.sphere_radius; // true "up"
         let forward = self.forward_vector();
-        let right = up.cross(forward).normalize(); // guaranteed tangent + perpendicular
+        let right = up.xyz().cross(forward).normalize(); // guaranteed tangent + perpendicular
         let rotation = DQuat::from_axis_angle(right, angular_disp);
 
         // Rotate position around sphere center
         // self.position/sphere_radius is now normalized once per forward()
-        self.position = (rotation * self.position).normalize() * self.sphere_radius;
+        self.position =
+            ((rotation * self.position.xyz()).normalize() * self.sphere_radius).extend(0.0);
 
         // Adjust orientation to maintain tangent plane
         // normalize self.orientation once per forward()
@@ -139,13 +141,11 @@ impl Turtle {
                 let p0 = self.position;
                 self.forward(*distance);
                 if self.round {
-                    self.position.x = self.position.x.round();
-                    self.position.y = self.position.y.round();
-                    self.position.z = self.position.z.round();
+                    self.position = self.position.round();
                 }
 
                 if !self.pen_up {
-                    self.result.push([p0, self.position]);
+                    self.result.push([p0.as_vec4(), self.position.as_vec4()]);
                 }
             }
             TurtleCommand::GeodesicForward(distance) => {
@@ -153,13 +153,27 @@ impl Turtle {
                 self.geodesic_forward(*distance);
 
                 if self.round {
-                    self.position.x = self.position.x.round();
-                    self.position.y = self.position.y.round();
-                    self.position.z = self.position.z.round();
+                    self.position = self.position.round();
                 }
 
                 if !self.pen_up {
-                    self.result.push([p0, self.position]);
+                    self.result.push([p0.as_vec4(), self.position.as_vec4()]);
+                }
+            }
+            TurtleCommand::TaperedForward(distance, reduction) => {
+                let p0 = self.position;
+                self.tapered_forward(*distance, *reduction);
+
+                if self.round {
+                    self.position = self.position.round();
+                }
+
+                if !self.pen_up {
+                    /*println!(
+                        "TaperedForward pushing: {p0:?}, {:?} {reduction}",
+                        self.position
+                    );*/
+                    self.result.push([p0.as_vec4(), self.position.as_vec4()]);
                 }
             }
             TurtleCommand::PenUp => self.pen_up = true,
@@ -186,6 +200,7 @@ pub(crate) enum TurtleCommand {
     Nop,
     Forward(f64),
     GeodesicForward(f64),
+    TaperedForward(f64, f64),
     Roll(f64),
     Pitch(f64),
     Yaw(f64),
@@ -209,8 +224,10 @@ pub(crate) struct TurtleRules {
     round: bool,
     iterations: u32,
     dedup_threshold: Option<f64>,
+    initial_width: Option<f64>,
     timeout: Option<Duration>,
     geodesic_radius: Option<f64>,
+    sdf_divisions: Option<f64>,
 }
 
 impl TurtleRules {
@@ -222,11 +239,6 @@ impl TurtleRules {
         }
         let _ = self.tokens.insert(token, ta);
         Ok(self)
-    }
-
-    pub fn set_timeout(&mut self, seconds: u64) -> Result<(), HallrError> {
-        self.timeout = Some(Duration::from_secs(seconds));
-        Ok(())
     }
 
     pub fn add_axiom(&mut self, axiom: String) -> Result<&mut Self, HallrError> {
@@ -368,9 +380,15 @@ impl TurtleRules {
 
             #[regex("\\.?iterations")]
             Iterations,
-            
+
             #[regex("\\.?dedup")]
             DeDup,
+
+            #[regex("\\.?initial_width")]
+            InitialWidth,
+
+            #[regex("\\.?sdf_divisions")]
+            SdfDivisions,
 
             #[regex("\\.?timeout")]
             Timeout,
@@ -389,6 +407,9 @@ impl TurtleRules {
 
             #[token("Turtle::GeodesicForward")]
             TurtleActionGeodesicForward,
+
+            #[token("Turtle::TaperedForward")]
+            TurtleActionTaperedForward,
 
             #[token("Turtle::Yaw")]
             TurtleActionYaw,
@@ -435,6 +456,7 @@ impl TurtleRules {
             Start,
             Token(Option<char>, Option<ParseTurtleAction>),
             TokenRotate(char, Option<f64>, Option<f64>, Option<f64>),
+            TokenTaperedForward(char, Option<f64>, Option<f64>),
             Axiom,
             Rule(Option<char>, Option<String>),
             Yaw,
@@ -442,7 +464,9 @@ impl TurtleRules {
             Iterations(Option<i32>),
             GeodesicRadius(Option<f64>),
             DeDup(Option<f64>),
+            InitialWidth(Option<f64>),
             Timeout(Option<u64>),
+            SdfDivisions(Option<f64>),
         }
 
         println!("Will try to parse the custom 🐢: {cmd_custom_turtle:?}");
@@ -607,6 +631,16 @@ impl TurtleRules {
                         )));
                     }
                 },
+                ParseToken::TurtleActionTaperedForward => match state {
+                    ParseState::Token(Some(text), None) => {
+                        state = ParseState::TokenTaperedForward(text, None, None);
+                    }
+                    _ => {
+                        return Err(HallrError::ParseError(format!(
+                            "Bad state for TurtleActionTaperedForward:{state:?} at line {line}",
+                        )));
+                    }
+                },
                 ParseToken::TurtleActionPenDown => match state {
                     ParseState::Token(Some(text), None) => {
                         println!("Accepted add_token(\"{text}\", TurtleAction::PenDown)");
@@ -712,6 +746,28 @@ impl TurtleRules {
                     }
                     state = ParseState::DeDup(None);
                 }
+                ParseToken::InitialWidth => {
+                    if state != ParseState::Start {
+                        return Err(HallrError::ParseError(format!(
+                            "Expected to be in Start state, was in state:{:?} when reading:{} at line {}.",
+                            state,
+                            lex.slice(),
+                            line
+                        )));
+                    }
+                    state = ParseState::InitialWidth(None);
+                }
+                ParseToken::SdfDivisions => {
+                    if state != ParseState::Start {
+                        return Err(HallrError::ParseError(format!(
+                            "Expected to be in Start state, was in state:{:?} when reading:{} at line {}.",
+                            state,
+                            lex.slice(),
+                            line
+                        )));
+                    }
+                    state = ParseState::SdfDivisions(None);
+                }
                 ParseToken::Timeout => {
                     if state != ParseState::Start {
                         return Err(HallrError::ParseError(format!(
@@ -765,6 +821,20 @@ impl TurtleRules {
                             );
                             state = ParseState::Start;
                         }
+                        ParseState::TokenTaperedForward(_text, None, None) => {
+                            // First parameter (forward)
+                            state = ParseState::TokenTaperedForward(_text, Some(value), None);
+                        }
+                        ParseState::TokenTaperedForward(text, Some(forward), None) => {
+                            // Second parameter (reduction) - now we have all parameters
+                            let reduction = value;
+                            println!(
+                                "Accepted add_token(\"{text}\", TurtleAction::TaperedForward({forward}, {reduction}))"
+                            );
+                            let _ = self
+                                .add_token(text, TurtleCommand::TaperedForward(forward, reduction));
+                            state = ParseState::Start;
+                        }
                         // New cases for TokenRotate state
                         ParseState::TokenRotate(text, None, None, None) => {
                             // First parameter (yaw)
@@ -791,7 +861,6 @@ impl TurtleRules {
                             );
                             state = ParseState::Start;
                         }
-
                         ParseState::Rotate(None, None, None) => {
                             state = ParseState::Rotate(Some(value.to_radians()), None, None);
                         }
@@ -820,6 +889,18 @@ impl TurtleRules {
                             let threshold = value;
                             println!("Accepted dedup({threshold})");
                             self.set_dedup(threshold)?;
+                            state = ParseState::Start;
+                        }
+                        ParseState::InitialWidth(None) => {
+                            let width = value;
+                            println!("Accepted initial_width({width})");
+                            self.set_initial_width(width)?;
+                            state = ParseState::Start;
+                        }
+                        ParseState::SdfDivisions(None) => {
+                            let divisions = value;
+                            println!("Accepted sdf_divisions({divisions})");
+                            self.set_sdf_divisions(divisions)?;
                             state = ParseState::Start;
                         }
                         ParseState::GeodesicRadius(None) => {
@@ -853,7 +934,7 @@ impl TurtleRules {
     }
 
     /// expands the rules and run the turtle over the result.
-    pub fn exec(&self, mut turtle: Turtle) -> Result<Vec<[DVec3; 2]>, HallrError> {
+    pub fn exec(&self, mut turtle: Turtle) -> Result<Vec<[Vec4; 2]>, HallrError> {
         if self.round {
             turtle.round = true;
         }
@@ -864,17 +945,28 @@ impl TurtleRules {
                 if matches!(
                     t,
                     TurtleCommand::Forward(_)
+                        | TurtleCommand::TaperedForward(_, _)
                         | TurtleCommand::Pitch(_)
                         | TurtleCommand::Rotate(_, _, _)
                         | TurtleCommand::Roll(_)
                 ) {
                     return Err(HallrError::ParseError(
-                        "No normal forward, pitch, roll, or rotate allowed with geodesic radius"
+                        "No normal forward, tapered forward, pitch, roll, or rotate possible with geodesic_radius()"
                             .to_string(),
                     ));
                 }
             }
-            turtle.position = DVec3::new(0.0, 0.0, -radius);
+            turtle.position = DVec4::new(0.0, 0.0, -radius, 0.0);
+            turtle.orientation = DQuat::IDENTITY;
+        } else if let Some(initial_width) = self.initial_width {
+            for t in self.tokens.values() {
+                if matches!(t, TurtleCommand::GeodesicForward(_)) {
+                    return Err(HallrError::ParseError(
+                        "No geodesic forward possible with initial_width()".to_string(),
+                    ));
+                }
+            }
+            turtle.position = DVec4::new(0.0, 0.0, 0.0, initial_width);
             turtle.orientation = DQuat::IDENTITY;
         } else {
             // Apply initial rotations
@@ -926,16 +1018,42 @@ impl TurtleRules {
         self.iterations = n;
         Ok(())
     }
-    
+
     fn set_dedup(&mut self, threshold: f64) -> Result<(), HallrError> {
         if threshold <= 0.0 {
-            Err(HallrError::InvalidInputData(format!("dedup threshold must be positive {threshold}").to_string()))?
+            Err(HallrError::InvalidInputData(
+                format!("dedup threshold must be positive {threshold}").to_string(),
+            ))?
         }
         self.dedup_threshold = Some(threshold);
         Ok(())
     }
 
-    pub fn get_dedup(&self ) -> Option<f64> {
+    pub fn get_dedup(&self) -> Option<f64> {
         self.dedup_threshold
+    }
+
+    fn set_initial_width(&mut self, width: f64) -> Result<(), HallrError> {
+        if width <= 0.0 {
+            Err(HallrError::InvalidInputData(
+                format!("Initial width must be positive {width}").to_string(),
+            ))?
+        }
+        self.initial_width = Some(width);
+        Ok(())
+    }
+
+    fn set_timeout(&mut self, seconds: u64) -> Result<(), HallrError> {
+        self.timeout = Some(Duration::from_secs(seconds));
+        Ok(())
+    }
+
+    fn set_sdf_divisions(&mut self, divisions: f64) -> Result<(), HallrError> {
+        self.sdf_divisions = Some(divisions);
+        Ok(())
+    }
+
+    pub fn get_sdf_divisions(&self) -> Option<f64> {
+        self.sdf_divisions
     }
 }

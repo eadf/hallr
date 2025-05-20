@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// Copyright (c) 2023, 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
-//! A module containing boiler-plate implementations of standard traits such as Default, From etc etc
+//! A module containing boilerplate implementations of standard traits such as Default, From etc etc
 
 use super::VertexDeduplicator3D;
 use ahash::AHashMap;

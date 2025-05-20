@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// Copyright (c) 2023, 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
 #[cfg(test)]
@@ -32,7 +32,7 @@ pub(crate) fn build_output_model(
     let mut aabb = <glam::Vec3 as GenericVector3>::Aabb::default();
 
     for vertex in model.vertices.iter() {
-        if !vertex.x.is_finite() || !vertex.y.is_finite() || !vertex.z.is_finite() {
+        if !vertex.is_finite() {
             Err(HallrError::InvalidInputData(format!(
                 "Only finite coordinates are allowed ({},{},{})",
                 vertex.x, vertex.y, vertex.z

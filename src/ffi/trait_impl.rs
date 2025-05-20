@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// Copyright (c) 2023, 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
 //! A module containing boilerplate implementations of standard traits such as Default, From etc etc
 
-use super::FFIVector3;
+use super::{FFIVector3, MeshFormat};
 use baby_shark::exports::nalgebra;
 use hronn::prelude::ConvertTo;
 use std::fmt;
 
+use crate::HallrError;
 use vector_traits::{
     approx::{AbsDiffEq, UlpsEq},
     glam::{DVec3, Vec3, Vec3A, vec3a},
@@ -339,5 +340,26 @@ impl From<&nalgebra::Vector3<f32>> for FFIVector3 {
     #[inline(always)]
     fn from(v: &nalgebra::Vector3<f32>) -> Self {
         FFIVector3::new(v.x, v.y, v.z)
+    }
+}
+
+impl fmt::Display for MeshFormat {
+    #[inline(always)]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_char())
+    }
+}
+
+impl TryFrom<&str> for MeshFormat {
+    type Error = HallrError;
+
+    fn try_from(s: &str) -> Result<Self, HallrError> {
+        // Extract the first character if present
+        s.chars()
+            .next()
+            .ok_or_else(|| {
+                HallrError::InvalidInputData("Empty string for MeshFormat conversion".to_string())
+            })
+            .and_then(MeshFormat::from_char)
     }
 }

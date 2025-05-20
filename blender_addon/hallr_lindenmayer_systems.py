@@ -345,7 +345,26 @@ rule("F","F+F-F")
 iterations(8)
 timeout(1)
 ''',
-
+    "3d Mesh tree": '''
+# Warning: this operation is slow!
+# https://en.wikipedia.org/wiki/L-system#Examples_of_L-systems
+# build a fractal plant
+token("X", Turtle::Nop)
+token("F", Turtle::TaperedForward(1.0, 0.91))
+token("→", Turtle::Rotate(30.0,0.0,-25.0))
+token("←", Turtle::Rotate(-31.0,0.0,5.0))
+token("[", Turtle::Push)
+token("]", Turtle::Pop)
+axiom("X")
+rule("X","F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
+rule("F", "F F")
+# initial rotation 5° off Y axis
+rotate(5.0,0.0,0.0)
+iterations(4)
+initial_width(1.0)
+sdf_divisions(1200)
+timeout(1)
+''',
     "Demo curve": '''
 # you can use these chars as tokens =<>^?∧\→←↑↓↻↺↕↶↷⥀⥁⇐⇒⇑⇓⇕×∘+-[]
 # and also [a-z][A-Z][0-9]

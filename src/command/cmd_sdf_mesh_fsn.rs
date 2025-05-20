@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// Copyright (c) 2023, 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
 #[cfg(test)]
@@ -28,7 +28,7 @@ type Extent3i = Extent<iglam::IVec3>;
 
 /// returns an AABB (not padded by radius)
 fn parse_input(model: &Model<'_>) -> Result<Extent<iglam::Vec3A>, HallrError> {
-    let zero = iglam::Vec3A::default();
+    let zero = iglam::Vec3A::ZERO;
     let mut aabb = {
         let vertex0 = model.vertices.first().ok_or_else(|| {
             HallrError::InvalidInputData("Input vertex list was empty".to_string())
@@ -37,7 +37,7 @@ fn parse_input(model: &Model<'_>) -> Result<Extent<iglam::Vec3A>, HallrError> {
     };
 
     for vertex in model.vertices.iter() {
-        if !vertex.x.is_finite() || !vertex.y.is_finite() || !vertex.z.is_finite() {
+        if !vertex.is_finite() {
             Err(HallrError::InvalidInputData(format!(
                 "Only finite coordinates are allowed ({},{},{})",
                 vertex.x, vertex.y, vertex.z

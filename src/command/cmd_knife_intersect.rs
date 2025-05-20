@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// Copyright (c) 2023, 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
 use super::{ConfigType, Model, OwnedModel};
@@ -9,7 +9,7 @@ use itertools::Itertools;
 use linestring::linestring_2d::indexed_intersection::IntersectionTester;
 use vector_traits::{
     approx::{AbsDiffEq, UlpsEq},
-    num_traits::{AsPrimitive, Float},
+    num_traits::AsPrimitive,
     prelude::{Aabb3, GenericVector2, GenericVector3, HasXY, Plane},
 };
 
@@ -84,7 +84,7 @@ where
                 affected_edges
             );*/
             for edge_index in affected_edges.iter() {
-                if !splitting_vertex.x().is_finite() || !splitting_vertex.x().is_finite() {
+                if !splitting_vertex.is_finite() {
                     return Err(HallrError::InternalError(format!(
                         "The found intersection is not valid: x:{:?}, y:{:?}",
                         splitting_vertex.x(),

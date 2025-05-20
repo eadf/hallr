@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// Copyright (c) 2023, 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
 //! This module contains the Rust to Python (or rather CTypes) interface
-mod impls;
+mod trait_impl;
 
 use crate::HallrError;
 use std::{
     collections::HashMap,
     ffi::{CStr, CString},
-    fmt,
     iter::successors,
     slice,
     time::Instant,
@@ -82,30 +81,14 @@ impl MeshFormat {
     }
 }
 
-impl fmt::Display for MeshFormat {
-    #[inline(always)]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.as_char())
-    }
-}
-
-impl TryFrom<&str> for MeshFormat {
-    type Error = HallrError;
-
-    fn try_from(s: &str) -> Result<Self, HallrError> {
-        // Extract the first character if present
-        s.chars()
-            .next()
-            .ok_or_else(|| {
-                HallrError::InvalidInputData("Empty string for MeshFormat conversion".to_string())
-            })
-            .and_then(MeshFormat::from_char)
-    }
-}
-
 impl FFIVector3 {
+    #[inline(always)]
     pub fn new(x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z }
+    }
+    #[inline(always)]
+    pub fn is_finite(&self) -> bool {
+        self.x.is_finite() && self.y.is_finite() && self.z.is_finite()
     }
 }
 

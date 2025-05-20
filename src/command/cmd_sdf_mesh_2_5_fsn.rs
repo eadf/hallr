@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+// Copyright (c) 2023, 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
 #[cfg(test)]
@@ -21,13 +21,14 @@ use std::{borrow::Borrow, time};
 use vector_traits::prelude::Plane;
 
 // The un-padded chunk side, it will become 16*16*16
-const UN_PADDED_CHUNK_SIDE: u32 = 14_u32;
-type PaddedChunkShape = fast_surface_nets::ndshape::ConstShape3u32<
+pub(crate) const UN_PADDED_CHUNK_SIDE: u32 = 14_u32;
+pub(crate) type PaddedChunkShape = fast_surface_nets::ndshape::ConstShape3u32<
     { UN_PADDED_CHUNK_SIDE + 2 },
     { UN_PADDED_CHUNK_SIDE + 2 },
     { UN_PADDED_CHUNK_SIDE + 2 },
 >;
-const DEFAULT_SDF_VALUE: f32 = 999.0;
+
+pub(crate) const DEFAULT_SDF_VALUE: f32 = 999.0;
 type Extent3i = Extent<iglam::IVec3>;
 
 /// returns a list of type-converted vertices, a list of edges, and an AABB padded by radius
@@ -49,7 +50,7 @@ fn parse_input(
         .vertices
         .iter()
         .map(|vertex| {
-            if !vertex.x.is_finite() || !vertex.y.is_finite() || !vertex.z.is_finite() {
+            if !vertex.is_finite() {
                 Err(HallrError::InvalidInputData(format!(
                     "Only valid coordinates are allowed ({},{},{})",
                     vertex.x, vertex.y, vertex.z
@@ -73,7 +74,7 @@ fn parse_input(
     Ok((vertices?, aabb))
 }
 
-/// This is the sdf formula of a rounded cone (at origin)
+/// This is the sdf formula of a tapered capsule (at origin)
 ///   vec2 q = vec2( length(p.xz), p.y );
 ///   float b = (r1-r2)/h;
 ///   float a = sqrt(1.0-b*b);
@@ -81,7 +82,7 @@ fn parse_input(
 ///   if( k < 0.0 ) return length(q) - r1;
 ///   if( k > a*h ) return length(q-vec2(0.0,h)) - r2;
 ///   return dot(q, vec2(a,b) ) - r1;
-struct RoundedCone {
+struct TaperedCapsule {
     r0: f32,
     r1: f32,
     h: f32,
@@ -96,13 +97,13 @@ struct RoundedCone {
 /// This code is run in a single thread
 fn generate_and_process_sdf_chunk(
     un_padded_chunk_extent: Extent3i,
-    rounded_cones: &[(RoundedCone, Extent3i)],
+    tapered_capsules: &[(TaperedCapsule, Extent3i)],
 ) -> Option<(iglam::Vec3A, SurfaceNetsBuffer)> {
     // the origin of this chunk, in voxel scale
     let padded_chunk_extent = un_padded_chunk_extent.padded(1);
 
     // filter out the edges that does not affect this chunk
-    let filtered_cones: Vec<_> = rounded_cones
+    let filtered_capsules: Vec<_> = tapered_capsules
         .iter()
         .enumerate()
         .filter_map(|(index, sdf)| {
@@ -115,7 +116,7 @@ fn generate_and_process_sdf_chunk(
         .collect();
 
     #[cfg(not(feature = "display_sdf_chunks"))]
-    if filtered_cones.is_empty() {
+    if filtered_capsules.is_empty() {
         // no tubes intersected this chunk
         return None;
     }
@@ -150,18 +151,18 @@ fn generate_and_process_sdf_chunk(
             }
             *v = (*v).min(x);
         }
-        for index in filtered_cones.iter() {
-            let cone = &rounded_cones[*index as usize].0;
-            let pwo = cone.m.transform_point3a(pwo);
+        for index in filtered_capsules.iter() {
+            let capsule = &tapered_capsules[*index as usize].0;
+            let pwo = capsule.m.transform_point3a(pwo);
 
             let q = iglam::Vec2::new(iglam::Vec2::new(pwo.x, pwo.z).length(), pwo.y);
-            let k = q.dot(iglam::Vec2::new(-cone.b, cone.a));
+            let k = q.dot(iglam::Vec2::new(-capsule.b, capsule.a));
             let new_v = if k < 0.0 {
-                q.length() - cone.r0
-            } else if k > cone.a * cone.h {
-                (q - iglam::vec2(0.0, cone.h)).length() - cone.r1
+                q.length() - capsule.r0
+            } else if k > capsule.a * capsule.h {
+                (q - iglam::vec2(0.0, capsule.h)).length() - capsule.r1
             } else {
-                q.dot(iglam::vec2(cone.a, cone.b)) - cone.r0
+                q.dot(iglam::vec2(capsule.a, capsule.b)) - capsule.r0
             };
 
             *v = (*v).min(new_v);
@@ -220,7 +221,7 @@ fn build_voxel(
 
     let scale = divisions / max_dimension;
 
-    let rounded_cones: Vec<(RoundedCone, Extent3i)> = indices
+    let tapered_capsules: Vec<(TaperedCapsule, Extent3i)> = indices
         .par_chunks_exact(2)
         .filter_map(|edge| {
             let (v0, r0) = vertices[edge[0]];
@@ -241,7 +242,7 @@ fn build_voxel(
             let ex1 =
                 Extent::<iglam::Vec3A>::from_min_and_shape(iglam::vec3a(v1.x, v1.y, 0.0), zero)
                     .padded(r1);
-            // The AABB of the rounded cone intersected this chunk - keep it
+            // The AABB of the capsule intersected this chunk - keep it
             let v = v1 - v0;
             //let _c = v0 + v * 0.5; // center
             let h = v.length();
@@ -254,7 +255,7 @@ fn build_voxel(
             let m = iglam::Affine3A::from_mat3_translation(rotation, translation);
 
             Some((
-                RoundedCone { r0, r1, h, b, a, m },
+                TaperedCapsule { r0, r1, h, b, a, m },
                 ex0.bound_union(&ex1).containing_integer_extent(),
             ))
         })
@@ -292,7 +293,7 @@ fn build_voxel(
                 let un_padded_chunk_extent =
                     Extent3i::from_min_and_shape(p * un_padded_chunk_shape, un_padded_chunk_shape);
 
-                generate_and_process_sdf_chunk(un_padded_chunk_extent, &rounded_cones)
+                generate_and_process_sdf_chunk(un_padded_chunk_extent, &tapered_capsules)
             })
             .collect()
     };
@@ -373,7 +374,7 @@ pub(crate) fn build_output_model(
                     }
                 }
                 Plane::YZ =>
-                // X axis is the radius dimension, swap X,Y,Z to Y,Z,X
+                // X-axis is the radius dimension, swap X,Y,Z to Y,Z,X
                 {
                     for pv in mesh_buffer.positions.iter() {
                         vertices.push(world_to_local(FFIVector3 {
@@ -408,7 +409,7 @@ pub(crate) fn build_output_model(
                     }
                 }
                 Plane::XZ =>
-                // Y axis is the radius dimension, swap X,Y,Z to X,Z,Y
+                // Y-axis is the radius dimension, swap X,Y,Z to X,Z,Y
                 {
                     for pv in mesh_buffer.positions.iter() {
                         vertices.push(FFIVector3 {
@@ -419,7 +420,7 @@ pub(crate) fn build_output_model(
                     }
                 }
                 Plane::YZ =>
-                // X axis is the radius dimension, swap X,Y,Z to Y,Z,X
+                // X-axis is the radius dimension, swap X,Y,Z to Y,Z,X
                 {
                     for pv in mesh_buffer.positions.iter() {
                         vertices.push(FFIVector3 {
@@ -444,7 +445,6 @@ pub(crate) fn build_output_model(
     }
     Ok(OwnedModel {
         world_orientation: OwnedModel::identity_matrix(),
-        //name: pb_model_name,
         vertices,
         indices,
     })
