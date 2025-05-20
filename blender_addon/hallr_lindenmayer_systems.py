@@ -14,6 +14,7 @@ axiom("L")
 rule("L", "L → R →")
 rule("R", "← L ← R")
 iterations(8)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -28,6 +29,7 @@ axiom("F X")
 rule("X","X → Y F →")
 rule("Y","↑ F X ↑ Y")
 iterations(8)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -51,6 +53,7 @@ token("←", Turtle::Rotate(-45.0, 0.0, -0.5))
 axiom("F")
 rule("F", "→ F ← ← F →")
 iterations(12)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -65,6 +68,7 @@ axiom("F←G←G")
 rule("F", "F←G→F→G←F")
 rule("G", "GG")
 iterations(5)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -79,6 +83,7 @@ axiom("R")
 rule("R", " L ← R ← L")
 rule("L", " R → L → R")
 iterations(6)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -118,6 +123,7 @@ token("←", Turtle::Yaw(-90.0))
 axiom("F")
 rule("F", "F → F ← F ← F → F")
 iterations(5)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -130,6 +136,7 @@ axiom("F←←F←←F")
 rule("F", "F←F→F→→F←F")
 # only on even iterations
 iterations(4)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -141,6 +148,7 @@ token("←", Turtle::Rotate(4.0, -90.0, 0.0))
 axiom("F")
 rule("F", " F ↑ F ← F ← F ↑ F")
 iterations(5)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -155,6 +163,7 @@ rule("F", "F←F→F→FF←F←F→F")
 #rule("F", " F→FF←FF←F←F→F→FF←F←F→F→FF→FF←F")
 # caution: this example increases in size really fast
 iterations(3)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -169,6 +178,7 @@ rule("F", "F←F→F→FF←F←F→F")
 # caution: this example increases in size really fast
 iterations(3)
 timeout(1)
+dedup(0.0001)
 geodesic_radius(5.0)
 ''',
 
@@ -183,6 +193,7 @@ axiom("F←F←F←F")
 rule("F", " F→F↻F↺←F↻F↺←F←F→F→F↻F↺←F←F→F→F↻F↺→F↻F↺←F")
 # caution: this example increases in size really fast
 iterations(3)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -199,6 +210,7 @@ axiom("0")
 rule("1", " 11")
 rule("0", " 1[→0]←0")
 iterations(10)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -216,6 +228,7 @@ axiom("0")
 rule("1", "11")
 rule("0", "1[→↺0]←↻0")
 iterations(10)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -234,6 +247,7 @@ rule("F","F F")
 # initial rotation 5° off Y axis
 rotate(5.0,0.0,0.0)
 iterations(6)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -250,6 +264,7 @@ rule("X","F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
 rule("F","F F")
 iterations(7)
 geodesic_radius(5.0)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -268,6 +283,7 @@ rule("F", "F F")
 # initial rotation 5° off Y axis
 rotate(5.0,0.0,0.0)
 iterations(6)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -283,6 +299,7 @@ axiom("A")
 rule("B", "←AF→BFB→FA←" )
 rule("A", "→BF←AFA←FB→" )
 iterations(5)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -305,6 +322,7 @@ rule("B", " A↑F↓CFB↓F↓D↓↓←F←D↓⇒F↓B⇒FC↓F↓A↺")
 rule("C", " ⇒D↓⇒F↓B←F→C↓F↓A↑↑FA↑F↓C→F→B↓F↓D↺")
 rule("D", " ⇒CFB←F→B⇒FA↑F↓A↑↑FB←F→B⇒FC↺")
 iterations(3)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -321,6 +339,7 @@ token("↺", Turtle::Roll(-90.0))
 axiom("X")
 rule("X", "↑↺XF↑↺XFX←F↑↻↻XFX↓F→↻↻XFX←F↻X←↻")
 iterations(3)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -332,6 +351,7 @@ token("-", Turtle::Yaw(-36.0))
 axiom("F++F++F++F++F")
 rule("F","F++F++F+++++F-F++F")
 iterations(3)
+dedup(0.0001)
 timeout(1)
 ''',
 
@@ -343,6 +363,7 @@ token("-", Turtle::Yaw(-120.0))
 axiom("F")
 rule("F","F+F-F")
 iterations(8)
+dedup(0.0001)
 timeout(1)
 ''',
     "3d Mesh tree": '''
@@ -363,6 +384,7 @@ rotate(5.0,0.0,0.0)
 iterations(4)
 initial_width(1.0)
 sdf_divisions(1400)
+dedup(0.0001)
 timeout(1)
 ''',
     "Demo curve": '''
@@ -390,7 +412,7 @@ timeout(1)
 # will round all float positions to the nearest integer
 round()
 # Removes duplicate vertices (calls Blender's 'remove_doubles(threshold)')
-dedup(0.05)
+dedup(0.0001)
 '''}
 
 

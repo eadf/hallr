@@ -47,6 +47,10 @@ For this purpose, the Rust tool watchexec works exceptionally well for automatic
 ## Contributing
 We welcome contributions from the community! Feel free to submit pull requests or report issues on our [GitHub repository](https://github.com/eadf/hallr).
 
+### Minimum Supported Rust Version (MSRV)
+
+The minimum supported version of Rust for `hallr` is `1.85.1`.
+
 ## License
 Hallr is licensed under **AGPL-3.0-or-later**.
 
