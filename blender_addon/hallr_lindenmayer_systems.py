@@ -366,26 +366,27 @@ iterations(8)
 dedup(0.0001)
 timeout(1)
 ''',
-    "3d Mesh tree": '''
+    "3d Mesh plant": '''
 # Warning: this operation does a lot of heavy lifting!
 # https://en.wikipedia.org/wiki/L-system#Examples_of_L-systems
 # build a fractal plant
 token("X", Turtle::Nop)
-# steps 1.0 forward, reduces radius by 0.94
-token("F", Turtle::TaperedForward(1.0, 0.94))
+# steps 1.0 forward, reduces radius by 1%
+token("F", Turtle::TaperedForward(1.0, 0.99))
 token("→", Turtle::Rotate(30.0,0.0,-25.0))
 token("←", Turtle::Rotate(-31.0,0.0,5.0))
 token("[", Turtle::Push)
-# reduces radius by 0.98
-token("]", Turtle::TaperedPop(0.98))
+# reduce radius by 1% on each pop
+token("]", Turtle::TaperedPop(0.99))
 axiom("X")
 rule("X","F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
 rule("F", "F F")
 # initial rotation 5° off Y axis
 rotate(5.0,0.0,0.0)
-iterations(4)
+iterations(6)
 initial_width(1.0)
-sdf_divisions(1400)
+# divide the longest axis in this many voxels
+sdf_divisions(1000)
 dedup(0.0001)
 timeout(1)
 ''',
