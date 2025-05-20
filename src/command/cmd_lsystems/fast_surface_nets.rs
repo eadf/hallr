@@ -15,43 +15,62 @@ use vector_traits::glam;
 
 type Extent3i = Extent<iglam::IVec3>;
 
-/// This is the sdf formula of a tapered capsule (at origin)
+/// This is the sdf formula of a tapered capsule
 struct TaperedCapsule {
     r0: f32,               // Radius at start
-    r1: f32,               // Radius at end
     h: f32,                // Length of the capsule
     center0: iglam::Vec3A, // Center of first sphere
-    center1: iglam::Vec3A, // Center of second sphere
+
+    // Pre-calculated constants
+    axis: iglam::Vec3A, // Normalized direction vector from center0 to center1
+    r_diff: f32,        // Difference between radii (r1 - r0)
 }
 
-fn sdf_tapered_capsule(p: iglam::Vec3A, capsule: &TaperedCapsule) -> f32 {
-    // Vector from center0 to p
-    let ba = capsule.center1 - capsule.center0;
-    let pa = p - capsule.center0;
-    let _pb = p - capsule.center1;
+impl TaperedCapsule {
+    fn new(center0: iglam::Vec3A, center1: iglam::Vec3A, r0: f32, r1: f32) -> Self {
+        let ba = center1 - center0;
+        let h = ba.length();
 
+        // Handle degenerate case
+        let axis = if h <= f32::EPSILON {
+            iglam::Vec3A::X // Default axis if centers are too close
+        } else {
+            ba / h
+        };
+
+        TaperedCapsule {
+            r0,
+            h,
+            center0,
+            axis,
+            r_diff: r1 - r0,
+        }
+    }
+}
+
+#[inline(always)]
+fn sdf_tapered_capsule(p: iglam::Vec3A, capsule: &TaperedCapsule) -> f32 {
     // Handle degenerate case
     if capsule.h <= f32::EPSILON {
         return (p - capsule.center0).length() - capsule.r0;
     }
 
-    // Normalized axis
-    let axis = ba / capsule.h;
+    let pa = p - capsule.center0;
 
     // Projection of pa onto axis
-    let t = pa.dot(axis);
+    let t = pa.dot(capsule.axis);
 
     // Project onto the line segment
     let t_clamped = t.clamp(0.0, capsule.h);
 
     // Compute the point on the segment that's closest to p
-    let closest_on_segment = capsule.center0 + axis * t_clamped;
+    let closest_on_segment = capsule.center0 + capsule.axis * t_clamped;
 
     // Distance from p to the closest point on the segment
     let d = (p - closest_on_segment).length();
 
-    // Interpolate radius at this point
-    let radius = capsule.r0 + (capsule.r1 - capsule.r0) * (t_clamped / capsule.h);
+    // Interpolate radius at this point using pre-calculated values
+    let radius = capsule.r0 + capsule.r_diff * (t_clamped / capsule.h);
 
     // SDF value
     d - radius
@@ -116,13 +135,7 @@ pub(super) fn build_voxel(
             .padded(r1);
 
             Some((
-                TaperedCapsule {
-                    r0,
-                    r1,
-                    h,
-                    center0,
-                    center1,
-                },
+                TaperedCapsule::new(center0, center1, r0, r1),
                 ex0.bound_union(&ex1).containing_integer_extent(),
             ))
         })

@@ -43,7 +43,6 @@ impl GrowingVob for vob::Vob<u32> {
 
 #[allow(clippy::type_complexity)]
 #[derive(Default)]
-#[allow(dead_code)]
 pub(crate) struct VertexDeduplicator2D<T: GenericVector2> {
     set: AHashMap<
         (
@@ -55,8 +54,8 @@ pub(crate) struct VertexDeduplicator2D<T: GenericVector2> {
     pub vertices: Vec<T>,
 }
 
-#[allow(dead_code)]
 impl<T: GenericVector2> VertexDeduplicator2D<T> {
+    #[allow(dead_code)]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             set: AHashMap::with_capacity(capacity),
@@ -64,6 +63,7 @@ impl<T: GenericVector2> VertexDeduplicator2D<T> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn get_index_or_insert(&mut self, vector: T) -> Result<u32, HallrError> {
         if !vector.is_finite() {
             return Err(HallrError::FloatNotFinite(format!(
@@ -98,7 +98,6 @@ pub(crate) struct VertexDeduplicator3D<T: GenericVector3> {
     pub vertices: Vec<T>,
 }
 
-#[allow(dead_code)]
 impl<T: GenericVector3> VertexDeduplicator3D<T> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {

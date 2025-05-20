@@ -362,7 +362,7 @@ rule("F", "F F")
 rotate(5.0,0.0,0.0)
 iterations(4)
 initial_width(1.0)
-sdf_divisions(1200)
+sdf_divisions(1400)
 timeout(1)
 ''',
     "Demo curve": '''
