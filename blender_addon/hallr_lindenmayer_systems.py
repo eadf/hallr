@@ -367,15 +367,17 @@ dedup(0.0001)
 timeout(1)
 ''',
     "3d Mesh tree": '''
-# Warning: this operation is slow!
+# Warning: this operation does a lot of heavy lifting!
 # https://en.wikipedia.org/wiki/L-system#Examples_of_L-systems
 # build a fractal plant
 token("X", Turtle::Nop)
-token("F", Turtle::TaperedForward(1.0, 0.91))
+# steps 1.0 forward, reduces radius by 0.94
+token("F", Turtle::TaperedForward(1.0, 0.94))
 token("→", Turtle::Rotate(30.0,0.0,-25.0))
 token("←", Turtle::Rotate(-31.0,0.0,5.0))
 token("[", Turtle::Push)
-token("]", Turtle::Pop)
+# reduces radius by 0.98
+token("]", Turtle::TaperedPop(0.98))
 axiom("X")
 rule("X","F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
 rule("F", "F F")

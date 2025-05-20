@@ -6,6 +6,7 @@ mod fast_surface_nets;
 mod lsystems;
 #[cfg(test)]
 mod tests;
+mod trait_impl;
 
 use ilattice::{glam as iglam, prelude::Extent};
 use vector_traits::{
@@ -83,7 +84,7 @@ pub(crate) fn process_command(
     };
     println!("build_custom_turtle render() duration: {:?}", now.elapsed());
 
-    println!("Turtle result: {aabb:?}");
+    //println!("Turtle result aabb: {aabb:?}");
     let mut return_config = ConfigType::new();
 
     let output_model = if let Some(_sdf_divisions) = sdf_divisions {
@@ -95,7 +96,6 @@ pub(crate) fn process_command(
 
         let (voxel_size, mesh) =
             fast_surface_nets::build_voxel(_sdf_divisions as f32, result, extent)?;
-        println!("mesh {:?}", mesh.len());
         let _ = return_config.insert(
             MeshFormat::MESH_FORMAT_TAG.to_string(),
             MeshFormat::Triangulated.to_string(),
@@ -117,7 +117,6 @@ pub(crate) fn process_command(
             output_vertices.push(p1_3.into());
             //println!("edge from {} to {}", p0, p1);
         }
-        println!("The aabb was : {aabb:?}");
         let _ = return_config.insert(
             MeshFormat::MESH_FORMAT_TAG.to_string(),
             MeshFormat::LineChunks.to_string(),

@@ -247,7 +247,7 @@ fn build_voxel(
             //let _c = v0 + v * 0.5; // center
             let h = v.length();
             let b = (r0 - r1) / h;
-            let bb = b*b;
+            let bb = b * b;
             if bb > 1.0 {
                 None
             } else {

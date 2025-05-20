@@ -40,7 +40,8 @@ def parse_arguments():
     parser.add_argument("--dev_mode", action="store_true", help="Enable development mode.")
     parser.add_argument("--release", action="store_true", help="Build in release mode.")
     parser.add_argument("--debug", action="store_true", help="Build in debug mode.")
-    parser.add_argument("--generate_tests", action="store_true", help="enable the ’generate_test_case_from_input’ feature")
+    parser.add_argument("--generate_tests", action="store_true", help="enable the ’generate_test_case_from_input’ feature. This will always be disabled in release mode")
+    parser.add_argument("--display_sdf_chunks", action="store_true", help="enable the ’display_sdf_chunks’ feature. This will always be disabled in release mode")
 
     args = parser.parse_args()
     if args.debug and args.release:
@@ -71,7 +72,7 @@ def validate_rust_project():
             exit(1)
 
 
-def run_cargo_build(dev_mode, debug, generate_tests):
+def run_cargo_build(dev_mode, debug, generate_tests, display_sdf_chunks):
     """Execute the cargo build command with appropriate flags.
 
     Args:
@@ -80,11 +81,16 @@ def run_cargo_build(dev_mode, debug, generate_tests):
         generate_tests: Whether to generate test cases (only works in dev_mode)
     """
     feature_args = []
-    if generate_tests:
+    if generate_tests or display_sdf_chunks:
         if not dev_mode:
-            print("Warning: Test generation is only available in dev_mode. Ignoring --generate_tests flag.")
+            print("Warning: Test features is only available in dev_mode. Ignoring --generate_tests and --display_sdf_chunks flags.")
         else:
-            feature_args = ["--features", "generate_test_case_from_input"]
+            if generate_tests:
+                feature_args.append("generate_test_case_from_input")
+            if display_sdf_chunks:
+                feature_args.append("display_sdf_chunks")
+            if feature_args:
+                feature_args = ["--features=" + ",".join(feature_args)]
 
     # Build base command
     if not dev_mode:
@@ -197,7 +203,7 @@ def package_addon(dev_mode):
 if __name__ == "__main__":
     args = parse_arguments()
     validate_rust_project()
-    run_cargo_build(args.dev_mode, args.debug, args.generate_tests)
+    run_cargo_build(args.dev_mode, args.debug, args.generate_tests, args.display_sdf_chunks)
     staging_area = "blender_addon_exported"
     dest_lib_directory = os.path.join(staging_area, "lib")
     copy_library_files(args.dev_mode,args.debug, dest_lib_directory)

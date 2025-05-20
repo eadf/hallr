@@ -12,7 +12,7 @@ use std::fmt;
 use crate::HallrError;
 use vector_traits::{
     approx::{AbsDiffEq, UlpsEq},
-    glam::{DVec3, Vec3, Vec3A, vec3a},
+    glam::{DVec3, Vec3, Vec3A, dvec3, vec3, vec3a},
     prelude::{Approx, GenericScalar, HasXY, HasXYZ},
 };
 
@@ -130,22 +130,35 @@ impl From<(f32, f32, f32)> for FFIVector3 {
 impl From<FFIVector3> for DVec3 {
     #[inline(always)]
     fn from(v: FFIVector3) -> Self {
-        Self {
-            x: v.x as f64,
-            y: v.y as f64,
-            z: v.z as f64,
-        }
+        dvec3(v.x as f64, v.y as f64, v.z as f64)
+    }
+}
+
+impl From<&FFIVector3> for DVec3 {
+    #[inline(always)]
+    fn from(v: &FFIVector3) -> Self {
+        dvec3(v.x as f64, v.y as f64, v.z as f64)
     }
 }
 
 impl From<FFIVector3> for Vec3 {
     #[inline(always)]
     fn from(v: FFIVector3) -> Self {
-        Self {
-            x: v.x,
-            y: v.y,
-            z: v.z,
-        }
+        vec3(v.x, v.y, v.z)
+    }
+}
+
+impl From<&FFIVector3> for Vec3 {
+    #[inline(always)]
+    fn from(v: &FFIVector3) -> Self {
+        vec3(v.x, v.y, v.z)
+    }
+}
+
+impl From<&FFIVector3> for Vec3A {
+    #[inline(always)]
+    fn from(v: &FFIVector3) -> Self {
+        vec3a(v.x, v.y, v.z)
     }
 }
 
@@ -159,22 +172,14 @@ impl From<FFIVector3> for Vec3A {
 impl ConvertTo<DVec3> for FFIVector3 {
     #[inline(always)]
     fn to(self) -> DVec3 {
-        DVec3 {
-            x: self.x as f64,
-            y: self.y as f64,
-            z: self.z as f64,
-        }
+        dvec3(self.x as f64, self.y as f64, self.z as f64)
     }
 }
 
 impl ConvertTo<Vec3> for FFIVector3 {
     #[inline(always)]
     fn to(self) -> Vec3 {
-        Vec3 {
-            x: self.x,
-            y: self.y,
-            z: self.z,
-        }
+        vec3(self.x, self.y, self.z)
     }
 }
 

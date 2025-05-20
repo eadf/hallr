@@ -7,30 +7,16 @@ use logos::Logos;
 use std::time::{Duration, Instant};
 use vector_traits::glam::{DQuat, DVec3, DVec4, Vec4, Vec4Swizzles};
 
-pub(crate) struct Turtle {
-    orientation: DQuat,
-    position: DVec4,
-    stack: Vec<(DQuat, DVec4)>,
-    result: Vec<[Vec4; 2]>,
+pub(super) struct Turtle {
+    pub(super) orientation: DQuat,
+    pub(super) position: DVec4,
+    pub(super) stack: Vec<(DQuat, DVec4)>,
+    pub(super) result: Vec<[Vec4; 2]>,
     /// Should the turtle draw while moving?
-    pen_up: bool,
+    pub(super) pen_up: bool,
     /// should coordinates be rounded to int after each move?
-    round: bool,
-    sphere_radius: f64,
-}
-
-impl Default for Turtle {
-    fn default() -> Self {
-        Self {
-            orientation: DQuat::IDENTITY,
-            position: DVec4::ZERO,
-            result: Vec::default(),
-            stack: Vec::default(),
-            pen_up: false,
-            round: false,
-            sphere_radius: 1.0,
-        }
-    }
+    pub(super) round: bool,
+    pub(super) sphere_radius: f64,
 }
 
 impl Turtle {
@@ -182,6 +168,16 @@ impl Turtle {
                 //println!("pushing {}", self.position);
                 self.stack.push((self.orientation, self.position))
             }
+            TurtleCommand::TaperedPop(reduction) => {
+                if let Some(pop) = self.stack.pop() {
+                    // Update heading and position
+                    self.orientation = pop.0;
+                    self.position = pop.1;
+                    self.position.w *= reduction;
+                } else {
+                    return Err(HallrError::LSystems3D("Could not pop stack".to_string()));
+                }
+            }
             TurtleCommand::Pop => {
                 if let Some(pop) = self.stack.pop() {
                     // Update heading and position
@@ -196,11 +192,13 @@ impl Turtle {
     }
 }
 
-pub(crate) enum TurtleCommand {
+pub(super) enum TurtleCommand {
     Nop,
     Forward(f64),
     GeodesicForward(f64),
+    // forward, reduction
     TaperedForward(f64, f64),
+    TaperedPop(f64),
     Roll(f64),
     Pitch(f64),
     Yaw(f64),
@@ -214,7 +212,7 @@ pub(crate) enum TurtleCommand {
 }
 
 #[derive(Default)]
-pub(crate) struct TurtleRules {
+pub(super) struct TurtleRules {
     rules: ahash::AHashMap<char, String>,
     axiom: String,
     tokens: ahash::AHashMap<char, TurtleCommand>,
@@ -342,6 +340,7 @@ impl TurtleRules {
             Yaw,
             Pitch,
             Roll,
+            TaperedPop,
             // These 'states' does not carry any value, so they can be executed directly
             //Push,
             //Pop,
@@ -434,6 +433,9 @@ impl TurtleRules {
 
             #[token("Turtle::Pop")]
             TurtleActionPop,
+
+            #[token("Turtle::TaperedPop")]
+            TurtleActionTaperedPop,
 
             #[token("Turtle::Push")]
             TurtleActionPush,
@@ -689,6 +691,16 @@ impl TurtleRules {
                         )));
                     }
                 },
+                ParseToken::TurtleActionTaperedPop => match state {
+                    ParseState::Token(Some(text), None) => {
+                        state = ParseState::Token(Some(text), Some(ParseTurtleAction::TaperedPop));
+                    }
+                    _ => {
+                        return Err(HallrError::ParseError(format!(
+                            "Bad state for TurtleActionTaperedPop:{state:?} at line {line}",
+                        )));
+                    }
+                },
                 ParseToken::TurtleActionPush => match state {
                     ParseState::Token(Some(text), None) => {
                         println!("Accepted add_token(\"{text}\", TurtleAction::Push)");
@@ -804,18 +816,25 @@ impl TurtleRules {
                                     ParseTurtleAction::GeodesicYaw => {
                                         TurtleCommand::GeodesicYaw(value.to_radians())
                                     }
+
                                     ParseTurtleAction::Yaw => {
                                         TurtleCommand::Yaw(value.to_radians())
                                     }
+
                                     ParseTurtleAction::Pitch => {
                                         TurtleCommand::Pitch(value.to_radians())
                                     }
+
                                     ParseTurtleAction::Roll => {
                                         TurtleCommand::Roll(value.to_radians())
                                     }
+
                                     ParseTurtleAction::Forward => TurtleCommand::Forward(value),
                                     ParseTurtleAction::GeodesicForward => {
                                         TurtleCommand::GeodesicForward(value)
+                                    }
+                                    ParseTurtleAction::TaperedPop => {
+                                        TurtleCommand::TaperedPop(value)
                                     }
                                 },
                             );

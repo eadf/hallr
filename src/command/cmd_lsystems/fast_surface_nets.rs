@@ -12,6 +12,8 @@ use ilattice::{glam as iglam, prelude::Extent};
 use rayon::iter::{IntoParallelRefIterator, ParallelBridge, ParallelIterator};
 use std::time;
 use vector_traits::glam;
+#[cfg(feature = "display_sdf_chunks")]
+use vector_traits::prelude::{Aabb3, GenericVector3};
 
 type Extent3i = Extent<iglam::IVec3>;
 
@@ -76,7 +78,6 @@ fn sdf_tapered_capsule(p: iglam::Vec3A, capsule: &TaperedCapsule) -> f32 {
     d - radius
 }
 
-#[allow(clippy::many_single_char_names)]
 /// Build the chunk lattice and spawn off thread tasks for each chunk
 pub(super) fn build_voxel(
     divisions: f32,
@@ -96,6 +97,10 @@ pub(super) fn build_voxel(
 
     let scale = divisions / max_dimension;
 
+    #[cfg(feature = "display_sdf_chunks")]
+    println!(
+        "display_sdf_chunks is enabled, input aabb : {aabb:?}, divisions: {divisions:?}, scale: {scale:?}"
+    );
     let tapered_capsules: Vec<(TaperedCapsule, Extent3i)> = edges
         .par_iter()
         .filter_map(|edge| {
@@ -141,14 +146,9 @@ pub(super) fn build_voxel(
         })
         .collect();
 
-    let max_z_radius = aabb
-        .minimum
-        .z
-        .abs()
-        .max((aabb.minimum.z + aabb.shape.z).abs());
-    let max_radius = scale * max_z_radius;
-    let padding_voxels = max_radius * (UN_PADDED_CHUNK_SIDE as f32 / scale);
-    //println!("max_z_radius:{}, max_radius:{}, padding_voxels:{}", max_z_radius, max_radius, padding_voxels);
+    let padding_voxels = 1.0;
+    #[cfg(feature = "display_sdf_chunks")]
+    println!(" padding_voxels:{padding_voxels}");
 
     let chunks_extent =
         // pad with the radius + one voxel
@@ -156,7 +156,10 @@ pub(super) fn build_voxel(
             .padded(padding_voxels)
             .containing_integer_extent();
 
-    //println!("chunks_extent padded:{:?} scale:{} UN_PADDED_CHUNK_SIDE:{}", chunks_extent, scale, UN_PADDED_CHUNK_SIDE);
+    #[cfg(feature = "display_sdf_chunks")]
+    println!(
+        "chunks_extent {chunks_extent:?} scale:{scale} UN_PADDED_CHUNK_SIDE:{UN_PADDED_CHUNK_SIDE}"
+    );
     let now = time::Instant::now();
 
     let sdf_chunks: Vec<_> = {
@@ -182,7 +185,7 @@ pub(super) fn build_voxel(
 }
 
 /// Generate the data of a single chunk.
-/// This code is run in a single thread
+/// This code is run in a parallel
 fn generate_and_process_sdf_chunk(
     un_padded_chunk_extent: Extent3i,
     tapered_capsules: &[(TaperedCapsule, Extent3i)],
@@ -310,6 +313,8 @@ pub(crate) fn build_output_model(
             Vec::with_capacity(face_capacity),
         )
     };
+    #[cfg(feature = "display_sdf_chunks")]
+    let mut result_aabb = <glam::Vec3 as GenericVector3>::Aabb::default();
 
     println!("Rust: *not* applying world-local transformation");
     for (vertex_offset, mesh_buffer) in mesh_buffers.iter() {
@@ -323,11 +328,15 @@ pub(crate) fn build_output_model(
                 y: (voxel_size * (pv[1] + vertex_offset.y)),
                 z: (voxel_size * (pv[2] + vertex_offset.z)),
             });
+            #[cfg(feature = "display_sdf_chunks")]
+            result_aabb.add_point(vertices.last().unwrap().into());
         }
         for vertex_id in mesh_buffer.indices.iter() {
             indices.push((*vertex_id + indices_offset) as usize);
         }
     }
+    #[cfg(feature = "display_sdf_chunks")]
+    println!("final aabb: {result_aabb:?}");
 
     if verbose {
         println!(
