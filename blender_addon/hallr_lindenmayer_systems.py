@@ -210,6 +210,8 @@ axiom("0")
 rule("1", " 11")
 rule("0", " 1[→0]←0")
 iterations(10)
+# initial rotation: align with the Z axis
+rotate(0.0,90.0,0.0)
 dedup(0.0001)
 timeout(1)
 ''',
@@ -227,6 +229,8 @@ token("]", Turtle::Pop)
 axiom("0")
 rule("1", "11")
 rule("0", "1[→↺0]←↻0")
+# initial rotation: align with the Z axis
+rotate(0.0,90.0,0.0)
 iterations(10)
 dedup(0.0001)
 timeout(1)
@@ -244,8 +248,8 @@ token("]", Turtle::Pop)
 axiom("X")
 rule("X","F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
 rule("F","F F")
-# initial rotation 5° off Y axis
-rotate(5.0,0.0,0.0)
+# initial rotation 5° off Y axis and up the Z axis
+rotate(5.0,90.0,0.0)
 iterations(6)
 dedup(0.0001)
 timeout(1)
@@ -280,8 +284,8 @@ token("]", Turtle::Pop)
 axiom("X")
 rule("X","F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
 rule("F", "F F")
-# initial rotation 5° off Y axis
-rotate(5.0,0.0,0.0)
+# initial rotation 5° off Y axis and up the Z axis
+rotate(5.0,90.0,0.0)
 iterations(6)
 dedup(0.0001)
 timeout(1)
@@ -381,8 +385,8 @@ token("]", Turtle::TaperedPop(0.99))
 axiom("X")
 rule("X","F → [ [ X ] ← X ] ← F [ ← F X ] → X" )
 rule("F", "F F")
-# initial rotation 5° off Y axis
-rotate(5.0,0.0,0.0)
+# initial rotation 5° off Y axis and up the Z axis
+rotate(5.0,90.0,0.0)
 iterations(6)
 initial_width(1.0)
 # divide the longest axis in this many voxels

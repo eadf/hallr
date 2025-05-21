@@ -15,8 +15,14 @@ fi
 rm -rf blender_addon_exported
 rm -f hallr.zip
 
-if [ -z "${HALLR_BUILD_TEST_FROM_INPUT+x}" ]; then
-    python3 build_script.py --dev_mode
-else
-    python3 build_script.py --dev_mode --generate_tests
+args=""
+if [ -n "${HALLR_BUILD_TEST_FROM_INPUT+x}" ]; then
+    echo "As a precaution, blender also needs to be run with the HALLR_BUILD_TEST_FROM_INPUT env set."
+    echo "eg. 'HALLR_BUILD_TEST_FROM_INPUT=1 blender --debug'"
+    args+=" --generate_tests"
 fi
+if [ -n "${HALLR_DISPLAY_SDF_CHUNKS+x}" ]; then
+    args+=" --display_sdf_chunks"
+fi
+
+python3 build_script.py --dev_mode $args

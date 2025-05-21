@@ -43,7 +43,7 @@ iterations(5)
 }
 
 #[test]
-fn test_lsystems_8() -> Result<(), HallrError> {
+fn test_lsystems_2() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
         "🐢".to_string(),
@@ -79,7 +79,7 @@ iterations(1)"###
 }
 
 #[test]
-fn test_lsystems_7() -> Result<(), HallrError> {
+fn test_lsystems_3() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
         "🐢".to_string(),
@@ -124,14 +124,12 @@ timeout(2)
 }
 
 #[test]
-fn test_lsystems_6() -> Result<(), HallrError> {
+fn test_lsystems_4() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("▶".to_string(), r###"lsystems"###.to_string());
     let _ = config.insert(
         "🐢".to_string(),
         r###"
-# https://en.wikipedia.org/wiki/L-system#Examples_of_L-systems
-# build fractal binary tree
 token("0", Turtle::Forward(1.0))
 token("1", Turtle::Forward(1.0))
 token("L", Turtle::Yaw(45.0))
@@ -164,13 +162,12 @@ timeout(2)
 }
 
 #[test]
-fn test_lsystems_2() -> Result<(), HallrError> {
+fn test_lsystems_5() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("▶".to_string(), r###"lsystems"###.to_string());
     let _ = config.insert(
         "🐢".to_string(),
         r###"
-# build a koch curve in 3d
 token("-", Turtle::Rotate(40.0, -90.0, 0.0))
 token("&", Turtle::Forward(30.0))
 token("?", Turtle::Forward(30.0))
@@ -192,43 +189,14 @@ timeout(1)
     let models = vec![owned_model_0.as_model()];
 
     let _result = super::process_command(config, models)?;
-    /*
-    assert_eq!(_result.1.len() % 3, 0);
-    assert!(!_result.1.is_empty());
-    let number_of_vertices = _result.0.len();
-    assert!(number_of_vertices>0);
 
-    for t in _result.1.chunks_exact(3) {
-        assert_ne!(t[0], t[1]);
-        assert_ne!(t[0], t[2]);
-        assert_ne!(t[1], t[2]);
-
-        assert!(
-            t[0] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[1] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[2] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        )
-    }*/
     assert_eq!(312, _result.0.len()); // vertices
     assert_eq!(312, _result.1.len()); // indices
     Ok(())
 }
 
 #[test]
-fn test_lsystems_3() -> Result<(), HallrError> {
+fn test_lsystems_6() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
         "🐢".to_string(),
@@ -260,42 +228,13 @@ timeout(1)
 
     let _result = super::process_command(config, models)?;
 
-    /*assert_eq!(_result.1.len() % 3, 0);
-    assert!(!_result.1.is_empty());
-    let number_of_vertices = _result.0.len();
-    assert!(number_of_vertices>0);
-
-    for t in _result.1.chunks_exact(3) {
-        assert_ne!(t[0], t[1]);
-        assert_ne!(t[0], t[2]);
-        assert_ne!(t[1], t[2]);
-
-        assert!(
-            t[0] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[1] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[2] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        )
-    }*/
     assert_eq!(16, _result.0.len()); // vertices
     assert_eq!(16, _result.1.len()); // indices
     Ok(())
 }
 
 #[test]
-fn test_lsystems_4() -> Result<(), HallrError> {
+fn test_lsystems_7() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
         "🐢".to_string(),
@@ -326,44 +265,13 @@ timeout(1)
     let models = vec![owned_model_0.as_model()];
 
     let _result = super::process_command(config, models)?;
-    /*
-    assert_eq!(result.1.len() % 3, 0);
-    assert!(!result.1.is_empty());
-    let number_of_vertices = result.0.len();
-    assert!(number_of_vertices>0);
-
-    for t in result.1.chunks_exact(3) {
-        assert_ne!(t[0], t[1]);
-        assert_ne!(t[0], t[2]);
-        assert_ne!(t[1], t[2]);
-
-        assert!(
-            t[0] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[1] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[2] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        )
-    }
-    //assert_eq!(0,result.0.len()); // vertices
-    //assert_eq!(0,result.1.len()); // indices
-     */
+    assert_eq!(40, _result.0.len()); // vertices
+    assert_eq!(40, _result.1.len()); // indices
     Ok(())
 }
 
 #[test]
-fn test_lsystems_5() -> Result<(), HallrError> {
+fn test_lsystems_8() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
         "🐢".to_string(),
@@ -393,38 +301,49 @@ fn test_lsystems_5() -> Result<(), HallrError> {
     let models = vec![owned_model_0.as_model()];
 
     let _result = super::process_command(config, models)?;
-    println!("result:{_result:?}");
-    /*
-    assert_eq!(result.1.len() % 3, 0);
-    assert!(!result.1.is_empty());
-    let number_of_vertices = result.0.len();
-    assert!(number_of_vertices > 0);
+    assert_eq!(32, _result.0.len()); // vertices
+    assert_eq!(32, _result.1.len()); // indices
+    Ok(())
+}
 
-    for t in result.1.chunks_exact(3) {
-        assert_ne!(t[0], t[1]);
-        assert_ne!(t[0], t[2]);
-        assert_ne!(t[1], t[2]);
+#[test]
+fn test_lsystems_9() -> Result<(), HallrError> {
+    let mut config = ConfigType::default();
+    let _ = config.insert("▶".to_string(), "lsystems".to_string());
+    let _ = config.insert(
+        "🐢".to_string(),
+        r##"
 
-        assert!(
-            t[0] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[1] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        );
-        assert!(
-            t[2] < number_of_vertices,
-            "{:?} >= {}",
-            t[2],
-            number_of_vertices
-        )
-    }*/
-    //assert_eq!(0,result.0.len()); // vertices
-    //assert_eq!(0,result.1.len()); // indices
+token("X", Turtle::Nop)
+token("F", Turtle::TaperedForward(1.0, 0.99))
+token("→", Turtle::Rotate(30.0,0.0,-25.0))
+token("←", Turtle::Rotate(-31.0,0.0,5.0))
+token("[", Turtle::Push)
+token("]", Turtle::TaperedPop(0.99))
+axiom("X")
+rule("X","F → [[X] ← X ] ← F [ ← F X ] → X" )
+rule("F", "F F")
+rotate(95.0,90.0,190.0)
+iterations(1)
+initial_width(1.0)
+sdf_divisions(10)
+dedup(0.0001)
+timeout(1)
+"##
+        .to_string(),
+    );
+    let _ = config.insert("≈".to_string(), "1e-05".to_string());
+    let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
+        vertices: vec![],
+        indices: vec![],
+    };
+
+    let models = vec![owned_model_0.as_model()];
+
+    let _result = super::process_command(config, models)?;
+    assert_eq!(328, _result.0.len()); // vertices
+    assert_eq!(1260, _result.1.len()); // indices
+
     Ok(())
 }

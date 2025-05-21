@@ -354,7 +354,7 @@ pub(crate) fn process_command(
     #[cfg(feature = "generate_test_case_from_input")]
     #[cfg(not(test))]
     {
-        // We are placing these "fetures" behind an extra ENV feature gate to prevent accidental spam
+        // We are placing these "features" behind an extra ENV feature gate to prevent accidental spam
         if is_test_code_generation_enabled() {
             // Used for debugging - records input data to help reproduce, and build tests cases from,
             // tricky edge cases

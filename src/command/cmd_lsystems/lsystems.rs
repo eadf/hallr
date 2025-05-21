@@ -266,7 +266,7 @@ impl TurtleRules {
         Ok(self)
     }
 
-    /// Set the initial heading of the, not yet known, turtle
+    /// Set the initial heading of the (not yet known) turtle.
     pub fn rotate(&mut self, yaw: f64, pitch: f64, roll: f64) -> Result<&mut Self, HallrError> {
         if (yaw - 0.0).abs() > f64::EPSILON {
             self.yaw = Some(yaw);
@@ -285,6 +285,7 @@ impl TurtleRules {
         }
         Ok(self)
     }
+
     pub fn set_geodesic_radius(&mut self, radius: f64) -> Result<(), HallrError> {
         self.geodesic_radius = Some(radius);
         Ok(())
@@ -977,17 +978,21 @@ impl TurtleRules {
             }
             turtle.position = DVec4::new(0.0, 0.0, -radius, 0.0);
             turtle.orientation = DQuat::IDENTITY;
-        } else if let Some(initial_width) = self.initial_width {
-            for t in self.tokens.values() {
-                if matches!(t, TurtleCommand::GeodesicForward(_)) {
-                    return Err(HallrError::ParseError(
-                        "No geodesic forward possible with initial_width()".to_string(),
-                    ));
-                }
-            }
-            turtle.position = DVec4::new(0.0, 0.0, 0.0, initial_width);
-            turtle.orientation = DQuat::IDENTITY;
         } else {
+            turtle.position = DVec4::new(0.0, 0.0, 0.0, 0.0);
+            turtle.orientation = DQuat::IDENTITY;
+
+            if let Some(initial_width) = self.initial_width {
+                for t in self.tokens.values() {
+                    if matches!(t, TurtleCommand::GeodesicForward(_)) {
+                        return Err(HallrError::ParseError(
+                            "No geodesic forward possible with initial_width()".to_string(),
+                        ));
+                    }
+                }
+                turtle.position.w = initial_width;
+            }
+
             // Apply initial rotations
             if let Some(yaw) = self.yaw {
                 turtle.apply(&TurtleCommand::Yaw(yaw))?;
