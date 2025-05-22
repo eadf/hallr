@@ -12,6 +12,7 @@ use crate::{
     ffi::FFIVector3,
 };
 use fast_surface_nets::{SurfaceNetsBuffer, ndshape::ConstShape, surface_nets};
+use vector_traits::glam;
 use ilattice::{glam as iglam, prelude::Extent};
 use rayon::prelude::*;
 use std::time;
@@ -88,9 +89,9 @@ fn build_voxel(
         );
         println!();
     }
-    let vertices: Vec<iglam::Vec3A> = vertices
+    let vertices: Vec<_> = vertices
         .iter()
-        .map(|v| iglam::Vec3A::new(v.x, v.y, v.z) * scale)
+        .map(|v| glam::Vec3A::new(v.x, v.y, v.z) * scale)
         .collect();
 
     let chunks_extent = {
@@ -128,13 +129,19 @@ fn build_voxel(
     Ok((1.0 / scale, sdf_chunks))
 }
 
+#[inline(always)]
+fn extent_from_min_and_lub(min:glam::Vec3A, lub:glam::Vec3A) -> Extent<iglam::Vec3A> {
+    Extent::from_min_and_lub(iglam::vec3a(min.x, min.y, min.z), iglam::vec3a(lub.x, lub.y, lub.z))
+}
+
 /// Generate the data of a single chunk
 fn generate_and_process_sdf_chunk(
     unpadded_chunk_extent: Extent3i,
-    vertices: &[iglam::Vec3A],
+    vertices: &[glam::Vec3A],
     indices: &[usize],
     thickness: f32,
 ) -> Option<(iglam::Vec3A, SurfaceNetsBuffer)> {
+    let thickness_v = glam::Vec3A::splat(thickness);
     // the origin of this chunk, in voxel scale
     let padded_chunk_extent = unpadded_chunk_extent.padded(1);
 
@@ -146,9 +153,9 @@ fn generate_and_process_sdf_chunk(
             let v0 = vertices[e0];
             let v1 = vertices[e1];
 
-            let tube_extent = Extent::from_min_and_lub(
-                v0.min(v1) - iglam::Vec3A::splat(thickness),
-                v0.max(v1) + iglam::Vec3A::splat(thickness),
+            let tube_extent = extent_from_min_and_lub(
+                v0.min(v1) - thickness_v,
+                v0.max(v1) + thickness_v,
             )
             .containing_integer_extent();
             if !padded_chunk_extent.intersection(&tube_extent).is_empty() {
@@ -179,19 +186,18 @@ fn generate_and_process_sdf_chunk(
     let mut some_neg_or_zero_found = false;
     let mut some_pos_found = false;
 
+    // Point With Offset from the un-padded extent minimum
     for pwo in padded_chunk_extent.iter3() {
         let v = {
             let p = pwo - unpadded_chunk_extent.minimum + 1;
             &mut array[PaddedChunkShape::linearize([p.x as u32, p.y as u32, p.z as u32]) as usize]
         };
-        let pwo = pwo.as_vec3a();
-        // Point With Offset from the un-padded extent minimum
+        
         #[cfg(feature = "display_sdf_chunks")]
         {
-            // todo: this could probably be optimized with PaddedChunkShape::linearize(corner_pos)
             let mut x = *v;
             for c in corners.iter() {
-                x = x.min(c.distance(pwo) - 1.);
+                x = x.min(c.distance(pwo.as_vec3a()) - 1.);
             }
             *v = (*v).min(x);
         }
@@ -200,7 +206,7 @@ fn generate_and_process_sdf_chunk(
             .map(|(e0, e1)| (vertices[*e0], vertices[*e1]))
         {
             // This is the sdf formula of a capsule
-            let pa = pwo - from_v;
+            let pa  = glam::vec3a(pwo.x as f32,pwo.y as f32, pwo.z as f32) - from_v;
             let ba = to_v - from_v;
             let t = pa.dot(ba) / ba.dot(ba);
             let h = t.clamp(0.0, 1.0);
