@@ -11,7 +11,7 @@ pub(super) struct Turtle {
     pub(super) orientation: DQuat,
     pub(super) position: DVec4,
     pub(super) stack: Vec<(DQuat, DVec4)>,
-    pub(super) result: Vec<[Vec4; 2]>,
+    pub(super) result: Vec<(Vec4, Vec4)>,
     /// Should the turtle draw while moving?
     pub(super) pen_up: bool,
     /// should coordinates be rounded to int after each move?
@@ -131,7 +131,7 @@ impl Turtle {
                 }
 
                 if !self.pen_up {
-                    self.result.push([p0.as_vec4(), self.position.as_vec4()]);
+                    self.result.push((p0.as_vec4(), self.position.as_vec4()));
                 }
             }
             TurtleCommand::GeodesicForward(distance) => {
@@ -143,7 +143,7 @@ impl Turtle {
                 }
 
                 if !self.pen_up {
-                    self.result.push([p0.as_vec4(), self.position.as_vec4()]);
+                    self.result.push((p0.as_vec4(), self.position.as_vec4()));
                 }
             }
             TurtleCommand::TaperedForward(distance, reduction) => {
@@ -159,7 +159,7 @@ impl Turtle {
                         "TaperedForward pushing: {p0:?}, {:?} {reduction}",
                         self.position
                     );*/
-                    self.result.push([p0.as_vec4(), self.position.as_vec4()]);
+                    self.result.push((p0.as_vec4(), self.position.as_vec4()));
                 }
             }
             TurtleCommand::PenUp => self.pen_up = true,
@@ -954,7 +954,7 @@ impl TurtleRules {
     }
 
     /// expands the rules and run the turtle over the result.
-    pub fn exec(&self, mut turtle: Turtle) -> Result<Vec<[Vec4; 2]>, HallrError> {
+    pub fn exec(&self, mut turtle: Turtle) -> Result<Vec<(Vec4, Vec4)>, HallrError> {
         if self.round {
             turtle.round = true;
         }

@@ -79,6 +79,7 @@ def run_cargo_build(dev_mode, debug, generate_tests, display_sdf_chunks):
         dev_mode: Whether to build in development mode
         debug: Whether to build with debug symbols (implies dev_mode)
         generate_tests: Whether to generate test cases (only works in dev_mode)
+        display_sdf_chunks: Whether to display the sdf chunk boundaries in the generated mesh (only works in dev_mode)
     """
     feature_args = []
     if generate_tests or display_sdf_chunks:

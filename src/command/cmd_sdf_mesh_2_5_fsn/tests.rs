@@ -36,8 +36,8 @@ fn test_sdf_mesh_2_5_1() -> Result<(), HallrError> {
 
     let models = vec![owned_model_0.as_model()];
     let result = super::process_command(config, models)?;
-    assert_eq!(1279, result.0.len()); // vertices
-    assert_eq!(6384, result.1.len()); // indices
+    assert_eq!(1270, result.0.len()); // vertices
+    assert_eq!(6348, result.1.len()); // indices
     Ok(())
 }
 

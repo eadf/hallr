@@ -2,6 +2,7 @@
 // Copyright (c) 2023, 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
+pub(crate) mod rounded_cones_fsn;
 #[cfg(test)]
 mod tests;
 mod trait_impl;

@@ -107,8 +107,7 @@ fn build_voxel(
         let unpadded_chunk_shape = iglam::IVec3::splat(UN_PADDED_CHUNK_SIDE as i32);
         // Spawn off thread tasks creating and processing chunks.
         chunks_extent
-            .iter3()
-            .par_bridge()
+            .par_iter3()
             .filter_map(move |p| {
                 let unpadded_chunk_extent =
                     Extent3i::from_min_and_shape(p * unpadded_chunk_shape, unpadded_chunk_shape);

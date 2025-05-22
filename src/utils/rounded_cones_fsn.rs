@@ -4,94 +4,123 @@
 
 use crate::{
     HallrError,
-    command::{OwnedModel, cmd_sdf_mesh_2_5_fsn::UN_PADDED_CHUNK_SIDE},
+    command::{Model, OwnedModel},
     ffi::FFIVector3,
 };
 use fast_surface_nets::{SurfaceNetsBuffer, ndshape::ConstShape, surface_nets};
 use ilattice::{glam as iglam, prelude::Extent};
-use rayon::iter::{IntoParallelRefIterator, ParallelBridge, ParallelIterator};
+use rayon::{iter::ParallelIterator, prelude::IntoParallelIterator};
 use std::time;
-use vector_traits::glam;
-#[cfg(feature = "display_sdf_chunks")]
-use vector_traits::prelude::{Aabb3, GenericVector3};
+use vector_traits::{
+    glam,
+    prelude::{Aabb3, GenericVector3},
+};
 
 type Extent3i = Extent<iglam::IVec3>;
+// The un-padded chunk side, it will become 16*16*16
+pub const UN_PADDED_CHUNK_SIDE: u32 = 14_u32;
+pub type PaddedChunkShape = fast_surface_nets::ndshape::ConstShape3u32<
+    { UN_PADDED_CHUNK_SIDE + 2 },
+    { UN_PADDED_CHUNK_SIDE + 2 },
+    { UN_PADDED_CHUNK_SIDE + 2 },
+>;
 
-/// This is the sdf formula of a tapered capsule
-struct TaperedCapsule {
-    r0: f32,               // Radius at start
-    h: f32,                // Length of the capsule
-    center0: iglam::Vec3A, // Center of first sphere
+pub const DEFAULT_SDF_VALUE: f32 = 999.0;
 
-    // Pre-calculated constants
-    axis: iglam::Vec3A, // Normalized direction vector from center0 to center1
-    r_diff: f32,        // Difference between radii (r1 - r0)
+/// This is the sdf formula of a round cone (tapered capsule)
+struct RoundCone {
+    r0: f32,              // Radius at start
+    r1: f32,              // Radius at end
+    center0: glam::Vec3A, // Center of first sphere
+
+    // Pre-calculated constants for optimization
+    ba: glam::Vec3A,      // Vector from center0 to center1
+    l2: f32,              // Squared length of ba
+    rr: f32,              // r0 - r1
+    rr3: f32,             // rr^3 (sign(rr) * rr * rr)
+    a2: f32,              // l2 - rr*rr
+    il2: f32,             // 1.0 / l2
 }
 
-impl TaperedCapsule {
+impl RoundCone {
     fn new(center0: iglam::Vec3A, center1: iglam::Vec3A, r0: f32, r1: f32) -> Self {
         let ba = center1 - center0;
-        let h = ba.length();
+        let l2 = ba.length_squared();
+        let rr = r0 - r1;
 
-        // Handle degenerate case
-        let axis = if h <= f32::EPSILON {
-            iglam::Vec3A::X // Default axis if centers are too close
-        } else {
-            ba / h
-        };
-
-        TaperedCapsule {
+        RoundCone {
             r0,
-            h,
-            center0,
-            axis,
-            r_diff: r1 - r0,
+            r1,
+            center0:glam::vec3a(center0.x, center0.y, center0.z),
+            ba: glam::vec3a(ba.x, ba.y, ba.z),
+            l2,
+            rr,
+            rr3: rr.signum() * rr * rr,
+            a2:l2 - rr * rr,
+            il2:1.0/l2,
         }
     }
 }
 
+// Helper function equivalent to GLSL's dot2 (dot product with itself)
 #[inline(always)]
-fn sdf_tapered_capsule(p: iglam::Vec3A, capsule: &TaperedCapsule) -> f32 {
-    // Handle degenerate case
-    if capsule.h <= f32::EPSILON {
+fn dot2(v: glam::Vec3A) -> f32 {
+    v.dot(v)
+}
+
+#[inline(always)]
+// source : https://iquilezles.org/articles/distfunctions/
+fn sdf_round_cone(p: glam::Vec3A, capsule: &RoundCone) -> f32 {
+    // Handle degenerate case where centers are the same
+    if capsule.l2 <= f32::EPSILON * f32::EPSILON {
         return (p - capsule.center0).length() - capsule.r0;
     }
 
+    // sampling dependent computations
     let pa = p - capsule.center0;
+    let y = pa.dot(capsule.ba);
+    let z = y - capsule.l2;
+    let x2 = dot2(pa * capsule.l2 - capsule.ba * y);
+    let y2 = y * y * capsule.l2;
+    let z2 = z * z * capsule.l2;
 
-    // Projection of pa onto axis
-    let t = pa.dot(capsule.axis);
+    let k = capsule.rr3 * x2;
 
-    // Project onto the line segment
-    let t_clamped = t.clamp(0.0, capsule.h);
+    if z.signum() * capsule.a2 * z2 > k {
+        return (x2 + z2).sqrt() * capsule.il2 - capsule.r1;
+    }
+    if y.signum() * capsule.a2 * y2 < k {
+        return (x2 + y2).sqrt() * capsule.il2 - capsule.r0;
+    }
 
-    // Compute the point on the segment that's closest to p
-    let closest_on_segment = capsule.center0 + capsule.axis * t_clamped;
-
-    // Distance from p to the closest point on the segment
-    let d = (p - closest_on_segment).length();
-
-    // Interpolate radius at this point using pre-calculated values
-    let radius = capsule.r0 + capsule.r_diff * (t_clamped / capsule.h);
-
-    // SDF value
-    d - radius
+    ((x2 * capsule.a2 * capsule.il2).sqrt() + y * capsule.rr) * capsule.il2 - capsule.r0
 }
 
-/// Build the chunk lattice and spawn off thread tasks for each chunk
-pub(super) fn build_voxel(
+/// Build the chunk lattice and spawn off threaded tasks for each chunk
+pub(crate) fn build_round_cones_voxel_mesh<I>(
     divisions: f32,
-    edges: Vec<[glam::Vec4; 2]>,
-    aabb: Extent<iglam::Vec3A>,
+    edges: I,
+    edges_aabb: <glam::Vec3 as GenericVector3>::Aabb,
 ) -> Result<
     (
         f32, // voxel_size
-        Vec<(iglam::Vec3A, SurfaceNetsBuffer)>,
+        Vec<(glam::Vec3, SurfaceNetsBuffer)>,
     ),
     HallrError,
-> {
+>
+where
+    I: IntoParallelIterator<Item = (glam::Vec4, glam::Vec4)>,
+{
+    let edges_aabb = {
+        let (min, _, shape) = edges_aabb.extents();
+        Extent::<iglam::Vec3A>::from_min_and_shape(
+            iglam::vec3a(min.x, min.y, min.z),
+            iglam::vec3a(shape.x, shape.y, shape.z),
+        )
+    };
+
     let max_dimension = {
-        let dimensions = aabb.shape;
+        let dimensions = edges_aabb.shape;
         dimensions.x.max(dimensions.y).max(dimensions.z)
     };
 
@@ -99,12 +128,12 @@ pub(super) fn build_voxel(
 
     #[cfg(feature = "display_sdf_chunks")]
     println!(
-        "display_sdf_chunks is enabled, input aabb : {aabb:?}, divisions: {divisions:?}, scale: {scale:?}"
+        "display_sdf_chunks is enabled, input aabb : {edges_aabb:?}, divisions: {divisions:?}, scale: {scale:?}"
     );
-    let tapered_capsules: Vec<(TaperedCapsule, Extent3i)> = edges
-        .par_iter()
+    let round_cones: Vec<(RoundCone, Extent3i)> = edges
+        .into_par_iter()
         .filter_map(|edge| {
-            let [v0, v1] = edge;
+            let (v0, v1) = edge;
             let r0 = v0.w;
             let r1 = v1.w;
 
@@ -140,7 +169,7 @@ pub(super) fn build_voxel(
             .padded(r1);
 
             Some((
-                TaperedCapsule::new(center0, center1, r0, r1),
+                RoundCone::new(center0, center1, r0, r1),
                 ex0.bound_union(&ex1).containing_integer_extent(),
             ))
         })
@@ -152,7 +181,7 @@ pub(super) fn build_voxel(
 
     let chunks_extent =
         // pad with the radius + one voxel
-        (aabb * (scale / (UN_PADDED_CHUNK_SIDE as f32)))
+        (edges_aabb * (scale / (UN_PADDED_CHUNK_SIDE as f32)))
             .padded(padding_voxels)
             .containing_integer_extent();
 
@@ -165,13 +194,12 @@ pub(super) fn build_voxel(
     let sdf_chunks: Vec<_> = {
         let un_padded_chunk_shape = iglam::IVec3::splat(UN_PADDED_CHUNK_SIDE as i32);
         chunks_extent
-            .iter3()
-            .par_bridge()
+            .par_iter3()
             .filter_map(move |p| {
                 let un_padded_chunk_extent =
                     Extent3i::from_min_and_shape(p * un_padded_chunk_shape, un_padded_chunk_shape);
 
-                generate_and_process_sdf_chunk(un_padded_chunk_extent, &tapered_capsules)
+                generate_and_process_sdf_chunk(un_padded_chunk_extent, &round_cones)
             })
             .collect()
     };
@@ -188,13 +216,13 @@ pub(super) fn build_voxel(
 /// This code is run in a parallel
 fn generate_and_process_sdf_chunk(
     un_padded_chunk_extent: Extent3i,
-    tapered_capsules: &[(TaperedCapsule, Extent3i)],
-) -> Option<(iglam::Vec3A, SurfaceNetsBuffer)> {
+    round_cones: &[(RoundCone, Extent3i)],
+) -> Option<(glam::Vec3, SurfaceNetsBuffer)> {
     // the origin of this chunk, in voxel scale
     let padded_chunk_extent = un_padded_chunk_extent.padded(1);
 
     // filter out the edges that does not affect this chunk
-    let filtered_capsules: Vec<_> = tapered_capsules
+    let filtered_capsules: Vec<_> = round_cones
         .iter()
         .enumerate()
         .filter_map(|(index, sdf)| {
@@ -212,17 +240,14 @@ fn generate_and_process_sdf_chunk(
         return None;
     }
 
-    let mut array = {
-        [crate::command::cmd_sdf_mesh_2_5_fsn::DEFAULT_SDF_VALUE;
-            crate::command::cmd_sdf_mesh_2_5_fsn::PaddedChunkShape::SIZE as usize]
-    };
+    let mut array = { [DEFAULT_SDF_VALUE; PaddedChunkShape::SIZE as usize] };
 
     #[cfg(feature = "display_sdf_chunks")]
     // The corners of the un-padded chunk extent
     let corners: Vec<_> = un_padded_chunk_extent
         .corners3()
         .iter()
-        .map(|p| p.as_vec3a())
+        .map(|p| glam::vec3a(p.x as f32, p.y as f32, p.z as f32))
         .collect();
 
     let mut some_neg_or_zero_found = false;
@@ -231,12 +256,10 @@ fn generate_and_process_sdf_chunk(
     for pwo in padded_chunk_extent.iter3() {
         let v = {
             let p = pwo - un_padded_chunk_extent.minimum + 1;
-            &mut array[crate::command::cmd_sdf_mesh_2_5_fsn::PaddedChunkShape::linearize([
-                p.x as u32, p.y as u32, p.z as u32,
-            ]) as usize]
+            &mut array[PaddedChunkShape::linearize([p.x as u32, p.y as u32, p.z as u32]) as usize]
         };
         // Point With Offset from the un-padded extent minimum
-        let pwo = pwo.as_vec3a();
+        let pwo = glam::vec3a(pwo.x as f32, pwo.y as f32, pwo.z as f32);
 
         #[cfg(feature = "display_sdf_chunks")]
         {
@@ -248,9 +271,9 @@ fn generate_and_process_sdf_chunk(
             *v = (*v).min(x);
         }
         for index in filtered_capsules.iter() {
-            let capsule = &tapered_capsules[*index as usize].0;
+            let capsule = &round_cones[*index as usize].0;
 
-            *v = (*v).min(sdf_tapered_capsule(pwo, capsule));
+            *v = (*v).min(sdf_round_cone(pwo, capsule));
         }
         if *v > 0.0 {
             some_pos_found = true;
@@ -265,7 +288,7 @@ fn generate_and_process_sdf_chunk(
         // do the voxel_size multiplication later, vertices pos. needs to match extent.
         surface_nets(
             &array,
-            &crate::command::cmd_sdf_mesh_2_5_fsn::PaddedChunkShape {},
+            &PaddedChunkShape {},
             [0; 3],
             [UN_PADDED_CHUNK_SIDE + 1; 3],
             &mut sn_buffer,
@@ -275,7 +298,11 @@ fn generate_and_process_sdf_chunk(
             // No vertices were generated by this chunk, ignore it
             None
         } else {
-            Some((padded_chunk_extent.minimum.as_vec3a(), sn_buffer))
+            let min = padded_chunk_extent.minimum;
+            Some((
+                glam::vec3(min.x as f32, min.y as f32, min.z as f32),
+                sn_buffer,
+            ))
         }
     } else {
         None
@@ -284,8 +311,9 @@ fn generate_and_process_sdf_chunk(
 
 /// Build the return model
 pub(crate) fn build_output_model(
+    input_model: Option<&Model<'_>>,
     voxel_size: f32,
-    mesh_buffers: Vec<(iglam::Vec3A, SurfaceNetsBuffer)>,
+    mesh_buffers: Vec<(glam::Vec3, SurfaceNetsBuffer)>,
     verbose: bool,
 ) -> Result<OwnedModel, HallrError> {
     let now = time::Instant::now();
@@ -313,30 +341,49 @@ pub(crate) fn build_output_model(
             Vec::with_capacity(face_capacity),
         )
     };
-    #[cfg(feature = "display_sdf_chunks")]
-    let mut result_aabb = <glam::Vec3 as GenericVector3>::Aabb::default();
 
-    println!("Rust: *not* applying world-local transformation");
-    for (vertex_offset, mesh_buffer) in mesh_buffers.iter() {
-        // each chunk starts counting vertices from zero
-        let indices_offset = vertices.len() as u32;
+    if let Some(world_to_local) =
+        input_model.and_then(|im| im.get_world_to_local_transform().transpose())
+    {
+        let world_to_local = world_to_local?;
+        println!("Rust: applying world-local transformation",);
+        for (vertex_offset, mesh_buffer) in mesh_buffers.iter() {
+            // each chunk starts counting vertices from zero
+            let indices_offset = vertices.len() as u32;
 
-        // vertices this far inside a chunk should (probably?) not be used outside this chunk.
-        for pv in mesh_buffer.positions.iter() {
-            vertices.push(FFIVector3 {
-                x: (voxel_size * (pv[0] + vertex_offset.x)),
-                y: (voxel_size * (pv[1] + vertex_offset.y)),
-                z: (voxel_size * (pv[2] + vertex_offset.z)),
-            });
-            #[cfg(feature = "display_sdf_chunks")]
-            result_aabb.add_point(vertices.last().unwrap().into());
+            // vertices this far inside a chunk should (probably?) not be used outside this chunk.
+            for pv in mesh_buffer.positions.iter() {
+                vertices.push(world_to_local(FFIVector3 {
+                    x: (voxel_size * (pv[0] + vertex_offset.x)),
+                    y: (voxel_size * (pv[1] + vertex_offset.y)),
+                    z: (voxel_size * (pv[2] + vertex_offset.z)),
+                }));
+            }
+
+            for vertex_id in mesh_buffer.indices.iter() {
+                indices.push((*vertex_id + indices_offset) as usize);
+            }
         }
-        for vertex_id in mesh_buffer.indices.iter() {
-            indices.push((*vertex_id + indices_offset) as usize);
+    } else {
+        println!("Rust: *not* applying world-local transformation");
+        for (vertex_offset, mesh_buffer) in mesh_buffers.iter() {
+            // each chunk starts counting vertices from zero
+            let indices_offset = vertices.len() as u32;
+
+            // vertices this far inside a chunk should (probably?) not be used outside this chunk.
+            for pv in mesh_buffer.positions.iter() {
+                vertices.push(FFIVector3 {
+                    x: (voxel_size * (pv[0] + vertex_offset.x)),
+                    y: (voxel_size * (pv[1] + vertex_offset.y)),
+                    z: (voxel_size * (pv[2] + vertex_offset.z)),
+                });
+            }
+
+            for vertex_id in mesh_buffer.indices.iter() {
+                indices.push((*vertex_id + indices_offset) as usize);
+            }
         }
     }
-    #[cfg(feature = "display_sdf_chunks")]
-    println!("final aabb: {result_aabb:?}");
 
     if verbose {
         println!(

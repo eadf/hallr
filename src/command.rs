@@ -212,9 +212,9 @@ impl Model<'_> {
 
 /// An owned variant of `Model`
 pub struct OwnedModel {
-    world_orientation: [f32; 16],
-    vertices: Vec<FFIVector3>,
-    indices: Vec<usize>,
+    pub(crate) world_orientation: [f32; 16],
+    pub(crate) vertices: Vec<FFIVector3>,
+    pub(crate) indices: Vec<usize>,
 }
 
 impl OwnedModel {
@@ -235,7 +235,7 @@ impl OwnedModel {
         }
     }
 
-    fn identity_matrix() -> [f32; 16] {
+    pub(crate) fn identity_matrix() -> [f32; 16] {
         IDENTITY_MATRIX
     }
 

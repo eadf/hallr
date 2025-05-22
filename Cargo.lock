@@ -749,6 +749,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "142c38a1c9ad4feaba850b1224875523ab8167ccf767ad26ce023e5e5467379b"
 dependencies = [
  "glam 0.24.2",
+ "rayon",
 ]
 
 [[package]]

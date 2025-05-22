@@ -2,13 +2,11 @@
 // Copyright (c) 2023 2025 lacklustr@protonmail.com https://github.com/eadf
 // This file is part of the hallr crate.
 
-mod fast_surface_nets;
 mod lsystems;
 #[cfg(test)]
 mod tests;
 mod trait_impl;
 
-use ilattice::{glam as iglam, prelude::Extent};
 use vector_traits::{
     glam::{Vec3, Vec4Swizzles},
     prelude::{Aabb3, GenericVector3},
@@ -21,6 +19,7 @@ use crate::{
     ffi::MeshFormat,
     prelude::*,
 };
+use rayon::prelude::IntoParallelIterator;
 use std::time;
 
 /// remove empty space and comments
@@ -71,7 +70,7 @@ pub(crate) fn process_command(
 
     let aabb = {
         let mut aabb = <Vec3 as GenericVector3>::Aabb::default();
-        for [p0, p1] in result.iter() {
+        for (p0, p1) in result.iter() {
             let mut aabb_point = <Vec3 as GenericVector3>::Aabb::from_point(p0.xyz());
             aabb_point.pad(Vec3::splat(p0.w));
             aabb.add_aabb(&aabb_point);
@@ -88,25 +87,23 @@ pub(crate) fn process_command(
     let mut return_config = ConfigType::new();
 
     let output_model = if let Some(_sdf_divisions) = sdf_divisions {
-        let (min, _, shape) = aabb.extents();
-        let extent = Extent::<iglam::Vec3A>::from_min_and_shape(
-            iglam::vec3a(min.x, min.y, min.z),
-            iglam::vec3a(shape.x, shape.y, shape.z),
-        );
-
         let (voxel_size, mesh) =
-            fast_surface_nets::build_voxel(_sdf_divisions as f32, result, extent)?;
+            crate::utils::rounded_cones_fsn::build_round_cones_voxel_mesh(
+                _sdf_divisions as f32,
+                result.into_par_iter(),
+                aabb,
+            )?;
         let _ = return_config.insert(
             MeshFormat::MESH_FORMAT_TAG.to_string(),
             MeshFormat::Triangulated.to_string(),
         );
-        fast_surface_nets::build_output_model(voxel_size, mesh, false)?
+        crate::utils::rounded_cones_fsn::build_output_model(None, voxel_size, mesh, false)?
     } else {
         let mut output_vertices = Vec::<FFIVector3>::with_capacity(result.len());
         let mut output_indices = Vec::<usize>::with_capacity(result.len());
 
         //println!("results:");
-        for [p0_4, p1_4] in result {
+        for (p0_4, p1_4) in result {
             let p0_3 = p0_4.xyz();
             let p1_3 = p1_4.xyz();
             //println!("found edge : {p0_4:?} - {p1_4:?}");
