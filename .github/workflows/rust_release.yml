@@ -57,62 +57,38 @@ jobs:
           path: platform_build
           include-hidden-files: true
 
-  build_macos_universal:
-    name: Build macOS Universal
-    runs-on: macos-latest
+  build_macos_arm64:
+    name: Build macOS ARM64
+    runs-on: macos-14  # Uses an Apple Silicon runner
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install targets
-        run: |
-          rustup target add x86_64-apple-darwin
-          rustup target add aarch64-apple-darwin
+      - name: Install ARM target
+        run: rustup target add aarch64-apple-darwin
 
-      - name: Build x86_64
-        run: |
-          cargo rustc --release --target x86_64-apple-darwin --crate-type="cdylib" -- -C opt-level=3 -C lto=fat
-          #cargo build --release --target x86_64-apple-darwin
-          #echo "after x86 build"
-          #ls -laR target/x86_64-apple-darwin/release
-
-      - name: Build aarch64
+      - name: Build ARM64 dylib
         run: |
           cargo rustc --release --target aarch64-apple-darwin --crate-type="cdylib" -- -C opt-level=3 -C lto=fat
-          #cargo build --release --target aarch64-apple-darwin
-          #echo "after arm build"
-          #ls -laR target/aarch64-apple-darwin/release
 
-      - name: Create universal library
+      - name: Prepare artifact
         run: |
           mkdir -p platform_build/hallr/lib
-          # create a dummy file for folder protection
           cp blender_addon/.hallr platform_build/hallr/
-          if [ ! -f "platform_build/hallr/.hallr" ]; then
-            touch platform_build/hallr/.hallr
-          fi
-          # Copy Python files
           cp blender_addon/*.py platform_build/hallr/
-          # Create universal binary
-          lipo -create \
-            -output platform_build/hallr/lib/libhallr.dylib \
-            target/x86_64-apple-darwin/release/libhallr.dylib \
-            target/aarch64-apple-darwin/release/libhallr.dylib
+          cp target/aarch64-apple-darwin/release/libhallr.dylib platform_build/hallr/lib/libhallr.dylib
 
-      - name: Verify universal binary
-        run: |
-          lipo -info platform_build/hallr/lib/libhallr.dylib
-
-      - name: Upload macOS universal artifact
+      - name: Upload macOS arm64 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: hallr-macos-universal
+          name: hallr-macos-arm64
           path: platform_build
           include-hidden-files: true
 
+
   combine_artifacts:
     name: Combine platform artifacts
-    needs: [build_platforms, build_macos_universal]
+    needs: [build_platforms, build_macos_arm64]
     runs-on: macos-latest
     steps:
       - name: Checkout code
