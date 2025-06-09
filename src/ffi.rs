@@ -92,6 +92,22 @@ impl FFIVector3 {
     }
 }
 
+// Convert Vec<[f32; 3]> to Vec<FFIVector3> without copying
+pub(crate) fn unsafe_convert_vec(vec: Vec<[f32; 3]>) -> Vec<FFIVector3> {
+    // Safety:
+    // 1. Both types have identical memory layouts (size + alignment).
+    // 2. Vec's allocation is correctly aligned for FFIVector3.
+    // 3. No destructors need to run for [f32; 3] or FFIVector3.
+    unsafe {
+        let mut vec = std::mem::ManuallyDrop::new(vec);
+        Vec::from_raw_parts(
+            vec.as_mut_ptr() as *mut FFIVector3,
+            vec.len(),
+            vec.capacity(),
+        )
+    }
+}
+
 /// A struct representing the geometry output for FFI (Foreign Function Interface) usage.
 ///
 /// This struct is used to return geometry-related data from Rust to other programming languages

@@ -635,10 +635,10 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
 
     remove_doubles_threshold_prop: bpy.props.FloatProperty(
         name="Merge Distance",
-        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
-        default=0.0001,
+        description="Maximum distance between vertices to be merged",
+        default=0.001,
         min=0.000001,
-        max=0.1,
+        max=0.01,
         precision=6,
         unit='LENGTH'
     )
@@ -724,10 +724,10 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
 
     remove_doubles_threshold_prop: bpy.props.FloatProperty(
         name="Merge Distance",
-        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
-        default=0.0001,
+        description="Maximum distance between vertices to be merged",
+        default=0.001,
         min=0.000001,
-        max=0.1,
+        max=0.01,
         precision=6,
         unit='LENGTH'
     )
@@ -831,10 +831,10 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
 
     remove_doubles_threshold_prop: bpy.props.FloatProperty(
         name="Merge Distance",
-        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
-        default=0.0001,
+        description="Maximum distance between vertices to be merged",
+        default=0.001,
         min=0.000001,
-        max=0.1,
+        max=0.01,
         precision=6,
         unit='LENGTH'
     )
@@ -934,10 +934,10 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
 
     remove_doubles_threshold_prop: bpy.props.FloatProperty(
         name="Merge Distance",
-        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
-        default=0.0001,
+        description="Maximum distance between vertices to be merged",
+        default=0.001,
         min=0.000001,
-        max=0.1,
+        max=0.01,
         precision=6,
         unit='LENGTH'
     )
@@ -1029,10 +1029,10 @@ class MESH_OT_hallr_random_vertices(bpy.types.Operator, BaseOperatorMixin):
 
     remove_doubles_threshold_prop: bpy.props.FloatProperty(
         name="Merge Distance",
-        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
-        default=0.0001,
+        description="Maximum distance between vertices to be merged",
+        default=0.001,
         min=0.000001,
-        max=0.1,
+        max=0.01,
         precision=6,
         unit='LENGTH'
     )
@@ -1078,7 +1078,8 @@ class MESH_OT_hallr_random_vertices(bpy.types.Operator, BaseOperatorMixin):
 
         # Merge vertices based on distance
         if self.use_remove_doubles_prop:
-            bpy.ops.mesh.remove_doubles(threshold=self.remove_doubles_threshold_prop)
+            with timer("Python: bpy.ops.mesh.remove_doubles()"):
+                bpy.ops.mesh.remove_doubles(threshold=self.remove_doubles_threshold_prop)
 
         # Update the mesh
         bmesh.update_edit_mesh(mesh)
@@ -1211,10 +1212,10 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
 
     remove_doubles_threshold_prop: bpy.props.FloatProperty(
         name="Merge Distance",
-        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
-        default=0.0001,
+        description="Maximum distance between vertices to be merged",
+        default=0.001,
         min=0.000001,
-        max=0.1,
+        max=0.01,
         precision=6,
         unit='LENGTH'
     )

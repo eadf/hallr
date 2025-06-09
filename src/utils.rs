@@ -11,6 +11,7 @@ pub(crate) mod voronoi_utils;
 use crate::HallrError;
 use ahash::{AHashMap, AHashSet};
 use hronn::prelude::MaximumTracker;
+use rustc_hash::FxHashMap;
 use smallvec::SmallVec;
 use std::{cmp::Reverse, hash::Hash};
 use vector_traits::prelude::{GenericScalar, GenericVector2, GenericVector3, HasXYZ};
@@ -144,7 +145,7 @@ impl<T: GenericVector3> VertexDeduplicator3D<T> {
 }
 
 pub(crate) struct IndexCompressor<T, I: Hash + Eq> {
-    index_map: AHashMap<I, usize>,
+    index_map: FxHashMap<I, usize>,
     pub vertices: Vec<T>,
 }
 
@@ -152,7 +153,7 @@ impl<T, I: Hash + Eq> IndexCompressor<T, I> {
     #[allow(dead_code)]
     pub fn new() -> Self {
         Self {
-            index_map: AHashMap::new(),
+            index_map: FxHashMap::default(),
             vertices: Vec::new(),
         }
     }
@@ -160,7 +161,7 @@ impl<T, I: Hash + Eq> IndexCompressor<T, I> {
     #[allow(dead_code)]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            index_map: AHashMap::with_capacity(capacity),
+            index_map: FxHashMap::with_capacity_and_hasher(capacity, Default::default()),
             vertices: Vec::with_capacity(capacity),
         }
     }

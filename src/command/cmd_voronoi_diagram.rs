@@ -171,7 +171,7 @@ pub(crate) fn process_command(
     )?;
 
     if !(super::DEFAULT_MAX_VORONOI_DIMENSION as i64..100_000_000)
-        .contains(&cmd_arg_max_voronoi_dimension.as_())
+        .contains::<i64>(&cmd_arg_max_voronoi_dimension.as_())
     {
         return Err(HallrError::InvalidInputData(format!(
             "The valid range of MAX_VORONOI_DIMENSION is [{}..100_000_000[% :({})",
@@ -206,19 +206,19 @@ pub(crate) fn process_command(
 
     // we already tested that there is only one model
     println!();
-    println!("cmd_voronoi_mesh got command:");
+    println!("Rust: cmd_voronoi_mesh got command:");
     //println!("model.name:{:?}, ", input_model.name);
-    println!("model.vertices:{:?}", input_model.vertices.len());
-    println!("model.indices:{:?}", input_model.indices.len());
+    println!("Rust: model.vertices:{:?}", input_model.vertices.len());
+    println!("Rust: model.indices:{:?}", input_model.indices.len());
     println!(
-        "model.world_orientation:{:?}:{}",
+        "Rust: model.world_orientation:{:?}:{}",
         input_model.world_orientation,
         input_model.has_identity_orientation()
     );
-    println!("MAX_VORONOI_DIMENSION:{cmd_arg_max_voronoi_dimension:?}");
-    println!("VORONOI_DISCRETE_DISTANCE:{cmd_arg_discretization_distance:?}%",);
-    println!("KEEP_INPUT:{cmd_arg_keep_input:?}");
-    println!("max_distance:{max_distance:?}");
+    println!("Rust: MAX_VORONOI_DIMENSION:{cmd_arg_max_voronoi_dimension:?}");
+    println!("Rust: VORONOI_DISCRETE_DISTANCE:{cmd_arg_discretization_distance:?}%",);
+    println!("Rust: KEEP_INPUT:{cmd_arg_keep_input:?}");
+    println!("Rust: max_distance:{max_distance:?}");
 
     println!();
 
@@ -270,7 +270,7 @@ pub(crate) fn process_command(
     }
 
     println!(
-        "cmd_voronoi_diagram mesh operation returning {} vertices, {} indices",
+        "Rust: cmd_voronoi_diagram mesh operation returning {} vertices, {} indices",
         output_model.vertices.len(),
         output_model.indices.len()
     );

@@ -85,7 +85,7 @@ pub(crate) fn process_command(
     // we already tested a_command.models.len()
     let input_model = &models[0];
 
-    println!("model.vertices:{:?}, ", input_model.vertices.len());
+    println!("Rust: model.vertices:{:?}, ", input_model.vertices.len());
 
     let (vertices, aabb) = parse_input(input_model, cmd_arg_sdf_radius_multiplier)?;
 

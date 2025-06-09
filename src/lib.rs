@@ -43,6 +43,9 @@ pub mod prelude {
 #[derive(thiserror::Error, Debug)]
 pub enum HallrError {
     #[error(transparent)]
+    DeDupError(#[from] dedup_mesh::DeDupError),
+
+    #[error(transparent)]
     SliceError(#[from] std::array::TryFromSliceError),
 
     #[error(transparent)]

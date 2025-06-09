@@ -9,10 +9,20 @@ import platform
 import bpy
 import ctypes
 from typing import List, Tuple, Dict, Optional
+from contextlib import contextmanager
+import time
 
 # workaround for the "ImportError: attempted relative import with no known parent package" problem:
 DEV_MODE = False  # Set this to False for distribution
 HALLR_LIBRARY = None
+
+
+@contextmanager
+def timer(description="Operation"):
+    start = time.perf_counter()
+    yield
+    elapsed = time.perf_counter() - start
+    print(f"{description} took {elapsed:.6f} seconds")
 
 
 class HallrException(Exception):
@@ -133,7 +143,7 @@ def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.
     # Handle vertices
     world_matrix = mesh_obj.matrix_world
     if world_matrix.is_identity:
-        print(f"Python: applying *no* local-world transformation")
+        print(f"Python: not applying local-world transformation")
         vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in mesh_obj.data.vertices]
     else:
         print(f"Python: applying local-world transformation: {get_matrices_col_major(mesh_obj)}")
@@ -207,7 +217,8 @@ def handle_new_object(return_options: Dict[str, str], mesh_obj: bpy.types.Object
 
     if remove_doubles:
         bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.remove_doubles(threshold=remove_doubles_threshold)
+        with timer("Python: bpy.ops.mesh.remove_doubles()"):
+            bpy.ops.mesh.remove_doubles(threshold=remove_doubles_threshold)
         bpy.ops.object.editmode_toggle()
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.mode_set(mode='EDIT')
@@ -308,7 +319,8 @@ def update_existing_object(active_obj: bpy.types.Object,
         try:
             remove_doubles_threshold = float(return_options.get(VERTEX_MERGE_TAG))
             print(f"Python: removing doubles by {remove_doubles_threshold} (blender op)")
-            result = bpy.ops.mesh.remove_doubles(threshold=remove_doubles_threshold)
+            with timer("Python: bpy.ops.mesh.remove_doubles()"):
+                result = bpy.ops.mesh.remove_doubles(threshold=remove_doubles_threshold)
         except ValueError as e:
             print(f"ValueError details: {str(e)}")
             print(f"Input value that caused error: {return_options.get(VERTEX_MERGE_TAG)}")

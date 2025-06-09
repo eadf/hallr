@@ -34,12 +34,12 @@ struct RoundCone {
     center0: glam::Vec3A, // Center of first sphere
 
     // Pre-calculated constants for optimization
-    ba: glam::Vec3A,      // Vector from center0 to center1
-    l2: f32,              // Squared length of ba
-    rr: f32,              // r0 - r1
-    rr3: f32,             // rr^3 (sign(rr) * rr * rr)
-    a2: f32,              // l2 - rr*rr
-    il2: f32,             // 1.0 / l2
+    ba: glam::Vec3A, // Vector from center0 to center1
+    l2: f32,         // Squared length of ba
+    rr: f32,         // r0 - r1
+    rr3: f32,        // rr^3 (sign(rr) * rr * rr)
+    a2: f32,         // l2 - rr*rr
+    il2: f32,        // 1.0 / l2
 }
 
 impl RoundCone {
@@ -51,13 +51,13 @@ impl RoundCone {
         RoundCone {
             r0,
             r1,
-            center0:glam::vec3a(center0.x, center0.y, center0.z),
+            center0: glam::vec3a(center0.x, center0.y, center0.z),
             ba: glam::vec3a(ba.x, ba.y, ba.z),
             l2,
             rr,
             rr3: rr.signum() * rr * rr,
-            a2:l2 - rr * rr,
-            il2:1.0/l2,
+            a2: l2 - rr * rr,
+            il2: 1.0 / l2,
         }
     }
 }
@@ -204,7 +204,7 @@ where
             .collect()
     };
     println!(
-        "process_chunks() duration: {:?} generated {} chunks",
+        "Rust: process_chunks() duration: {:?} generated {} chunks",
         now.elapsed(),
         sdf_chunks.len()
     );
@@ -387,7 +387,7 @@ pub(crate) fn build_output_model(
 
     if verbose {
         println!(
-            "Vertex return model packaging duration: {:?}",
+            "Rust: Vertex return model packaging duration: {:?}",
             now.elapsed()
         );
     }

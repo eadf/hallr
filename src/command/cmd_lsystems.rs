@@ -86,13 +86,12 @@ pub(crate) fn process_command(
     //println!("Turtle result aabb: {aabb:?}");
     let mut return_config = ConfigType::new();
 
-    let output_model = if let Some(_sdf_divisions) = sdf_divisions {
-        let (voxel_size, mesh) =
-            crate::utils::rounded_cones_fsn::build_round_cones_voxel_mesh(
-                _sdf_divisions as f32,
-                result.into_par_iter(),
-                aabb,
-            )?;
+    let output_model = if let Some(sdf_divisions) = sdf_divisions {
+        let (voxel_size, mesh) = crate::utils::rounded_cones_fsn::build_round_cones_voxel_mesh(
+            sdf_divisions as f32,
+            result.into_par_iter(),
+            aabb,
+        )?;
         let _ = return_config.insert(
             MeshFormat::MESH_FORMAT_TAG.to_string(),
             MeshFormat::Triangulated.to_string(),

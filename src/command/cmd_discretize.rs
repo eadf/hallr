@@ -90,7 +90,7 @@ pub(crate) fn build_output_model(
 
     if verbose {
         println!(
-            "Vertex return model packaging duration: {:?}",
+            "Rust: Vertex return model packaging duration: {:?}",
             now.elapsed()
         );
     }
@@ -154,7 +154,7 @@ pub(crate) fn process_command(
     let input_model = &models[0];
 
     println!(
-        "model.vertices:{:?}, cmd_arg_discretize_length_multiplier:{}",
+        "Rust: model.vertices:{:?}, cmd_arg_discretize_length_multiplier:{}",
         input_model.vertices.len(),
         cmd_arg_discretize_length_multiplier
     );

@@ -12,10 +12,10 @@ use crate::{
     ffi::FFIVector3,
 };
 use fast_surface_nets::{SurfaceNetsBuffer, ndshape::ConstShape, surface_nets};
-use vector_traits::glam;
 use ilattice::{glam as iglam, prelude::Extent};
 use rayon::prelude::*;
 use std::time;
+use vector_traits::glam;
 
 // The un-padded chunk side, it will become 16*16*16
 const UN_PADDED_CHUNK_SIDE: u32 = 14_u32;
@@ -80,11 +80,11 @@ fn build_voxel(
 
     if verbose {
         println!(
-            "Voxelizing using tube radius. {radius} = {max_dimension}*{radius_multiplier}*{scale}"
+            "Rust: Voxelizing using tube radius. {radius} = {max_dimension}*{radius_multiplier}*{scale}"
         );
 
         println!(
-            "Voxelizing using divisions = {divisions}, max dimension = {max_dimension}, scale factor={scale} (max_dimension*scale={})",
+            "Rust: Voxelizing using divisions = {divisions}, max dimension = {max_dimension}, scale factor={scale} (max_dimension*scale={})",
             max_dimension * scale
         );
         println!();
@@ -120,7 +120,7 @@ fn build_voxel(
 
     if verbose {
         println!(
-            "process_chunks() duration: {:?} generated {} chunks",
+            "Rust: process_chunks() duration: {:?} generated {} chunks",
             now.elapsed(),
             sdf_chunks.len()
         );
@@ -130,8 +130,11 @@ fn build_voxel(
 }
 
 #[inline(always)]
-fn extent_from_min_and_lub(min:glam::Vec3A, lub:glam::Vec3A) -> Extent<iglam::Vec3A> {
-    Extent::from_min_and_lub(iglam::vec3a(min.x, min.y, min.z), iglam::vec3a(lub.x, lub.y, lub.z))
+fn extent_from_min_and_lub(min: glam::Vec3A, lub: glam::Vec3A) -> Extent<iglam::Vec3A> {
+    Extent::from_min_and_lub(
+        iglam::vec3a(min.x, min.y, min.z),
+        iglam::vec3a(lub.x, lub.y, lub.z),
+    )
 }
 
 /// Generate the data of a single chunk
@@ -153,11 +156,9 @@ fn generate_and_process_sdf_chunk(
             let v0 = vertices[e0];
             let v1 = vertices[e1];
 
-            let tube_extent = extent_from_min_and_lub(
-                v0.min(v1) - thickness_v,
-                v0.max(v1) + thickness_v,
-            )
-            .containing_integer_extent();
+            let tube_extent =
+                extent_from_min_and_lub(v0.min(v1) - thickness_v, v0.max(v1) + thickness_v)
+                    .containing_integer_extent();
             if !padded_chunk_extent.intersection(&tube_extent).is_empty() {
                 // The AABB of the edge tube intersected this chunk - keep it
                 Some((e0, e1))
@@ -192,7 +193,7 @@ fn generate_and_process_sdf_chunk(
             let p = pwo - unpadded_chunk_extent.minimum + 1;
             &mut array[PaddedChunkShape::linearize([p.x as u32, p.y as u32, p.z as u32]) as usize]
         };
-        
+
         #[cfg(feature = "display_sdf_chunks")]
         {
             let mut x = *v;
@@ -206,7 +207,7 @@ fn generate_and_process_sdf_chunk(
             .map(|(e0, e1)| (vertices[*e0], vertices[*e1]))
         {
             // This is the sdf formula of a capsule
-            let pa  = glam::vec3a(pwo.x as f32,pwo.y as f32, pwo.z as f32) - from_v;
+            let pa = glam::vec3a(pwo.x as f32, pwo.y as f32, pwo.z as f32) - from_v;
             let ba = to_v - from_v;
             let t = pa.dot(ba) / ba.dot(ba);
             let h = t.clamp(0.0, 1.0);
@@ -316,7 +317,7 @@ pub(crate) fn build_output_model(
 
     if verbose {
         println!(
-            "Vertex return model packaging duration: {:?}",
+            "Rust: Vertex return model packaging duration: {:?}",
             now.elapsed()
         );
     }
@@ -361,7 +362,7 @@ pub(crate) fn process_command(
     // we already tested a_command.models.len()
     let input_model = &models[0];
 
-    println!("model.vertices:{:?}, ", input_model.vertices.len());
+    println!("Rust: model.vertices:{:?}, ", input_model.vertices.len());
 
     let aabb = parse_input(input_model)?;
     let (voxel_size, mesh) = build_voxel(
@@ -394,7 +395,7 @@ pub(crate) fn process_command(
         let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
     }
     println!(
-        "SDF mesh operation returning {} vertices, {} indices",
+        "Rust: SDF mesh operation returning {} vertices, {} indices",
         output_model.vertices.len(),
         output_model.indices.len()
     );

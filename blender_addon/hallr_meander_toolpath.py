@@ -186,7 +186,7 @@ class OBJECT_OT_MT_GenerateMesh(bpy.types.Operator):
                       "step": str(settings.step_props),
                       "minimum_z": str(settings.minimum_z_props),
                       hallr_ffi_utils.COMMAND_TAG: "surface_scan",
-                      hallr_ffi_utils.VERTEX_MERGE_TAG: str(0.00001),}
+                      hallr_ffi_utils.VERTEX_MERGE_TAG: str(0.0001),}
             if str(settings.probe_props) == "TAPERED_END":
                 config["probe_angle"] = str(settings.probe_angle_props)
 

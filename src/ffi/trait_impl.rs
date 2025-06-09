@@ -348,6 +348,13 @@ impl From<&nalgebra::Vector3<f32>> for FFIVector3 {
     }
 }
 
+impl From<FFIVector3> for [f32; 3] {
+    #[inline(always)]
+    fn from(v: FFIVector3) -> Self {
+        [v.x, v.y, v.z]
+    }
+}
+
 impl fmt::Display for MeshFormat {
     #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

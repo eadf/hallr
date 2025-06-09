@@ -72,9 +72,9 @@ where
         }
     }
 
-    println!("Input vertices : {:?}", model.vertices.len());
-    println!("Input internal edges: {:?}", internal_edges.len());
-    println!("Input all edges: {:?}", all_edges.len());
+    println!("Rust: Input vertices : {:?}", model.vertices.len());
+    println!("Rust: Input internal edges: {:?}", internal_edges.len());
+    println!("Rust: Input all edges: {:?}", all_edges.len());
 
     let kept_edges = all_edges
         .into_iter()

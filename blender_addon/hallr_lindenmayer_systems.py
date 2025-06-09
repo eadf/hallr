@@ -484,7 +484,7 @@ class RunLSystemScriptOperator(bpy.types.Operator):
                 config = {
                     hallr_ffi_utils.COMMAND_TAG: "lsystems",
                     "🐢": script_content,
-                    hallr_ffi_utils.VERTEX_MERGE_TAG: str(0.00001),
+                    hallr_ffi_utils.VERTEX_MERGE_TAG: str(0.001),
                 }
 
                 # Call the Rust function

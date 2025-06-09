@@ -357,22 +357,22 @@ where
     // Can also be described as cos(angle) between edge and segment.
     let dot_limit = cmd_arg_angle.to_radians().cos().abs();
 
-    println!("cmd_centerline got command");
-    println!("model.vertices:{:?}", input_model.vertices.len());
-    println!("model.indices:{:?}", input_model.indices.len());
+    println!("Rust: cmd_centerline got command");
+    println!("Rust: model.vertices:{:?}", input_model.vertices.len());
+    println!("Rust: model.indices:{:?}", input_model.indices.len());
     println!(
-        "model.world_orientation:{:?}:{}",
+        "Rust: model.world_orientation:{:?}:{}",
         input_model.world_orientation,
         input_model.has_identity_orientation()
     );
-    println!("ANGLE:{cmd_arg_angle:?}°, dot_limit:{dot_limit:?}");
-    println!("REMOVE_INTERNALS:{cmd_arg_remove_internals:?}");
-    println!("SIMPLIFY:{cmd_arg_simplify:?}");
-    println!("KEEP_INPUT:{cmd_arg_keep_input:?}, WELD:{cmd_arg_weld:?}",);
-    println!("DISTANCE:{cmd_arg_discrete_distance:?}%");
-    println!("NEGATIVE_RADIUS:{cmd_arg_negative_radius:?}");
-    println!("MAX_VORONOI_DIMENSION:{cmd_arg_max_voronoi_dimension:?}");
-    println!("max_distance:{max_distance:?}");
+    println!("Rust: ANGLE:{cmd_arg_angle:?}°, dot_limit:{dot_limit:?}");
+    println!("Rust: REMOVE_INTERNALS:{cmd_arg_remove_internals:?}");
+    println!("Rust: SIMPLIFY:{cmd_arg_simplify:?}");
+    println!("Rust: KEEP_INPUT:{cmd_arg_keep_input:?}, WELD:{cmd_arg_weld:?}",);
+    println!("Rust: DISTANCE:{cmd_arg_discrete_distance:?}%");
+    println!("Rust: NEGATIVE_RADIUS:{cmd_arg_negative_radius:?}");
+    println!("Rust: MAX_VORONOI_DIMENSION:{cmd_arg_max_voronoi_dimension:?}");
+    println!("Rust: max_distance:{max_distance:?}");
     println!();
 
     //let mut obj = Obj::<FFIVector3>::new("cmd_centerline");

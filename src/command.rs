@@ -33,7 +33,7 @@ mod cmd_wavefront_obj_logger;
 mod trait_impl;
 
 use crate::{ffi, ffi::FFIVector3, prelude::*};
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Instant};
 use vector_traits::{
     approx::ulps_eq,
     glam::{Vec3A, Vec4Swizzles},
@@ -82,7 +82,7 @@ trait Options {
     /// will be returned.
     fn get_parsed_option<T: std::str::FromStr>(&self, key: &str) -> Result<Option<T>, HallrError>;
 
-    /// Returns the &str value of an option, or an Err is it does not exists
+    /// Returns the &str value of an option, or an Err is it does not exist
     fn get_mandatory_option(&self, key: &str) -> Result<&str, HallrError>;
 
     /// Returns true if the option exists
@@ -366,7 +366,7 @@ pub(crate) fn process_command(
             cmd_wavefront_obj_logger::process_command(&config, &models)?;
         }
     }
-    Ok(match config.get_mandatory_option(ffi::COMMAND_TAG)? {
+    let mut rv = match config.get_mandatory_option(ffi::COMMAND_TAG)? {
         "surface_scan" => cmd_surface_scan::process_command::<T>(config, models)?,
         "convex_hull_2d" => cmd_convex_hull_2d::process_command::<T>(config, models)?,
         "simplify_rdp" => cmd_simplify_rdp::process_command::<T>(config, models)?,
@@ -393,7 +393,66 @@ pub(crate) fn process_command(
         illegal_command => Err(HallrError::InvalidParameter(format!(
             "Invalid command:{illegal_command}",
         )))?,
-    })
+    };
+    if let Some(tolerance) = rv.3.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
+        let len = rv.0.len();
+        let start = Instant::now();
+
+        let dedup = match rv
+            .3
+            .get_mandatory_option(ffi::MeshFormat::MESH_FORMAT_TAG)?
+            .chars()
+            .next()
+        {
+            Some(ffi::MeshFormat::TRIANGULATED_CHAR) => {
+                if len > 1000 {
+                    dedup_mesh::vertex_deduplication::<
+                        f32,
+                        dedup_mesh::MultiThreaded,
+                        dedup_mesh::KeepAll,
+                        dedup_mesh::Triangulated,
+                        _,
+                    >(&rv.0, &rv.1, tolerance)?
+                } else {
+                    dedup_mesh::vertex_deduplication::<
+                        f32,
+                        dedup_mesh::SingleThreaded,
+                        dedup_mesh::KeepAll,
+                        dedup_mesh::Triangulated,
+                        _,
+                    >(&rv.0, &rv.1, tolerance)?
+                }
+            }
+            Some(ffi::MeshFormat::LINE_CHUNKS_CHAR) => dedup_mesh::vertex_deduplication::<
+                f32,
+                dedup_mesh::MultiThreaded,
+                dedup_mesh::KeepAll,
+                dedup_mesh::Edges,
+                _,
+            >(&rv.0, &rv.1, tolerance)?,
+            Some(ffi::MeshFormat::POINT_CLOUD_CHAR) => dedup_mesh::vertex_deduplication::<
+                f32,
+                dedup_mesh::MultiThreaded,
+                dedup_mesh::KeepAll,
+                dedup_mesh::PointCloud,
+                _,
+            >(&rv.0, &rv.1, tolerance)?,
+            other => {
+                return Err(HallrError::InvalidParameter(format!(
+                    "Unknown mesh format tag {other:?}",
+                )));
+            }
+        };
+        println!(
+            "Rust: vertex_deduplication() execution time {:?} removed:{:?} vertices",
+            start.elapsed(),
+            len - dedup.0.len()
+        );
+        rv.0 = ffi::unsafe_convert_vec(dedup.0);
+        rv.1 = dedup.1;
+        let _ = rv.3.remove(ffi::VERTEX_MERGE_TAG);
+    }
+    Ok(rv)
 }
 
 #[cfg(test)]

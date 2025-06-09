@@ -29,6 +29,10 @@ krakel = {version = "0.4.1", features = ["vector-traits", "glam"]}
 hronn = { version = "0.6.0", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
 #hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
+dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel"]}
+#dedup_mesh = { path = "../dedup_mesh_rs", features = ["parallel"]}
+#dedup_mesh = { version = "0.0.1", features = ["parallel"]}
+
 boostvoronoi = { version = "0.11.1" }
 thiserror = "2.0.12"
 ahash = "0.8.11"
@@ -44,6 +48,7 @@ logos = "0.15"
 ryu = { version="1.0.20", optional=true }
 saft = { version="0.34.1", features = ["with_rayon"]}
 macaw = { version="^0.19"} # macaw must be the same version that saft uses
+rustc-hash = "2.1.1"
 
 [dev-dependencies]
 rand = "0.9.1"

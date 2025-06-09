@@ -54,10 +54,10 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
 
     remove_doubles_threshold_prop: bpy.props.FloatProperty(
         name="Merge Distance",
-        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
-        default=0.0001,
+        description="Maximum distance between vertices to be merged",
+        default=0.001,
         min=0.000001,
-        max=0.1,
+        max=0.01,
         precision=6,
         unit='LENGTH'
     )
@@ -208,10 +208,10 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin)
 
     remove_doubles_threshold_prop: bpy.props.FloatProperty(
         name="Merge Distance",
-        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
-        default=0.0001,
+        description="Maximum distance between vertices to be merged",
+        default=0.001,
         min=0.000001,
-        max=0.1,
+        max=0.01,
         precision=6,
         unit='LENGTH'
     )
@@ -342,10 +342,10 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
 
     remove_doubles_threshold_prop: bpy.props.FloatProperty(
         name="Merge Distance",
-        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
-        default=0.0001,
+        description="Maximum distance between vertices to be merged",
+        default=0.001,
         min=0.000001,
-        max=0.1,
+        max=0.01,
         precision=6,
         unit='LENGTH'
     )
@@ -470,10 +470,10 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
 
     remove_doubles_threshold_prop: bpy.props.FloatProperty(
         name="Merge Distance",
-        description="Maximum distance between vertices to be merged (uses Blender's 'Remove Doubles' operation)",
-        default=0.0001,
+        description="Maximum distance between vertices to be merged",
+        default=0.001,
         min=0.000001,
-        max=0.1,
+        max=0.01,
         precision=6,
         unit='LENGTH'
     )
