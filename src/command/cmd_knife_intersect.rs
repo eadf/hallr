@@ -201,7 +201,7 @@ where
             "No models detected".to_string(),
         ));
     }
-    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Edges)?;
 
     let input_model = &models[0];
     /*if !input_model.has_xy_transform_only() {
@@ -222,7 +222,7 @@ where
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
         ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
-        ffi::MeshFormat::LineChunks.to_string(),
+        ffi::MeshFormat::Edges.to_string(),
     );
     println!(
         "knife_intersect returning {} vertices, {} indices, {} edges",

@@ -63,7 +63,7 @@ where
         "Could not calculate inverse matrix".to_string(),
     ))?;
 
-    println!("cmd_voronoi_diagram: data was in plane:{plane:?} aabb:{aabb:?}",);
+    println!("Rust: cmd_voronoi_diagram: data was in plane:{plane:?} aabb:{aabb:?}",);
 
     //println!("input Lines:{:?}", input_model.vertices);
 
@@ -114,12 +114,13 @@ pub(crate) fn compute_voronoi_diagram(
 ) -> Result<(Vec<Vec3A>, Vec<usize>), HallrError> {
     let (vor_vertices, vor_lines, vor_aabb2, inverted_transform) =
         parse_input::<Vec3A>(input_model, cmd_arg_max_voronoi_dimension)?;
-    let vor_diagram = {
-        BV::Builder::<i64, f32>::default()
-            .with_vertices(vor_vertices.iter())?
-            .with_segments(vor_lines.iter())?
-            .build()?
-    };
+    println!("vor_vertices {vor_vertices:?}");
+    println!("vor_lines {vor_lines:?}");
+
+    let vor_diagram = BV::Builder::<i64, f32>::default()
+        .with_vertices(vor_vertices.iter())?
+        .with_segments(vor_lines.iter())?
+        .build()?;
 
     let discretization_distance: f32 = {
         let max_dist = vor_aabb2.max() - vor_aabb2.min();
@@ -151,7 +152,7 @@ pub(crate) fn process_command(
 ) -> Result<super::CommandResult, HallrError> {
     type Scalar = f32;
 
-    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Edges)?;
 
     if models.is_empty() {
         return Err(HallrError::InvalidInputData(
@@ -261,7 +262,7 @@ pub(crate) fn process_command(
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
         ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
-        ffi::MeshFormat::LineChunks.to_string(),
+        ffi::MeshFormat::Edges.to_string(),
     );
 
     if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {

@@ -227,7 +227,17 @@ where
     ) -> Result<BV::Point<i64>, HallrError> {
         let (index, cat) = self.diagram.get_cell(cell_id)?.get().source_index_2();
         Ok(match cat {
-            BV::SourceCategory::SinglePoint => self.vertices[index],
+            BV::SourceCategory::SinglePoint => {
+                if index < self.vertices.len() {
+                    self.vertices[index]
+                } else {
+                    let v = self.segments[index - self.vertices.len()].start;
+                    println!(
+                        "Rust: Line point requested as a SinglePoint: {v:?} (should not happen)"
+                    );
+                    v
+                }
+            }
             BV::SourceCategory::SegmentStart => self.segments[index - self.vertices.len()].start,
             BV::SourceCategory::Segment | BV::SourceCategory::SegmentEnd => {
                 self.segments[index - self.vertices.len()].end
@@ -486,9 +496,9 @@ where
     pub(crate) fn convert_edges(
         &self,
         discretization_distance: T::Scalar,
-    ) -> Result<(DiagramHelperRw<T>, ahash::AHashMap<usize, Vec<usize>>), HallrError> {
+    ) -> Result<(DiagramHelperRw<T>, rustc_hash::FxHashMap<usize, Vec<usize>>), HallrError> {
         let mut hrw = DiagramHelperRw::default();
-        let mut rv = ahash::AHashMap::<usize, Vec<usize>>::new();
+        let mut rv = rustc_hash::FxHashMap::<usize, Vec<usize>>::default();
 
         for edge in self.diagram.edges() {
             let edge = edge.get();
@@ -559,7 +569,7 @@ where
     pub(crate) fn generate_mesh_from_cells(
         &self,
         mut dhrw: DiagramHelperRw<T>,
-        edge_map: ahash::AHashMap<usize, Vec<usize>>,
+        edge_map: rustc_hash::FxHashMap<usize, Vec<usize>>,
     ) -> Result<(Vec<usize>, Vec<T>), HallrError> {
         let mut return_indices = Vec::<usize>::new();
 
@@ -693,7 +703,7 @@ where
     pub(crate) fn generate_voronoi_edges_from_cells(
         &self,
         mut dhrw: DiagramHelperRw<T>,
-        edge_map: ahash::AHashMap<usize, Vec<usize>>,
+        edge_map: rustc_hash::FxHashMap<usize, Vec<usize>>,
         cmd_arg_keep_input: bool,
     ) -> Result<(Vec<usize>, Vec<T>), HallrError> {
         // A vec containing the edges of the faces in "chunk" format

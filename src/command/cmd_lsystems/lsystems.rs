@@ -472,7 +472,7 @@ impl TurtleRules {
             SdfDivisions(Option<f64>),
         }
 
-        println!("Will try to parse the custom 🐢: {cmd_custom_turtle:?}");
+        println!("Rust: Will try to parse the custom 🐢: {cmd_custom_turtle:?}");
 
         let mut lex = ParseToken::lexer(cmd_custom_turtle);
         let mut state = ParseState::Start;
@@ -528,7 +528,7 @@ impl TurtleRules {
                     let text: &str = &lex.slice()[1..lex.slice().len() - 1];
                     match state {
                         ParseState::Axiom => {
-                            println!("Accepted add_axiom(\"{text}\")");
+                            println!("Rust: Accepted add_axiom(\"{text}\")");
                             let _ = self.add_axiom(text.to_string());
                             state = ParseState::Start;
                         }
@@ -552,7 +552,7 @@ impl TurtleRules {
                             state = ParseState::Rule(Some(rule_id), None);
                         }
                         ParseState::Rule(Some(rule_id), None) => {
-                            println!("Accepted add_rule('{rule_id}', \"{text}\")");
+                            println!("Rust: Accepted add_rule('{rule_id}', \"{text}\")");
                             let _ = self.add_rule(rule_id, text.to_string());
                             state = ParseState::Start;
                         }

@@ -42,7 +42,7 @@ pub struct FFIVector3 {
 pub enum MeshFormat {
     Triangulated,
     LineWindows,
-    LineChunks,
+    Edges,
     PointCloud,
 }
 
@@ -53,7 +53,7 @@ impl MeshFormat {
     pub(crate) const MESH_FORMAT_TAG: &'static str = "📦";
     pub(crate) const TRIANGULATED_CHAR: char = '△';
     pub(crate) const LINE_WINDOWS_CHAR: char = '∧';
-    pub(crate) const LINE_CHUNKS_CHAR: char = '⸗';
+    pub(crate) const EDGE_CHAR: char = '⸗';
     pub(crate) const POINT_CLOUD_CHAR: char = '⁖';
 
     #[inline(always)]
@@ -61,7 +61,7 @@ impl MeshFormat {
         match self {
             MeshFormat::Triangulated => Self::TRIANGULATED_CHAR,
             MeshFormat::LineWindows => Self::LINE_WINDOWS_CHAR,
-            MeshFormat::LineChunks => Self::LINE_CHUNKS_CHAR,
+            MeshFormat::Edges => Self::EDGE_CHAR,
             MeshFormat::PointCloud => Self::POINT_CLOUD_CHAR,
         }
     }
@@ -72,7 +72,7 @@ impl MeshFormat {
         match c {
             Self::TRIANGULATED_CHAR => Ok(MeshFormat::Triangulated),
             Self::LINE_WINDOWS_CHAR => Ok(MeshFormat::LineWindows),
-            Self::LINE_CHUNKS_CHAR => Ok(MeshFormat::LineChunks),
+            Self::EDGE_CHAR => Ok(MeshFormat::Edges),
             Self::POINT_CLOUD_CHAR => Ok(MeshFormat::PointCloud),
             _ => Err(HallrError::InvalidInputData(format!(
                 "Invalid char for MeshFormat conversion: '{c}'",

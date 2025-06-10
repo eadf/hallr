@@ -13,7 +13,7 @@ fn test_discretize_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
         MeshFormat::MESH_FORMAT_TAG.to_string(),
-        MeshFormat::LineChunks.to_string(),
+        MeshFormat::Edges.to_string(),
     );
     let _ = config.insert("discretize_length".to_string(), "50.0".to_string());
     let _ = config.insert("▶".to_string(), "discretize".to_string());
@@ -45,7 +45,7 @@ fn test_discretize_2() -> Result<(), HallrError> {
     let _ = config.insert("▶".to_string(), "discretize".to_string());
     let _ = config.insert(
         MeshFormat::MESH_FORMAT_TAG.to_string(),
-        MeshFormat::LineChunks.to_string(),
+        MeshFormat::Edges.to_string(),
     );
 
     let owned_model_0 = OwnedModel {

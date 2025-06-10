@@ -81,7 +81,10 @@ pub(crate) fn process_command(
         }
         aabb
     };
-    println!("build_custom_turtle render() duration: {:?}", now.elapsed());
+    println!(
+        "Rust: build_custom_turtle render() duration: {:?}",
+        now.elapsed()
+    );
 
     //println!("Turtle result aabb: {aabb:?}");
     let mut return_config = ConfigType::new();
@@ -115,7 +118,7 @@ pub(crate) fn process_command(
         }
         let _ = return_config.insert(
             MeshFormat::MESH_FORMAT_TAG.to_string(),
-            MeshFormat::LineChunks.to_string(),
+            MeshFormat::Edges.to_string(),
         );
         OwnedModel {
             vertices: output_vertices,

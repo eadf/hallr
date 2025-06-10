@@ -13,7 +13,7 @@ use ahash::{AHashMap, AHashSet};
 use hronn::prelude::MaximumTracker;
 use rustc_hash::FxHashMap;
 use smallvec::SmallVec;
-use std::{cmp::Reverse, hash::Hash};
+use std::cmp::Reverse;
 use vector_traits::prelude::{GenericScalar, GenericVector2, GenericVector3, HasXYZ};
 
 pub(crate) trait GrowingVob {
@@ -144,7 +144,7 @@ impl<T: GenericVector3> VertexDeduplicator3D<T> {
     }
 }
 
-pub(crate) struct IndexCompressor<T, I: Hash + Eq> {
+/*pub(crate) struct IndexCompressor<T, I: Hash + Eq> {
     index_map: FxHashMap<I, usize>,
     pub vertices: Vec<T>,
 }
@@ -179,9 +179,10 @@ impl<T, I: Hash + Eq> IndexCompressor<T, I> {
         })
     }
 }
+ */
 
 pub(crate) struct IndexDeduplicator<T: HasXYZ> {
-    set: AHashMap<u32, u32>,
+    set: FxHashMap<u32, u32>,
     pub vertices: Vec<T>,
 }
 
@@ -189,7 +190,7 @@ pub(crate) struct IndexDeduplicator<T: HasXYZ> {
 impl<T: HasXYZ> IndexDeduplicator<T> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            set: AHashMap::with_capacity(capacity),
+            set: FxHashMap::with_capacity_and_hasher(capacity, Default::default()),
             vertices: Vec::with_capacity(capacity),
         }
     }

@@ -16,7 +16,7 @@ fn test_sdf_mesh_2_5_1() -> Result<(), HallrError> {
     let _ = config.insert("▶".to_string(), "sdf_mesh_2_5".to_string());
     let _ = config.insert(
         MeshFormat::MESH_FORMAT_TAG.to_string(),
-        MeshFormat::LineChunks.to_string(),
+        MeshFormat::Edges.to_string(),
     );
 
     let owned_model_0 = OwnedModel {

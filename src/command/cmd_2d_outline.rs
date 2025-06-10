@@ -32,9 +32,9 @@ fn remove_internal_edges<T: GenericVector3>(
 where
     FFIVector3: ConvertTo<T>,
 {
-    let mut all_edges = ahash::AHashSet::<(u32, u32)>::default();
-    //let mut single_edges = ahash::AHashSet::<(usize, usize)>::default();
-    let mut internal_edges = ahash::AHashSet::<(u32, u32)>::default();
+    let mut all_edges = rustc_hash::FxHashSet::<(u32, u32)>::default();
+    //let mut single_edges = rustc_hash::FxHashSet::<(usize, usize)>::default();
+    let mut internal_edges = rustc_hash::FxHashSet::<(u32, u32)>::default();
     //println!("Input faces : {:?}", obj.faces);
 
     let mut aabb = <T as GenericVector3>::Aabb::default();
@@ -183,7 +183,7 @@ where
         let mut return_config = ConfigType::new();
         let _ = return_config.insert(
             ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
-            ffi::MeshFormat::LineChunks.to_string(),
+            ffi::MeshFormat::Edges.to_string(),
         );
 
         Ok((

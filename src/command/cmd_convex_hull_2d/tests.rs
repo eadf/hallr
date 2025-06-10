@@ -112,8 +112,8 @@ fn test_convex_hull_2d_3() -> Result<(), HallrError> {
     let model_0 = owned_model_0.as_model();
     let models = vec![model_0];
     let result = super::process_command::<Vec3>(config, models)?;
-    println!("vertices: {:?}", result.0);
-    println!("indices: {:?}", result.1);
+    println!("Rust: vertices: {:?}", result.0);
+    println!("Rust: indices: {:?}", result.1);
     assert_eq!(25, result.0.len()); // vertices
     assert_eq!(26, result.1.len()); // indices
 

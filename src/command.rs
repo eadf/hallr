@@ -33,6 +33,7 @@ mod cmd_wavefront_obj_logger;
 mod trait_impl;
 
 use crate::{ffi, ffi::FFIVector3, prelude::*};
+use dedup_mesh::prelude::*;
 use std::{collections::HashMap, time::Instant};
 use vector_traits::{
     approx::ulps_eq,
@@ -406,37 +407,37 @@ pub(crate) fn process_command(
         {
             Some(ffi::MeshFormat::TRIANGULATED_CHAR) => {
                 if len > 1000 {
-                    dedup_mesh::vertex_deduplication::<
-                        f32,
-                        dedup_mesh::MultiThreaded,
-                        dedup_mesh::KeepAll,
-                        dedup_mesh::Triangulated,
-                        _,
-                    >(&rv.0, &rv.1, tolerance)?
+                    dedup::<f32, MultiThreaded, Triangulated, CheckFinite>(
+                        &rv.0,
+                        &rv.1,
+                        tolerance,
+                        PruneUnused,
+                        PruneDegenerate,
+                    )?
                 } else {
-                    dedup_mesh::vertex_deduplication::<
-                        f32,
-                        dedup_mesh::SingleThreaded,
-                        dedup_mesh::KeepAll,
-                        dedup_mesh::Triangulated,
-                        _,
-                    >(&rv.0, &rv.1, tolerance)?
+                    dedup::<f32, SingleThreaded, Triangulated, CheckFinite>(
+                        &rv.0,
+                        &rv.1,
+                        tolerance,
+                        PruneUnused,
+                        PruneDegenerate,
+                    )?
                 }
             }
-            Some(ffi::MeshFormat::LINE_CHUNKS_CHAR) => dedup_mesh::vertex_deduplication::<
-                f32,
-                dedup_mesh::MultiThreaded,
-                dedup_mesh::KeepAll,
-                dedup_mesh::Edges,
-                _,
-            >(&rv.0, &rv.1, tolerance)?,
-            Some(ffi::MeshFormat::POINT_CLOUD_CHAR) => dedup_mesh::vertex_deduplication::<
-                f32,
-                dedup_mesh::MultiThreaded,
-                dedup_mesh::KeepAll,
-                dedup_mesh::PointCloud,
-                _,
-            >(&rv.0, &rv.1, tolerance)?,
+            Some(ffi::MeshFormat::EDGE_CHAR) => dedup::<f32, MultiThreaded, Edges, CheckFinite>(
+                &rv.0,
+                &rv.1,
+                tolerance,
+                KeepUnused,
+                KeepDegenerate,
+            )?,
+            Some(ffi::MeshFormat::POINT_CLOUD_CHAR) => dedup::<f32, MultiThreaded, PointCloud, CheckFinite>(
+                &rv.0,
+                &rv.1,
+                tolerance,
+                KeepUnused,
+                KeepDegenerate,
+            )?,
             other => {
                 return Err(HallrError::InvalidParameter(format!(
                     "Unknown mesh format tag {other:?}",

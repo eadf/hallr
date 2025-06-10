@@ -155,7 +155,7 @@ pub(crate) fn process_command(
         ));
     }
 
-    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Edges)?;
 
     if models.len() > 1 {
         return Err(HallrError::InvalidInputData(
@@ -273,7 +273,7 @@ pub(crate) fn process_command(
     }
 
     println!(
-        "voronoi mesh operation returning {} vertices, {} indices",
+        "Rust: voronoi mesh operation returning {} vertices, {} indices",
         output_model.vertices.len(),
         output_model.indices.len()
     );

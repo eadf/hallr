@@ -118,7 +118,7 @@ class MeshFormat:
     """Constants for mesh formats"""
     TRIANGULATED = "△"
     LINE_WINDOWS = "∧"
-    LINE_CHUNKS = "⸗"
+    EDGES = "⸗"
     POINT_CLOUD = "⁖"
 
 
@@ -160,7 +160,7 @@ def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.
         if len(indices) == 0:
             raise HallrException(f"No polygons found in '{mesh_obj.name}', maybe the mesh is not fully triangulated?")
 
-    elif mesh_format == MeshFormat.LINE_CHUNKS:
+    elif mesh_format == MeshFormat.EDGES:
         # Verify there are no polygons for line formats
         if len(mesh_obj.data.polygons) > 0:
             raise HallrException(
@@ -269,7 +269,7 @@ def process_mesh_from_ffi(ffi_vertices_ptr, ffi_indices_ptr, vertex_count, index
                 v2 = ffi_indices_ptr[e + 1]
                 new_mesh.edges[e].vertices = (v1, v2)
 
-    elif mesh_format == MeshFormat.LINE_CHUNKS:
+    elif mesh_format == MeshFormat.EDGES:
         # Process line mesh in chunks format (paired indices)
         edge_count = index_count // 2
         if edge_count > 0:
@@ -531,7 +531,7 @@ def process_mesh_with_rust(config: Dict[str, str],
 # Simpler convenience functions that wrap the main processing function
 
 def process_single_mesh(config: Dict[str, str], mesh_obj: bpy.types.Object = None,
-                        mesh_format: str = MeshFormat.LINE_CHUNKS,
+                        mesh_format: str = MeshFormat.EDGES,
                         create_new: bool = True) -> Optional[bpy.types.Object]:
     """
     Process a single mesh with the Rust library.

@@ -136,7 +136,7 @@ pub(crate) fn process_command(
         ));
     }
 
-    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Edges)?;
 
     let cmd_arg_sdf_radius_multiplier =
         input_config.get_mandatory_parsed_option::<f32>("SDF_RADIUS_MULTIPLIER", None)? / 100.0;

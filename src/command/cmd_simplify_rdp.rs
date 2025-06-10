@@ -57,7 +57,7 @@ where
     let cmd_simplify_distance: T::Scalar =
         input_config.get_mandatory_parsed_option("simplify_distance", None)?;
 
-    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Edges)?;
 
     let simplify_in_3d = input_config
         .get_parsed_option("simplify_3d")?
@@ -125,7 +125,7 @@ where
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
         ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
-        ffi::MeshFormat::LineChunks.to_string(),
+        ffi::MeshFormat::Edges.to_string(),
     );
     if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
         // we take the easy way out here, and let blender do the de-duplication of the vertices.

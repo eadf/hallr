@@ -6,11 +6,12 @@
 mod tests;
 
 use super::{ConfigType, Model};
-use crate::{HallrError, command::Options, ffi, utils::IndexCompressor};
+use crate::{HallrError, command::Options, ffi};
 use baby_shark::{
     mesh::{corner_table::CornerTableF, traits::FromIndexed},
     remeshing::incremental::IncrementalRemesher,
 };
+use dedup_mesh::prelude::*;
 use hronn::HronnError;
 use std::time::Instant;
 
@@ -61,57 +62,54 @@ pub(crate) fn process_command(
     );
 
     // it would be nice with a reverse of the `CornerTableF::from_vertices_and_indices()` method here.
+    let start = Instant::now();
+    let mut indices:usize = 0;
+    let deduplicated = dedup_exact_from_iter::<
+        f32,
+        Triangulated,
+        CheckFinite,
+        _,
+        _,
+    >(
+        mesh.faces().flat_map(|face_descriptor| {
+            indices += 3;
+            let face = mesh.face_vertices(face_descriptor);
+            [face.0, face.1, face.2].into_iter()
+        }),
+        |i| *mesh.vertex_position(i),
+        mesh.faces().count() * 3,
+        PruneDegenerate,
+    )?;
+    println!(
+        "Rust: vertex_deduplication_exact() execution time {:?} indices:{indices}",
+        start.elapsed()
+    );
 
-    // Compress the ranges of the indices to a minimum
-    let mut compressor = IndexCompressor::with_capacity(mesh.vertices().count());
+    // Get the final vertex array
+    let mut ffi_vertices = ffi::unsafe_convert_vec(deduplicated.0);
 
-    // Extract the triangles with remapped indices
-    let mut ffi_indices = Vec::with_capacity(mesh.faces().count() * 3);
-
-    for face_descriptor in mesh.faces() {
-        let (i0, i1, i2) = mesh.face_vertices(face_descriptor);
-
-        // Skip degenerate triangles
-        if i0 == i1 || i0 == i2 || i1 == i2 {
-            continue;
-        }
-
-        // Map each vertex to a new compressed index
-        let ni0 = compressor.get_or_create_mapping(i0, || mesh.vertex_position(i0).into());
-        let ni1 = compressor.get_or_create_mapping(i1, || mesh.vertex_position(i1).into());
-        let ni2 = compressor.get_or_create_mapping(i2, || mesh.vertex_position(i2).into());
-
-        // Push directly to the output vector
-        ffi_indices.push(ni0);
-        ffi_indices.push(ni1);
-        ffi_indices.push(ni2);
-    }
     if let Some(world_to_local) = model.get_world_to_local_transform()? {
+        // Transform to local
         println!(
             "Rust: applying world-local transformation 1/{:?}",
             model.world_orientation
         );
-        // Transform to local
-        compressor
-            .vertices
+        ffi_vertices
             .iter_mut()
             .for_each(|v| *v = world_to_local(*v));
     } else {
         println!("Rust: *not* applying world-local transformation");
     }
 
-    // Get the final vertex array
-    let ffi_vertices = compressor.vertices;
-
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
         ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
-    if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
-        // we take the easy way out here, and let blender do the de-duplication of the vertices.
-        let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
-    }
+    //if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
+    //    // we take the easy way out here, and let blender do the de-duplication of the vertices.
+    //    let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
+    //}
 
-    Ok((ffi_vertices, ffi_indices, world_matrix, return_config))
+    Ok((ffi_vertices, deduplicated.1, world_matrix, return_config))
 }

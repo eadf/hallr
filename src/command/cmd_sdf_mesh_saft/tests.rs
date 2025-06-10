@@ -18,7 +18,7 @@ fn test_sdf_mesh_saft_1() -> Result<(), HallrError> {
     let _ = config.insert("▶".to_string(), "sdf_mesh_saft".to_string());
     let _ = config.insert(
         MeshFormat::MESH_FORMAT_TAG.to_string(),
-        MeshFormat::LineChunks.to_string(),
+        MeshFormat::Edges.to_string(),
     );
     let _ = config.insert("SDF_RADIUS_MULTIPLIER".to_string(), "1.0".to_string());
     let _ = config.insert("SDF_DIVISIONS".to_string(), "50".to_string());

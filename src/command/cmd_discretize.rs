@@ -145,7 +145,7 @@ pub(crate) fn process_command(
             "Input vertex list was empty".to_string(),
         ));
     }
-    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Edges)?;
 
     let cmd_arg_discretize_length_multiplier =
         input_config.get_mandatory_parsed_option::<f32>("discretize_length", None)? / 100.0;
@@ -163,7 +163,7 @@ pub(crate) fn process_command(
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
         ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
-        ffi::MeshFormat::LineChunks.to_string(),
+        ffi::MeshFormat::Edges.to_string(),
     );
 
     if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {

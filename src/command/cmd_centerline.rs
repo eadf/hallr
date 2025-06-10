@@ -59,9 +59,9 @@ where
                 aabbe_d.x(), aabbe_d.y(), aabbe_d.z(),aabbe_c.x(), aabbe_c.y(), aabbe_c.z()
             ))
         })?;
-    println!("Centerline op: data was in plane:{plane:?} aabb:{aabb:?}",);
-    //println!("vertices:{:?}", model.vertices);
-    //println!("indices:{:?}", model.indices);
+    println!("Rust: Centerline op: data was in plane:{plane:?} aabb:{aabb:?}",);
+    //println!("Rust: vertices:{:?}", model.vertices);
+    //println!("Rust: indices:{:?}", model.indices);
     let mut edge_set = ahash::AHashSet::<(usize, usize)>::default();
 
     for edge in model.indices.chunks(2) {
@@ -172,7 +172,7 @@ where
 
             if v0_index == v1_index {
                 println!(
-                    "v0_index==v1_index, but v0!=v1 v0:{v0:?} v1:{v1:?} v0_index:{v0_index:?} v1_index:{v1_index:?}",
+                    "Rust: v0_index==v1_index, but v0!=v1 v0:{v0:?} v1:{v1:?} v0_index:{v0_index:?} v1_index:{v1_index:?}",
                 );
                 continue;
             }
@@ -215,7 +215,7 @@ where
             output_pb_model_indices.push(a as usize);
             output_pb_model_indices.push(b as usize);
         } else {
-            println!("Something is wrong wanted to add edge {a} to {b}");
+            println!("Rust: Something is wrong: wanted to add edge {a} to {b}");
         }
     }
     //println!("Resulting centerline model:{:?}", output_pb_model_indices);
@@ -281,7 +281,7 @@ where
     let default_max_voronoi_dimension: T::Scalar =
         NumCast::from(super::DEFAULT_MAX_VORONOI_DIMENSION).unwrap();
 
-    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Edges)?;
 
     // angle is supposed to be in degrees
     let cmd_arg_angle: T::Scalar = input_config.get_mandatory_parsed_option("ANGLE", None)?;
@@ -517,14 +517,14 @@ where
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
         ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
-        ffi::MeshFormat::LineChunks.to_string(),
+        ffi::MeshFormat::Edges.to_string(),
     );
     if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
         // we take the easy way out here, and let blender do the de-duplication of the vertices.
         let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
     }
     println!(
-        "centerline operation returning {} vertices, {} indices",
+        "Rust: centerline operation returning {} vertices, {} indices",
         model.vertices.len(),
         model.indices.len()
     );

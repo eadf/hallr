@@ -14,7 +14,7 @@ fn knife_intersect_0() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
         MeshFormat::MESH_FORMAT_TAG.to_string(),
-        MeshFormat::LineChunks.to_string(),
+        MeshFormat::Edges.to_string(),
     );
     let _ = config.insert("▶".to_string(), "knife_intersect".to_string());
 
@@ -41,7 +41,7 @@ fn knife_intersect_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert(
         MeshFormat::MESH_FORMAT_TAG.to_string(),
-        MeshFormat::LineChunks.to_string(),
+        MeshFormat::Edges.to_string(),
     );
     let _ = config.insert("▶".to_string(), "knife_intersect".to_string());
 
@@ -70,7 +70,7 @@ fn knife_intersect_2() -> Result<(), HallrError> {
     let _ = config.insert("▶".to_string(), "knife_intersect".to_string());
     let _ = config.insert(
         MeshFormat::MESH_FORMAT_TAG.to_string(),
-        MeshFormat::LineChunks.to_string(),
+        MeshFormat::Edges.to_string(),
     );
 
     let owned_model = OwnedModel {
@@ -105,7 +105,7 @@ fn knife_intersect_3() -> Result<(), HallrError> {
     let _ = config.insert("▶".to_string(), "knife_intersect".to_string());
     let _ = config.insert(
         MeshFormat::MESH_FORMAT_TAG.to_string(),
-        MeshFormat::LineChunks.to_string(),
+        MeshFormat::Edges.to_string(),
     );
 
     let owned_model = OwnedModel {

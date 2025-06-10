@@ -81,7 +81,7 @@ fn build_voxel(
     let root = graph.op_union_multi(capsules);
     let mesh = saft::mesh_from_sdf(&graph, root, mesh_options)?;
 
-    println!("mesh_from_sdf_saft() duration: {:?}", now.elapsed());
+    println!("Rust: mesh_from_sdf_saft() duration: {:?}", now.elapsed());
     Ok((1.0 / scale, mesh))
 }
 
@@ -144,7 +144,7 @@ pub(crate) fn process_command(
         ));
     }
 
-    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::LineChunks)?;
+    input_config.confirm_mesh_packaging(0, ffi::MeshFormat::Edges)?;
 
     let cmd_arg_sdf_divisions: f32 =
         input_config.get_mandatory_parsed_option("SDF_DIVISIONS", None)?;

@@ -16,7 +16,7 @@ fn test_centerline_1() -> Result<(), HallrError> {
     let _ = config.insert("NEGATIVE_RADIUS".to_string(), "true".to_string());
     let _ = config.insert(
         MeshFormat::MESH_FORMAT_TAG.to_string(),
-        MeshFormat::LineChunks.to_string(),
+        MeshFormat::Edges.to_string(),
     );
     let _ = config.insert("WELD".to_string(), "true".to_string());
     let _ = config.insert("▶".to_string(), "centerline".to_string());
@@ -56,7 +56,7 @@ fn test_centerline_2() -> Result<(), HallrError> {
     let _ = config.insert("REMOVE_INTERNALS".to_string(), "true".to_string());
     let _ = config.insert(
         MeshFormat::MESH_FORMAT_TAG.to_string(),
-        MeshFormat::LineChunks.to_string(),
+        MeshFormat::Edges.to_string(),
     );
     let _ = config.insert("KEEP_INPUT".to_string(), "false".to_string());
     let _ = config.insert("DISTANCE".to_string(), "0.004999999888241291".to_string());
@@ -93,7 +93,7 @@ fn test_centerline_3() -> Result<(), HallrError> {
     let _ = config.insert("REMOVE_INTERNALS".to_string(), "true".to_string());
     let _ = config.insert(
         MeshFormat::MESH_FORMAT_TAG.to_string(),
-        MeshFormat::LineChunks.to_string(),
+        MeshFormat::Edges.to_string(),
     );
     let _ = config.insert("▶".to_string(), "centerline".to_string());
     let _ = config.insert("NEGATIVE_RADIUS".to_string(), "true".to_string());

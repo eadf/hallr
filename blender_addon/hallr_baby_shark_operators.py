@@ -68,12 +68,6 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
         default=True
     )
 
-    use_remove_doubles_prop: bpy.props.BoolProperty(
-        name="Use remove doubled",
-        description="Activates the remove doubles feature",
-        default=True
-    )
-
     manifold_not_checked = True
 
     def invoke(self, context, event):
@@ -113,8 +107,6 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
             "ERROR_THRESHOLD": str(self.error_threshold),
             "MIN_FACES_COUNT": str(self.min_faces_count)
         }
-        if self.use_remove_doubles_prop:
-            config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
 
         try:
             # Call the Rust function
@@ -134,14 +126,6 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
         layout.prop(self, "min_faces_count")
         row = layout.row()
         row.prop(self, "deny_non_manifold_prop")
-        row = layout.row()
-        row.prop(self, "use_remove_doubles_prop", text="")
-        right_side = row.split(factor=0.99)
-        icon_area = right_side.row(align=True)
-        icon_area.label(text="", icon='SNAP_MIDPOINT')
-        icon_area.prop(self, "remove_doubles_threshold_prop")
-        icon_area.enabled = self.use_remove_doubles_prop
-
 
 # Baby Shark Isotropic Remeshing mesh operator
 class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
@@ -163,7 +147,7 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin)
     target_edge_length_prop: bpy.props.FloatProperty(
         name="Target Edge Length",
         description="Target edge length after remeshing. Warning: Setting this too small will significantly increase processing time",
-        default=1.0,
+        default=0.5,
         min=0.001,
         max=2.0,
         precision=6,
@@ -203,22 +187,6 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin)
     deny_non_manifold_prop: bpy.props.BoolProperty(
         name="Deny non manifold mesh",
         description="Check if the mesh is non-manifold before sending to baby_shark",
-        default=True
-    )
-
-    remove_doubles_threshold_prop: bpy.props.FloatProperty(
-        name="Merge Distance",
-        description="Maximum distance between vertices to be merged",
-        default=0.001,
-        min=0.000001,
-        max=0.01,
-        precision=6,
-        unit='LENGTH'
-    )
-
-    use_remove_doubles_prop: bpy.props.BoolProperty(
-        name="Use remove doubled",
-        description="Activates the remove doubles feature",
         default=True
     )
 
@@ -266,8 +234,6 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin)
             "SHIFT_VERTICES": str(self.shift_vertices_prop),
             "PROJECT_VERTICES": str(self.project_vertices_prop)
         }
-        if self.use_remove_doubles_prop:
-            config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
 
         try:
             # Call the Rust function
@@ -303,14 +269,6 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin)
         layout.prop(self, "project_vertices_prop")
         row = layout.row()
         row.prop(self, "deny_non_manifold_prop")
-        row = layout.row()
-        row.prop(self, "use_remove_doubles_prop", text="")
-        right_side = row.split(factor=0.99)
-        icon_area = right_side.row(align=True)
-        icon_area.label(text="", icon='SNAP_MIDPOINT')
-        icon_area.prop(self, "remove_doubles_threshold_prop")
-        icon_area.enabled = self.use_remove_doubles_prop
-
 
 # Mesh Offset Operator
 class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
