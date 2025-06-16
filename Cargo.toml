@@ -29,9 +29,9 @@ krakel = {version = "0.4.1", features = ["vector-traits", "glam"]}
 hronn = { version = "0.6.0", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
 #hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
-dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel"]}
+#dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel"]}
 #dedup_mesh = { path = "../dedup_mesh_rs", features = ["parallel"]}
-#dedup_mesh = { version = "0.0.2", features = ["parallel"]}
+dedup_mesh = { version = "0.0.3", features = ["parallel"]}
 
 boostvoronoi = { version = "0.11.1" }
 thiserror = "2.0.12"

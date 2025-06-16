@@ -407,7 +407,7 @@ pub(crate) fn process_command(
         {
             Some(ffi::MeshFormat::TRIANGULATED_CHAR) => {
                 if len > 1000 {
-                    dedup::<f32, MultiThreaded, Triangulated, CheckFinite>(
+                    dedup::<f32, MultiThreaded, Triangulated>(
                         &rv.0,
                         &rv.1,
                         tolerance,
@@ -415,7 +415,7 @@ pub(crate) fn process_command(
                         PruneDegenerate,
                     )?
                 } else {
-                    dedup::<f32, SingleThreaded, Triangulated, CheckFinite>(
+                    dedup::<f32, SingleThreaded, Triangulated>(
                         &rv.0,
                         &rv.1,
                         tolerance,
@@ -424,14 +424,14 @@ pub(crate) fn process_command(
                     )?
                 }
             }
-            Some(ffi::MeshFormat::EDGE_CHAR) => dedup::<f32, MultiThreaded, Edges, CheckFinite>(
+            Some(ffi::MeshFormat::EDGE_CHAR) => dedup::<f32, MultiThreaded, Edges>(
                 &rv.0,
                 &rv.1,
                 tolerance,
                 KeepUnused,
                 KeepDegenerate,
             )?,
-            Some(ffi::MeshFormat::POINT_CLOUD_CHAR) => dedup::<f32, MultiThreaded, PointCloud, CheckFinite>(
+            Some(ffi::MeshFormat::POINT_CLOUD_CHAR) => dedup::<f32, MultiThreaded, PointCloud>(
                 &rv.0,
                 &rv.1,
                 tolerance,

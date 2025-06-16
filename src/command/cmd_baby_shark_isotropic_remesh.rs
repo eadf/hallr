@@ -63,14 +63,8 @@ pub(crate) fn process_command(
 
     // it would be nice with a reverse of the `CornerTableF::from_vertices_and_indices()` method here.
     let start = Instant::now();
-    let mut indices:usize = 0;
-    let deduplicated = dedup_exact_from_iter::<
-        f32,
-        Triangulated,
-        CheckFinite,
-        _,
-        _,
-    >(
+    let mut indices: usize = 0;
+    let deduplicated = dedup_exact_from_iter::<f32, Triangulated, CheckFinite, _, _>(
         mesh.faces().flat_map(|face_descriptor| {
             indices += 3;
             let face = mesh.face_vertices(face_descriptor);
