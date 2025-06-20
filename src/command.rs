@@ -406,8 +406,8 @@ pub(crate) fn process_command(
             .next()
         {
             Some(ffi::MeshFormat::TRIANGULATED_CHAR) => {
-                if len > 1000 {
-                    dedup::<f32, MultiThreaded, Triangulated>(
+                if len < 1000 {
+                    dedup::<f32, SingleThreaded, Triangulated>(
                         &rv.0,
                         &rv.1,
                         tolerance,
@@ -415,7 +415,7 @@ pub(crate) fn process_command(
                         PruneDegenerate,
                     )?
                 } else {
-                    dedup::<f32, SingleThreaded, Triangulated>(
+                    dedup::<f32, MultiThreaded, Triangulated>(
                         &rv.0,
                         &rv.1,
                         tolerance,
