@@ -11,7 +11,6 @@ use baby_shark::{
     decimation::{EdgeDecimator, edge_decimation::ConstantErrorDecimationCriteria},
     mesh::{corner_table::CornerTableF, traits::FromIndexed},
 };
-use dedup_mesh::PruneDegenerateType::PruneDegenerate;
 use hronn::HronnError;
 use std::time::Instant;
 
@@ -64,7 +63,7 @@ pub(crate) fn process_command(
         }),
         |i| *mesh.vertex_position(i),
         mesh.faces().count() * 3,
-        PruneDegenerate,
+        dedup_mesh::PruneDegenerate,
     )?;
     println!(
         "Rust: vertex_deduplication_exact() execution time {:?}",
