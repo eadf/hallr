@@ -363,3 +363,87 @@ pub fn reconstruct_from_unordered_edges(edges: &[usize]) -> Result<Vec<usize>, H
 
     Ok(reconstructed)
 }
+
+#[allow(dead_code)]
+pub(crate) trait UnsafeVob {
+    fn u_get(&self, index: usize) -> bool;
+    fn u_set(&mut self, bit: usize, flag: bool);
+}
+
+impl UnsafeVob for vob::Vob {
+    #[cfg(not(debug_assertions))]
+    #[inline(always)]
+    fn u_get(&self, bit: usize) -> bool {
+        unsafe { self.get(bit).unwrap_unchecked() }
+        //self.get(bit).unwrap()
+    }
+
+    #[cfg(debug_assertions)]
+    #[inline(always)]
+    fn u_get(&self, bit: usize) -> bool {
+        self.get(bit).unwrap()
+    }
+
+    #[inline(always)]
+    fn u_set(&mut self, bit: usize, flag: bool) {
+        let _ = self.set(bit, flag);
+    }
+}
+
+#[allow(dead_code)]
+pub(crate) trait UnsafeArray<T> {
+    fn u_get(&self, index: usize) -> &T;
+    fn u_get_mut(&mut self, index: usize) -> &mut T;
+}
+
+impl<T> UnsafeArray<T> for [T] {
+    #[cfg(debug_assertions)]
+    #[inline(always)]
+    fn u_get(&self, index: usize) -> &T {
+        self.get(index).unwrap()
+    }
+
+    #[cfg(not(debug_assertions))]
+    #[inline(always)]
+    fn u_get(&self, index: usize) -> &T {
+        unsafe { self.get_unchecked(index) }
+    }
+
+    #[cfg(debug_assertions)]
+    #[inline(always)]
+    fn u_get_mut(&mut self, index: usize) -> &mut T {
+        self.get_mut(index).unwrap()
+    }
+
+    #[cfg(not(debug_assertions))]
+    #[inline(always)]
+    fn u_get_mut(&mut self, index: usize) -> &mut T {
+        unsafe { self.get_unchecked_mut(index) }
+    }
+}
+
+impl<T> UnsafeArray<T> for Vec<T> {
+    #[cfg(debug_assertions)]
+    #[inline(always)]
+    fn u_get(&self, index: usize) -> &T {
+        self.get(index).unwrap()
+    }
+
+    #[cfg(not(debug_assertions))]
+    #[inline(always)]
+    fn u_get(&self, index: usize) -> &T {
+        unsafe { self.get_unchecked(index) }
+    }
+
+    #[cfg(debug_assertions)]
+    #[inline(always)]
+    fn u_get_mut(&mut self, index: usize) -> &mut T {
+        self.get_mut(index).unwrap()
+    }
+
+    #[cfg(not(debug_assertions))]
+    #[inline(always)]
+    fn u_get_mut(&mut self, index: usize) -> &mut T {
+        unsafe { self.get_unchecked_mut(index) }
+    }
+}

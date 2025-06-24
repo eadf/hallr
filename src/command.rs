@@ -27,6 +27,7 @@ pub mod cmd_surface_scan;
 mod cmd_voronoi_diagram;
 mod cmd_voronoi_mesh;
 
+mod cmd_mesh_cleanup;
 #[cfg(feature = "generate_test_case_from_input")]
 #[cfg(not(test))]
 mod cmd_wavefront_obj_logger;
@@ -391,6 +392,7 @@ pub(crate) fn process_command(
         "baby_shark_mesh_offset" => cmd_baby_shark_mesh_offset::process_command(config, models)?,
         "baby_shark_boolean" => cmd_baby_shark_boolean::process_command(config, models)?,
         "lsystems" => cmd_lsystems::process_command(config, models)?,
+        "mesh_cleanup" => cmd_mesh_cleanup::process_command(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(
             "Invalid command:{illegal_command}",
         )))?,

@@ -1287,6 +1287,57 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
         icon_area.enabled = self.use_remove_doubles_prop
 
 
+class MESH_OT_hallr_mesh_cleanup(bpy.types.Operator, BaseOperatorMixin):
+    bl_idname = "mesh.hallr_meshtools_mesh_cleanup"
+    bl_label = "Mesh cleanup"
+    bl_icon = 'MOD_MESHDEFORM'
+    bl_description = "Try to fix a non-manifold mesh"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    iterations_count_prop: bpy.props.IntProperty(
+        name="Max iterations",
+        description="Maximum number of iterations for remeshing. Increase this if your remeshed mesh contains irregularities."
+                    "Higher values improve mesh quality but increase computation time.",
+        default=10,
+        min=1,
+        max=100
+    )
+
+    def invoke(self, context, event):
+        self.manifold_not_checked = True
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+    def execute(self, context):
+        obj = context.active_object
+
+        # Ensure the object is in object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        config = {
+            hallr_ffi_utils.COMMAND_TAG: "mesh_cleanup",
+            "max_iterations": str(self.iterations_count_prop),
+        }
+
+        try:
+            # Call the Rust function
+            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
+                                                create_new=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
+
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        box = layout.box()
+        row = box.row()
+        row.prop(self, "iterations_count_prop")
+
+
 # menu containing all tools
 class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
     bl_label = "Hallr meshtools"
@@ -1315,6 +1366,8 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
         layout.separator()
         layout.operator(MESH_OT_hallr_random_vertices.bl_idname, icon=MESH_OT_hallr_random_vertices.bl_icon)
         layout.operator(MESH_OT_hallr_triangulate_and_flatten.bl_idname,
+                        icon=MESH_OT_hallr_triangulate_and_flatten.bl_icon),
+        layout.operator(MESH_OT_hallr_mesh_cleanup.bl_idname,
                         icon=MESH_OT_hallr_triangulate_and_flatten.bl_icon)
 
 
@@ -1344,6 +1397,7 @@ classes = (
     MESH_OT_hallr_discretize,
     MESH_OT_hallr_random_vertices,
     MESH_OT_hallr_meta_volume,
+    MESH_OT_hallr_mesh_cleanup,
 )
 
 
