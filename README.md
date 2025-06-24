@@ -64,6 +64,7 @@ This project would not be possible without the following Rust crates:
 * logos (v0.15) — Dual-licensed under MIT or Apache 2.0.
 * thiserror (v2.0) — Licensed under either the MIT or Apache 2.0 license.
 * ahash (v0.8) — Dual-licensed under MIT or Apache 2.0.
+* rustc-hash (v2.1) — Dual-licensed under MIT or Apache 2.0.
 * smallvec (v1.15) — Dual-licensed under MIT or Apache 2.0.
 * rayon (v1.10) — Dual-licensed under MIT or Apache 2.0.
 * itertools (v0.14) — Dual-licensed under MIT or Apache 2.0.

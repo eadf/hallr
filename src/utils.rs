@@ -9,9 +9,8 @@ mod trait_impl;
 pub(crate) mod voronoi_utils;
 
 use crate::HallrError;
-use ahash::{AHashMap, AHashSet};
+use rustc_hash::{FxHashSet,FxHashMap};
 use hronn::prelude::MaximumTracker;
-use rustc_hash::FxHashMap;
 use smallvec::SmallVec;
 use std::cmp::Reverse;
 use vector_traits::prelude::{GenericScalar, GenericVector2, GenericVector3, HasXYZ};
@@ -26,10 +25,9 @@ pub(crate) trait GrowingVob {
 
 impl GrowingVob for vob::Vob<u32> {
     fn fill_with_false(initial_size: usize) -> Self {
-        let mut v: vob::Vob<u32> = vob::Vob::<u32>::new_with_storage_type(0);
-        v.resize(initial_size, false);
-        v
+        vob::Vob::<u32>::from_elem_with_storage_type(false,initial_size)
     }
+    
     #[inline]
     fn set_grow(&mut self, bit: usize, state: bool) -> bool {
         if bit >= self.len() {
@@ -37,6 +35,7 @@ impl GrowingVob for vob::Vob<u32> {
         }
         self.set(bit, state)
     }
+    
     #[inline]
     fn get_f(&self, bit: usize) -> bool {
         self.get(bit).unwrap_or(false)
@@ -46,7 +45,7 @@ impl GrowingVob for vob::Vob<u32> {
 #[allow(clippy::type_complexity)]
 #[derive(Default)]
 pub(crate) struct VertexDeduplicator2D<T: GenericVector2> {
-    set: AHashMap<
+    set: FxHashMap<
         (
             <T::Scalar as GenericScalar>::BitsType,
             <T::Scalar as GenericScalar>::BitsType,
@@ -60,7 +59,7 @@ impl<T: GenericVector2> VertexDeduplicator2D<T> {
     #[allow(dead_code)]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            set: AHashMap::with_capacity(capacity),
+            set: FxHashMap::with_capacity_and_hasher(capacity, Default::default()),
             vertices: Vec::with_capacity(capacity),
         }
     }
@@ -89,7 +88,7 @@ impl<T: GenericVector2> VertexDeduplicator2D<T> {
 
 #[allow(clippy::type_complexity)]
 pub(crate) struct VertexDeduplicator3D<T: GenericVector3> {
-    set: AHashMap<
+    set: FxHashMap<
         (
             <T::Scalar as GenericScalar>::BitsType,
             <T::Scalar as GenericScalar>::BitsType,
@@ -103,7 +102,7 @@ pub(crate) struct VertexDeduplicator3D<T: GenericVector3> {
 impl<T: GenericVector3> VertexDeduplicator3D<T> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            set: AHashMap::with_capacity(capacity),
+            set: FxHashMap::with_capacity_and_hasher(capacity, Default::default()),
             vertices: Vec::with_capacity(capacity),
         }
     }
@@ -226,7 +225,7 @@ impl<T: HasXYZ> IndexDeduplicator<T> {
 #[allow(clippy::type_complexity)]
 pub fn adjacency_map_from_unordered_edges(
     edges: &[usize],
-) -> Result<(usize, AHashMap<usize, SmallVec<[usize; 2]>>), HallrError> {
+) -> Result<(usize, FxHashMap<usize, SmallVec<[usize; 2]>>), HallrError> {
     let mut lowest_index = MaximumTracker::<Reverse<usize>>::default();
 
     if edges.len() < 2 {
@@ -235,7 +234,7 @@ pub fn adjacency_map_from_unordered_edges(
         ));
     }
 
-    let mut adjacency: AHashMap<usize, SmallVec<[usize; 2]>> = AHashMap::new();
+    let mut adjacency: FxHashMap<usize, SmallVec<[usize; 2]>> = FxHashMap::with_capacity_and_hasher(edges.len(), Default::default());
     for chunk in edges.chunks(2) {
         let a = chunk[0];
         let b = chunk[1];
@@ -317,7 +316,7 @@ pub fn reconstruct_from_unordered_edges(edges: &[usize]) -> Result<Vec<usize>, H
     };
     let starting_point = current;
 
-    let mut visited = AHashSet::new();
+    let mut visited = FxHashSet::default();
     let _ = visited.insert(current);
     let mut reconstructed = vec![current];
 

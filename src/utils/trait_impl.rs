@@ -5,14 +5,14 @@
 //! A module containing boilerplate implementations of standard traits such as Default, From etc etc
 
 use super::VertexDeduplicator3D;
-use ahash::AHashMap;
+use rustc_hash::FxHashMap;
 use vector_traits::prelude::GenericVector3;
 
 // for some reason the derived Default impl requires T to be Default
 impl<T: GenericVector3> Default for VertexDeduplicator3D<T> {
     fn default() -> Self {
         Self {
-            set: AHashMap::default(),
+            set: FxHashMap::default(),
             vertices: Vec::default(),
         }
     }
