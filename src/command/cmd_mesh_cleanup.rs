@@ -6,12 +6,12 @@ use crate::{
     command::{ConfigType, Model, Options},
     ffi,
     ffi::FFIVector3,
+    utils::UnsafeArray,
 };
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::time::Instant;
 use smallvec::SmallVec;
+use std::time::Instant;
 use vector_traits::glam::Vec3;
-use crate::utils::UnsafeArray;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Edge {
@@ -116,16 +116,13 @@ impl Mesh {
 
     /// Internal computation method - separated from public API
     fn compute_non_manifold_edges(&self) -> Vec<Edge> {
-        let mut edge_to_faces: FxHashMap<Edge, SmallVec<[usize;3]>> =
+        let mut edge_to_faces: FxHashMap<Edge, SmallVec<[usize; 3]>> =
             FxHashMap::with_capacity_and_hasher(self.vertices.len(), Default::default());
 
         // Build edge-to-face mapping
         for (face_idx, face) in self.faces.iter().enumerate() {
             for edge in face.edges() {
-                edge_to_faces
-                    .entry(edge)
-                    .or_default()
-                    .push(face_idx);
+                edge_to_faces.entry(edge).or_default().push(face_idx);
             }
         }
 
@@ -164,18 +161,9 @@ impl Mesh {
             FxHashMap::with_capacity_and_hasher(self.vertices.len(), Default::default());
 
         for (face_idx, face) in self.faces.iter().enumerate() {
-            vertex_to_faces
-                .entry(face.v0)
-                .or_default()
-                .push(face_idx);
-            vertex_to_faces
-                .entry(face.v1)
-                .or_default()
-                .push(face_idx);
-            vertex_to_faces
-                .entry(face.v2)
-                .or_default()
-                .push(face_idx);
+            vertex_to_faces.entry(face.v0).or_default().push(face_idx);
+            vertex_to_faces.entry(face.v1).or_default().push(face_idx);
+            vertex_to_faces.entry(face.v2).or_default().push(face_idx);
         }
 
         for (vertex_idx, face_indices) in vertex_to_faces {
@@ -205,7 +193,8 @@ impl Mesh {
         vertex_idx: usize,
         face_indices: &[usize],
     ) -> Vec<Vec<usize>> {
-        let mut visited = FxHashSet::with_capacity_and_hasher(face_indices.len(), Default::default());
+        let mut visited =
+            FxHashSet::with_capacity_and_hasher(face_indices.len(), Default::default());
         let mut components = Vec::new();
 
         for &face_idx in face_indices {
@@ -277,10 +266,7 @@ impl Mesh {
     }
 
     /// Check if face components around a vertex are spatially separated
-    fn are_components_spatially_separated(
-        &self,
-        components: &[Vec<usize>],
-    ) -> bool {
+    fn are_components_spatially_separated(&self, components: &[Vec<usize>]) -> bool {
         if components.len() < 2 {
             return false;
         }
@@ -312,7 +298,7 @@ impl Mesh {
         // (indicating different surface orientations)
         for i in 0..component_normals.len() {
             for j in i + 1..component_normals.len() {
-                let dot_product = component_normals.u_get(i).dot(*component_normals.u_get(j));
+                let dot_product = component_normals.ᚦget(i).dot(*component_normals.ᚦget(j));
                 if dot_product < 0.5 {
                     // Normals differ by more than 60 degrees
                     return true;
@@ -381,7 +367,7 @@ impl Mesh {
 
             // Update faces in this component to use the new vertex
             for &face_idx in component {
-                let face = self.faces.u_get_mut(face_idx);
+                let face = self.faces.ᚦget_mut(face_idx);
                 if face.v0 == vertex_idx {
                     face.v0 = new_vertex_idx;
                 }
@@ -430,8 +416,8 @@ impl Mesh {
         }
 
         // Calculate midpoint
-        let v0 = self.vertices.u_get(v0_idx);
-        let v1 = self.vertices.u_get(v1_idx);
+        let v0 = self.vertices.ᚦget(v0_idx);
+        let v1 = self.vertices.ᚦget(v1_idx);
         let midpoint = Vec3 {
             x: (v0.x + v1.x) * 0.5,
             y: (v0.y + v1.y) * 0.5,
@@ -439,7 +425,7 @@ impl Mesh {
         };
 
         // Update vertex position
-        *self.vertices.u_get_mut(v0_idx) = midpoint;
+        *self.vertices.ᚦget_mut(v0_idx) = midpoint;
 
         // Replace all references to v1_idx with v0_idx in faces
         for face in &mut self.faces {
@@ -521,11 +507,11 @@ impl Mesh {
         (total_vertex_fixes, total_edge_fixes)
     }
 
-    /// Get mesh statistics - now much more efficient with caching
+    /// Get mesh statistics
     pub fn stats(&mut self) -> (usize, usize, usize, usize) {
         let vertices_len = self.vertices.len();
         let faces_len = self.faces.len();
-        
+
         let analysis = self.get_analysis();
         (
             vertices_len,
@@ -585,11 +571,7 @@ pub(crate) fn process_command(
 
     // Get the final vertex array
     let mut ffi_vertices: Vec<FFIVector3> = mesh.vertices.iter().map(|v| (*v).into()).collect();
-    let indices: Vec<usize> = mesh
-        .faces
-        .iter()
-        .flat_map(|f| [f.v0, f.v1, f.v2])
-        .collect();
+    let indices: Vec<usize> = mesh.faces.iter().flat_map(|f| [f.v0, f.v1, f.v2]).collect();
 
     if let Some(world_to_local) = model.get_world_to_local_transform()? {
         // Transform to local

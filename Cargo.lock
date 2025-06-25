@@ -137,9 +137,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.18.1"
+version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "793db76d6187cd04dff33004d8e6c9cc4e05cd330500379d2394209271b4aeee"
+checksum = "46c5e41b57b8bba42a04676d81cb89e9ee8e859a1a66f80a5a72e1cb76b34d43"
 
 [[package]]
 name = "bytemuck"
@@ -275,9 +275,9 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "crunchy"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43da5946c66ffcc7745f48db692ffbb10a83bfe0afd96235c5c2a4fb23994929"
+checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 
 [[package]]
 name = "crypto-common"
@@ -291,8 +291,9 @@ dependencies = [
 
 [[package]]
 name = "dedup_mesh"
-version = "0.0.3"
-source = "git+https://codeberg.org/eadf/dedup_mesh_rs.git#00431c08b81c831e088c84a99e8a49b4282d96de"
+version = "0.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "51ce700cd85b6e689419ab4b41ad10c752c97a7c7a119bc85cb7d87ff95f213c"
 dependencies = [
  "num-traits",
  "rayon",
@@ -1886,9 +1887,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vob"
-version = "3.0.4"
+version = "3.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba59a857adc264b7783397cc7b4bb2aa02d7fff59fd89be54ae701af5f64eb5c"
+checksum = "0baa046ba374a7701d98032a468a0bbd968a8cd3a2ae39c94d74e211fac05c81"
 dependencies = [
  "num-traits",
 ]

@@ -20,6 +20,7 @@
     elided_lifetimes_in_paths
 )]
 #![warn(clippy::explicit_into_iter_loop)]
+#![allow(uncommon_codepoints)]
 
 //! Experimental Blender addon written in Rust. This is a work in progress; expect API changes.
 //!

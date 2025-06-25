@@ -9,8 +9,8 @@ mod trait_impl;
 pub(crate) mod voronoi_utils;
 
 use crate::HallrError;
-use rustc_hash::{FxHashSet,FxHashMap};
 use hronn::prelude::MaximumTracker;
+use rustc_hash::{FxHashMap, FxHashSet};
 use smallvec::SmallVec;
 use std::cmp::Reverse;
 use vector_traits::prelude::{GenericScalar, GenericVector2, GenericVector3, HasXYZ};
@@ -25,9 +25,9 @@ pub(crate) trait GrowingVob {
 
 impl GrowingVob for vob::Vob<u32> {
     fn fill_with_false(initial_size: usize) -> Self {
-        vob::Vob::<u32>::from_elem_with_storage_type(false,initial_size)
+        vob::Vob::<u32>::from_elem_with_storage_type(false, initial_size)
     }
-    
+
     #[inline]
     fn set_grow(&mut self, bit: usize, state: bool) -> bool {
         if bit >= self.len() {
@@ -35,7 +35,7 @@ impl GrowingVob for vob::Vob<u32> {
         }
         self.set(bit, state)
     }
-    
+
     #[inline]
     fn get_f(&self, bit: usize) -> bool {
         self.get(bit).unwrap_or(false)
@@ -234,7 +234,8 @@ pub fn adjacency_map_from_unordered_edges(
         ));
     }
 
-    let mut adjacency: FxHashMap<usize, SmallVec<[usize; 2]>> = FxHashMap::with_capacity_and_hasher(edges.len(), Default::default());
+    let mut adjacency: FxHashMap<usize, SmallVec<[usize; 2]>> =
+        FxHashMap::with_capacity_and_hasher(edges.len(), Default::default());
     for chunk in edges.chunks(2) {
         let a = chunk[0];
         let b = chunk[1];
@@ -365,58 +366,71 @@ pub fn reconstruct_from_unordered_edges(edges: &[usize]) -> Result<Vec<usize>, H
 
 #[allow(dead_code)]
 pub(crate) trait UnsafeVob {
-    fn u_get(&self, index: usize) -> bool;
-    fn u_set(&mut self, bit: usize, flag: bool);
+    /// unsafe (thorn) get()
+    fn ᚦget(&self, index: usize) -> bool;
+    /// unsafe (thorn) set()
+    fn ᚦset(&mut self, bit: usize, flag: bool);
 }
 
 impl UnsafeVob for vob::Vob {
     #[cfg(not(debug_assertions))]
     #[inline(always)]
-    fn u_get(&self, bit: usize) -> bool {
-        unsafe { self.get(bit).unwrap_unchecked() }
-        //self.get(bit).unwrap()
+    fn ᚦget(&self, bit: usize) -> bool {
+        unsafe { self.get_unchecked(bit) }
     }
 
     #[cfg(debug_assertions)]
     #[inline(always)]
-    fn u_get(&self, bit: usize) -> bool {
+    fn ᚦget(&self, bit: usize) -> bool {
         self.get(bit).unwrap()
     }
 
+    #[cfg(not(debug_assertions))]
     #[inline(always)]
-    fn u_set(&mut self, bit: usize, flag: bool) {
-        let _ = self.set(bit, flag);
+    fn ᚦset(&mut self, bit: usize, flag: bool) {
+        unsafe {
+            let _ = self.set_unchecked(bit, flag);
+        };
+    }
+    #[cfg(debug_assertions)]
+    #[inline(always)]
+    fn ᚦset(&mut self, bit: usize, flag: bool) {
+        unsafe {
+            let _ = self.set_unchecked(bit, flag);
+        }
     }
 }
 
 #[allow(dead_code)]
 pub(crate) trait UnsafeArray<T> {
-    fn u_get(&self, index: usize) -> &T;
-    fn u_get_mut(&mut self, index: usize) -> &mut T;
+    /// unsafe (thorn) get()
+    fn ᚦget(&self, index: usize) -> &T;
+    /// unsafe (thorn) get_mut()
+    fn ᚦget_mut(&mut self, index: usize) -> &mut T;
 }
 
 impl<T> UnsafeArray<T> for [T] {
     #[cfg(debug_assertions)]
     #[inline(always)]
-    fn u_get(&self, index: usize) -> &T {
+    fn ᚦget(&self, index: usize) -> &T {
         self.get(index).unwrap()
     }
 
     #[cfg(not(debug_assertions))]
     #[inline(always)]
-    fn u_get(&self, index: usize) -> &T {
+    fn ᚦget(&self, index: usize) -> &T {
         unsafe { self.get_unchecked(index) }
     }
 
     #[cfg(debug_assertions)]
     #[inline(always)]
-    fn u_get_mut(&mut self, index: usize) -> &mut T {
+    fn ᚦget_mut(&mut self, index: usize) -> &mut T {
         self.get_mut(index).unwrap()
     }
 
     #[cfg(not(debug_assertions))]
     #[inline(always)]
-    fn u_get_mut(&mut self, index: usize) -> &mut T {
+    fn ᚦget_mut(&mut self, index: usize) -> &mut T {
         unsafe { self.get_unchecked_mut(index) }
     }
 }
@@ -424,25 +438,25 @@ impl<T> UnsafeArray<T> for [T] {
 impl<T> UnsafeArray<T> for Vec<T> {
     #[cfg(debug_assertions)]
     #[inline(always)]
-    fn u_get(&self, index: usize) -> &T {
+    fn ᚦget(&self, index: usize) -> &T {
         self.get(index).unwrap()
     }
 
     #[cfg(not(debug_assertions))]
     #[inline(always)]
-    fn u_get(&self, index: usize) -> &T {
+    fn ᚦget(&self, index: usize) -> &T {
         unsafe { self.get_unchecked(index) }
     }
 
     #[cfg(debug_assertions)]
     #[inline(always)]
-    fn u_get_mut(&mut self, index: usize) -> &mut T {
+    fn ᚦget_mut(&mut self, index: usize) -> &mut T {
         self.get_mut(index).unwrap()
     }
 
     #[cfg(not(debug_assertions))]
     #[inline(always)]
-    fn u_get_mut(&mut self, index: usize) -> &mut T {
+    fn ᚦget_mut(&mut self, index: usize) -> &mut T {
         unsafe { self.get_unchecked_mut(index) }
     }
 }
