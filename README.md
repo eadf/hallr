@@ -1,3 +1,5 @@
+[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://stand-with-ukraine.pp.ua)
+
 # Hallr
 
 [![Rust](https://github.com/eadf/hallr/actions/workflows/rust_test.yml/badge.svg)](https://github.com/eadf/hallr/actions/workflows/rust_test.yml)![License](https://img.shields.io/crates/l/hallr)

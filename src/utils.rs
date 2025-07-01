@@ -12,7 +12,7 @@ use crate::HallrError;
 use hronn::prelude::MaximumTracker;
 use rustc_hash::{FxHashMap, FxHashSet};
 use smallvec::SmallVec;
-use std::cmp::Reverse;
+use std::{cmp::Reverse, time::Instant};
 use vector_traits::prelude::{GenericScalar, GenericVector2, GenericVector3, HasXYZ};
 
 pub(crate) trait GrowingVob {
@@ -142,43 +142,6 @@ impl<T: GenericVector3> VertexDeduplicator3D<T> {
         self.set.clear()
     }
 }
-
-/*pub(crate) struct IndexCompressor<T, I: Hash + Eq> {
-    index_map: FxHashMap<I, usize>,
-    pub vertices: Vec<T>,
-}
-
-impl<T, I: Hash + Eq> IndexCompressor<T, I> {
-    #[allow(dead_code)]
-    pub fn new() -> Self {
-        Self {
-            index_map: FxHashMap::default(),
-            vertices: Vec::new(),
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn with_capacity(capacity: usize) -> Self {
-        Self {
-            index_map: FxHashMap::with_capacity_and_hasher(capacity, Default::default()),
-            vertices: Vec::with_capacity(capacity),
-        }
-    }
-
-    /// Maps an old index to a new one, adding the vertex to the collection
-    /// if this is the first time we've seen this index
-    pub fn get_or_create_mapping<F>(&mut self, old_index: I, vertex_provider: F) -> usize
-    where
-        F: FnOnce() -> T,
-    {
-        *self.index_map.entry(old_index).or_insert_with(|| {
-            let new_index = self.vertices.len();
-            self.vertices.push(vertex_provider());
-            new_index
-        })
-    }
-}
- */
 
 pub(crate) struct IndexDeduplicator<T: HasXYZ> {
     set: FxHashMap<u32, u32>,
@@ -458,5 +421,35 @@ impl<T> UnsafeArray<T> for Vec<T> {
     #[inline(always)]
     fn ᚦget_mut(&mut self, index: usize) -> &mut T {
         unsafe { self.get_unchecked_mut(index) }
+    }
+}
+
+pub struct TimeKeeper {
+    start: Instant,
+    label: String,
+    stopped: bool, // Track whether we've already printed
+}
+
+impl TimeKeeper {
+    pub fn new(label: impl Into<String>) -> Self {
+        TimeKeeper {
+            start: Instant::now(),
+            label: label.into(),
+            stopped: false,
+        }
+    }
+
+    // Explicit drop method that can be called early
+    pub fn drop(&mut self) {
+        if !self.stopped {
+            println!("{}: {:?}", self.label, self.start.elapsed());
+            self.stopped = true;
+        }
+    }
+}
+
+impl Drop for TimeKeeper {
+    fn drop(&mut self) {
+        self.drop(); // Reuse the same logic
     }
 }

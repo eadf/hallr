@@ -6,14 +6,15 @@
 mod tests;
 
 use super::{ConfigType, Model};
-use crate::{HallrError, command::Options, ffi, prelude::FFIVector3};
+use crate::{HallrError, command::Options, ffi, utils::TimeKeeper};
+
 use baby_shark::{
     exports::nalgebra::Vector3,
     mesh::polygon_soup::data_structure::PolygonSoup,
     voxel::prelude::{MarchingCubesMesher, MeshToVolume},
 };
+use dedup_mesh::{CheckFinite, PruneDegenerate, Triangulated, dedup_exact_from_iter};
 use hronn::HronnError;
-use std::time::Instant;
 
 pub(crate) fn process_command(
     input_config: ConfigType,
@@ -34,6 +35,7 @@ pub(crate) fn process_command(
     input_config.confirm_mesh_packaging(1, ffi::MeshFormat::Triangulated)?;
 
     let mut mesh_0_volume = {
+        let _ = TimeKeeper::new("Rust: Building baby_shark input data mesh 0");
         println!(
             "Rust: model0: {} vertices, {} indices",
             models[0].vertices.len(),
@@ -54,6 +56,7 @@ pub(crate) fn process_command(
     };
 
     let mut mesh_1_volume = {
+        let _ = TimeKeeper::new("Rust: Building baby_shark input data mesh 1");
         println!(
             "Rust: model1: {} vertices, {} indices",
             models[1].vertices.len(),
@@ -78,9 +81,8 @@ pub(crate) fn process_command(
     }
     let operation = input_config.get_mandatory_option("operation")?;
 
-    println!("Rust: Starting baby_shark::boolean()");
-    let start = Instant::now();
-    let return_vertices = {
+    let bs_vertices = {
+        let _ = TimeKeeper::new("Rust: Running baby_shark::boolean()");
         let volume = match operation {
             "DIFFERENCE" => mesh_0_volume.subtract(mesh_1_volume),
             "UNION" => mesh_0_volume.union(mesh_1_volume),
@@ -93,26 +95,24 @@ pub(crate) fn process_command(
             .with_voxel_size(volume.voxel_size())
             .mesh(&volume)
     };
-    println!(
-        "Rust: baby_shark::boolean() execution time {:?}",
-        start.elapsed()
-    );
-    let ffi_indices: Vec<usize> = (0..return_vertices.len()).collect();
-    let ffi_vertices = return_vertices
-        .into_iter()
-        .map(|i| i.into())
-        .collect::<Vec<FFIVector3>>();
+
+    let (ffi_vertices, ffi_indices) = {
+        let _ = TimeKeeper::new("Rust: Building baby_shark output data (+dedup)");
+
+        let (v, i) = dedup_exact_from_iter::<f32, usize, Triangulated, CheckFinite, _, _>(
+            0..bs_vertices.len(),
+            |i| bs_vertices[i],
+            bs_vertices.len(),
+            PruneDegenerate,
+        )?;
+        (ffi::unsafe_cast_vec(v), i)
+    };
 
     let mut return_config = ConfigType::new();
     let _ = return_config.insert(
         ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Triangulated.to_string(),
     );
-
-    if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
-        // we take the easy way out here, and let blender do the de-duplication of the vertices.
-        let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
-    }
 
     Ok((ffi_vertices, ffi_indices, world_matrix, return_config))
 }

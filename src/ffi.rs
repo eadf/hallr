@@ -93,7 +93,7 @@ impl FFIVector3 {
 }
 
 // Convert Vec<[f32; 3]> to Vec<FFIVector3> without copying
-pub(crate) fn unsafe_convert_vec(vec: Vec<[f32; 3]>) -> Vec<FFIVector3> {
+pub(crate) fn unsafe_cast_vec(vec: Vec<[f32; 3]>) -> Vec<FFIVector3> {
     // Safety:
     // 1. Both types have identical memory layouts (size + alignment).
     // 2. Vec's allocation is correctly aligned for FFIVector3.

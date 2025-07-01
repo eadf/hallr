@@ -57,9 +57,9 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "baby_shark"
-version = "0.3.9"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e1e5cdbeb8bba656577c0ecac9d8252e214c888a20454faa525360d8bce8783"
+checksum = "48928c8ed1f1d7382f88a78a908f54296140b785cd68a3be4dd1712fe40e76ef"
 dependencies = [
  "bitflags",
  "faer",
@@ -291,9 +291,9 @@ dependencies = [
 
 [[package]]
 name = "dedup_mesh"
-version = "0.0.4"
+version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51ce700cd85b6e689419ab4b41ad10c752c97a7c7a119bc85cb7d87ff95f213c"
+checksum = "ae281689fe00ab4e090a6bbc591e4283bf8bc21f05115d3013b5e427356e0f6d"
 dependencies = [
  "num-traits",
  "rayon",
@@ -772,9 +772,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.9.0"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cea70ddb795996207ad57735b50c5982d8844f38ba9ee5f1aedcfb708a2aa11e"
+checksum = "fe4cd85333e22411419a0bcae1297d25e58c9443848b11dc6a86fefe8c78a661"
 dependencies = [
  "equivalent",
  "hashbrown",

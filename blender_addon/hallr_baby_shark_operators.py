@@ -127,6 +127,7 @@ class MESH_OT_baby_shark_decimate(bpy.types.Operator, BaseOperatorMixin):
         row = layout.row()
         row.prop(self, "deny_non_manifold_prop")
 
+
 # Baby Shark Isotropic Remeshing mesh operator
 class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
     bl_idname = "mesh.hallr_meshtools_bs_isotropic_remesh"
@@ -270,6 +271,7 @@ class MESH_OT_baby_shark_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin)
         row = layout.row()
         row.prop(self, "deny_non_manifold_prop")
 
+
 # Mesh Offset Operator
 class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
     bl_idname = "mesh.hallr_meshtools_bs_offset"
@@ -360,7 +362,7 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
             "OFFSET_BY": str(self.offset_by_prop),
         }
         if self.use_remove_doubles_prop:
-            config[hallr_ffi_utils.VERTEX_MERGE_TAG]= str(self.remove_doubles_threshold_prop)
+            config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
 
         try:
             # Call the Rust function
@@ -389,8 +391,6 @@ class MESH_OT_baby_shark_mesh_offset(bpy.types.Operator, BaseOperatorMixin):
         icon_area.label(text="", icon='SNAP_MIDPOINT')
         icon_area.prop(self, "remove_doubles_threshold_prop")
         icon_area.enabled = self.use_remove_doubles_prop
-
-
 
 
 class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
@@ -424,22 +424,6 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
         name="Swap Operands",
         description="Reverse the operation order, only meaningful for 'Difference'",
         default=False
-    )
-
-    remove_doubles_threshold_prop: bpy.props.FloatProperty(
-        name="Merge Distance",
-        description="Maximum distance between vertices to be merged",
-        default=0.001,
-        min=0.000001,
-        max=0.01,
-        precision=6,
-        unit='LENGTH'
-    )
-
-    use_remove_doubles_prop: bpy.props.BoolProperty(
-        name="Use remove doubled",
-        description="Activates the remove doubles feature",
-        default=True
     )
 
     deny_non_manifold_prop: bpy.props.BoolProperty(
@@ -482,14 +466,11 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
                 return {'CANCELLED'}
 
             self.manifold_not_checked = False
-            
+
             config = {"operation": str(self.operation_prop),
                       "swap": str(self.swap_operands_prop),
                       "voxel_size": str(self.voxel_size_prop),
                       hallr_ffi_utils.COMMAND_TAG: "baby_shark_boolean"}
-
-            if self.use_remove_doubles_prop:
-                config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
 
             try:
                 # Call the Rust function
@@ -506,7 +487,6 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
 
         return {'FINISHED'}
 
-
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "operation_prop")
@@ -516,13 +496,6 @@ class OBJECT_OT_baby_shark_boolean(bpy.types.Operator):
         layout.prop(self, "swap_operands_prop")
         row = layout.row()
         row.prop(self, "deny_non_manifold_prop")
-        row = layout.row()
-        row.prop(self, "use_remove_doubles_prop", text="")
-        right_side = row.split(factor=0.99)
-        icon_area = right_side.row(align=True)
-        icon_area.label(text="", icon='SNAP_MIDPOINT')
-        icon_area.prop(self, "remove_doubles_threshold_prop")
-        icon_area.enabled = self.use_remove_doubles_prop
 
 
 # Panel for redo-last (appears in F9 and Adjust Last Operation)

@@ -64,7 +64,7 @@ pub(crate) fn process_command(
     // it would be nice with a reverse of the `CornerTableF::from_vertices_and_indices()` method here.
     let start = Instant::now();
     let mut indices: usize = 0;
-    let deduplicated = dedup_exact_from_iter::<f32, Triangulated, CheckFinite, _, _>(
+    let deduplicated = dedup_exact_from_iter::<f32, usize, Triangulated, CheckFinite, _, _>(
         mesh.faces().flat_map(|face_descriptor| {
             indices += 3;
             let face = mesh.face_vertices(face_descriptor);
@@ -80,7 +80,7 @@ pub(crate) fn process_command(
     );
 
     // Get the final vertex array
-    let mut ffi_vertices = ffi::unsafe_convert_vec(deduplicated.0);
+    let mut ffi_vertices = ffi::unsafe_cast_vec(deduplicated.0);
 
     if let Some(world_to_local) = model.get_world_to_local_transform()? {
         // Transform to local

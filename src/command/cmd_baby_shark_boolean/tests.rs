@@ -96,7 +96,7 @@ fn test_baby_shark_boolean_1() -> Result<(), HallrError> {
 
     let result = super::process_command(config, models)?;
     command::test_3d_triangulated_mesh(&result);
-    assert_eq!(168, result.0.len()); // vertices
+    assert_eq!(30, result.0.len()); // vertices
     assert_eq!(168, result.1.len()); // indices
     Ok(())
 }

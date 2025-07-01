@@ -29,9 +29,9 @@ krakel = {version = "0.4.1", features = ["vector-traits", "glam"]}
 hronn = { version = "0.6.0", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
 #hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
-#dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel"]}
-#dedup_mesh = { path = "../dedup_mesh_rs", features = ["parallel"]}
-dedup_mesh = { version = "0.0.4", features = ["parallel"]}
+#dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel", "simd"]}
+#dedup_mesh = { path = "../dedup_mesh_rs", features = ["parallel", "simd"]}
+dedup_mesh = { version = "=0.0.5", features = ["parallel", "simd"]}
 
 boostvoronoi = { version = "0.11.1" }
 thiserror = "2.0.12"
@@ -45,7 +45,7 @@ ilattice = { version="0.4.0", default-features = false, features = ["glam", "ray
 #fast-surface-nets = "0.2.1"
 fast-surface-nets = {git="https://github.com/eadf/fast-surface-nets-rs.git", rev= "02552f3", features = []}
 #fast-surface-nets = {path="../fast-surface-nets-rs", features = []}
-baby_shark = "=0.3.9"
+baby_shark = "=0.3.10"
 logos = "0.15"
 ryu = { version="1.0.20", optional=true }
 saft = { version="0.34.1", features = ["with_rayon"]}

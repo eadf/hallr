@@ -52,6 +52,7 @@ pub(crate) fn process_command(
     let start = Instant::now();
     let deduplicated = dedup_mesh::dedup_exact_from_iter::<
         f32,
+        usize,
         dedup_mesh::Triangulated,
         dedup_mesh::CheckFinite,
         _,
@@ -71,7 +72,7 @@ pub(crate) fn process_command(
     );
 
     // Get the final vertex array
-    let mut ffi_vertices = ffi::unsafe_convert_vec(deduplicated.0);
+    let mut ffi_vertices = ffi::unsafe_cast_vec(deduplicated.0);
 
     if let Some(world_to_local) = model.get_world_to_local_transform()? {
         // Transform to local

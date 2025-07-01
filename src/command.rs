@@ -407,38 +407,29 @@ pub(crate) fn process_command(
             .chars()
             .next()
         {
-            Some(ffi::MeshFormat::TRIANGULATED_CHAR) => {
-                if len < 1000 {
-                    dedup::<f32, SingleThreaded, Triangulated>(
-                        &rv.0,
-                        &rv.1,
-                        tolerance,
-                        PruneUnused,
-                        PruneDegenerate,
-                    )?
-                } else {
-                    dedup::<f32, MultiThreaded, Triangulated>(
-                        &rv.0,
-                        &rv.1,
-                        tolerance,
-                        PruneUnused,
-                        PruneDegenerate,
-                    )?
-                }
-            }
-            Some(ffi::MeshFormat::EDGE_CHAR) => dedup::<f32, MultiThreaded, Edges>(
+            Some(ffi::MeshFormat::TRIANGULATED_CHAR) => dedup::<f32, usize, Auto, Triangulated>(
                 &rv.0,
                 &rv.1,
                 tolerance,
-                KeepUnused,
-                KeepDegenerate,
+                PruneUnused,
+                PruneDegenerate,
+                RelaxTolerance,
             )?,
-            Some(ffi::MeshFormat::POINT_CLOUD_CHAR) => dedup::<f32, MultiThreaded, PointCloud>(
+            Some(ffi::MeshFormat::EDGE_CHAR) => dedup::<f32, usize, Auto, Edges>(
                 &rv.0,
                 &rv.1,
                 tolerance,
                 KeepUnused,
                 KeepDegenerate,
+                RelaxTolerance,
+            )?,
+            Some(ffi::MeshFormat::POINT_CLOUD_CHAR) => dedup::<f32, usize, Auto, PointCloud>(
+                &rv.0,
+                &rv.1,
+                tolerance,
+                KeepUnused,
+                KeepDegenerate,
+                RelaxTolerance,
             )?,
             other => {
                 return Err(HallrError::InvalidParameter(format!(
@@ -451,7 +442,7 @@ pub(crate) fn process_command(
             start.elapsed(),
             len - dedup.0.len()
         );
-        rv.0 = ffi::unsafe_convert_vec(dedup.0);
+        rv.0 = ffi::unsafe_cast_vec(dedup.0);
         rv.1 = dedup.1;
         let _ = rv.3.remove(ffi::VERTEX_MERGE_TAG);
     }
