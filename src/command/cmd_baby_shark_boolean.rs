@@ -82,6 +82,7 @@ pub(crate) fn process_command(
     let operation = input_config.get_mandatory_option("operation")?;
 
     let bs_vertices = {
+        println!("Rust: Starting baby_shark::boolean()");
         let _ = TimeKeeper::new("Rust: Running baby_shark::boolean()");
         let volume = match operation {
             "DIFFERENCE" => mesh_0_volume.subtract(mesh_1_volume),
@@ -97,7 +98,7 @@ pub(crate) fn process_command(
     };
 
     let (ffi_vertices, ffi_indices) = {
-        let _ = TimeKeeper::new("Rust: Building baby_shark output data (+dedup)");
+        let _ = TimeKeeper::new("Rust: collecting baby_shark output data (+dedup)");
 
         let (v, i) = dedup_exact_from_iter::<f32, usize, Triangulated, CheckFinite, _, _>(
             0..bs_vertices.len(),

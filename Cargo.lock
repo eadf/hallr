@@ -291,9 +291,9 @@ dependencies = [
 
 [[package]]
 name = "dedup_mesh"
-version = "0.0.5"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae281689fe00ab4e090a6bbc591e4283bf8bc21f05115d3013b5e427356e0f6d"
+checksum = "86daedd10ca5a792650a41a6fb249b068071fb9f737bd18151301194d284bff4"
 dependencies = [
  "num-traits",
  "rayon",
@@ -460,7 +460,8 @@ dependencies = [
 [[package]]
 name = "fast-surface-nets"
 version = "0.2.1"
-source = "git+https://github.com/eadf/fast-surface-nets-rs.git?rev=02552f3#02552f3369f1e7a9788754a6d6b786b0c576a5fa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2aef9e8d9e33f51d8120a2e997a819f18239ad7c2735e353ade79208a9a1c442"
 dependencies = [
  "glam 0.29.3",
  "ndshape",
@@ -693,7 +694,7 @@ dependencies = [
 
 [[package]]
 name = "hallr"
-version = "0.1.14"
+version = "0.1.15"
 dependencies = [
  "ahash",
  "baby_shark",

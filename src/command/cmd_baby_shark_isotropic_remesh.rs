@@ -6,14 +6,13 @@
 mod tests;
 
 use super::{ConfigType, Model};
-use crate::{HallrError, command::Options, ffi};
+use crate::{HallrError, command::Options, ffi, utils::TimeKeeper};
 use baby_shark::{
     mesh::{corner_table::CornerTableF, traits::FromIndexed},
     remeshing::incremental::IncrementalRemesher,
 };
 use dedup_mesh::prelude::*;
 use hronn::HronnError;
-use std::time::Instant;
 
 pub(crate) fn process_command(
     input_config: ConfigType,
@@ -30,64 +29,63 @@ pub(crate) fn process_command(
 
     let target_edge_length =
         input_config.get_mandatory_parsed_option("TARGET_EDGE_LENGTH", None)?;
-    let mut mesh = CornerTableF::from_vertex_and_face_iters(
-        model.vertices.iter().map(|v| v.into()),
-        model.indices.iter().copied(),
-    );
+    let mut mesh = {
+        let _ = TimeKeeper::new("Rust: building baby_shark CornerTableF");
+        CornerTableF::from_vertex_and_face_iters(
+            model.vertices.iter().map(|v| v.into()),
+            model.indices.iter().copied(),
+        )
+    };
 
-    let remesher = IncrementalRemesher::new()
-        .with_iterations_count(input_config.get_mandatory_parsed_option("ITERATIONS_COUNT", None)?)
-        .with_split_edges(
-            input_config.get_mandatory_parsed_option::<bool>("SPLIT_EDGES", Some(false))?,
-        )
-        .with_collapse_edges(
-            input_config.get_mandatory_parsed_option::<bool>("COLLAPSE_EDGES", Some(false))?,
-        )
-        .with_flip_edges(
-            input_config.get_mandatory_parsed_option::<bool>("FLIP_EDGES", Some(false))?,
-        )
-        .with_shift_vertices(
-            input_config.get_mandatory_parsed_option::<bool>("SHIFT_VERTICES", Some(false))?,
-        )
-        .with_project_vertices(
-            input_config.get_mandatory_parsed_option::<bool>("PROJECT_VERTICES", Some(false))?,
-        );
+    {
+        println!("Rust: Starting baby_shark::remesh()");
+        let _ = TimeKeeper::new("Rust: baby_shark::remesh()");
+        let remesher = IncrementalRemesher::new()
+            .with_iterations_count(
+                input_config.get_mandatory_parsed_option("ITERATIONS_COUNT", None)?,
+            )
+            .with_split_edges(
+                input_config.get_mandatory_parsed_option::<bool>("SPLIT_EDGES", Some(false))?,
+            )
+            .with_collapse_edges(
+                input_config.get_mandatory_parsed_option::<bool>("COLLAPSE_EDGES", Some(false))?,
+            )
+            .with_flip_edges(
+                input_config.get_mandatory_parsed_option::<bool>("FLIP_EDGES", Some(false))?,
+            )
+            .with_shift_vertices(
+                input_config.get_mandatory_parsed_option::<bool>("SHIFT_VERTICES", Some(false))?,
+            )
+            .with_project_vertices(
+                input_config
+                    .get_mandatory_parsed_option::<bool>("PROJECT_VERTICES", Some(false))?,
+            );
 
-    println!("Rust: Starting baby_shark::remesh()");
-    let start = Instant::now();
-    remesher.remesh(&mut mesh, target_edge_length);
-    println!(
-        "Rust: baby_shark::remesh() execution time {:?}",
-        start.elapsed()
-    );
+        remesher.remesh(&mut mesh, target_edge_length)
+    };
 
     // it would be nice with a reverse of the `CornerTableF::from_vertices_and_indices()` method here.
-    let start = Instant::now();
-    let mut indices: usize = 0;
-    let deduplicated = dedup_exact_from_iter::<f32, usize, Triangulated, CheckFinite, _, _>(
-        mesh.faces().flat_map(|face_descriptor| {
-            indices += 3;
-            let face = mesh.face_vertices(face_descriptor);
-            [face.0, face.1, face.2].into_iter()
-        }),
-        |i| *mesh.vertex_position(i),
-        mesh.faces().count() * 3,
-        PruneDegenerate,
-    )?;
-    println!(
-        "Rust: vertex_deduplication_exact() execution time {:?} indices:{indices}",
-        start.elapsed()
-    );
+    let (ffi_vertices, ffi_indices) = {
+        let _ = TimeKeeper::new("Rust: collecting baby_shark output data (+dedup)");
+        dedup_exact_from_iter::<f32, usize, Triangulated, CheckFinite, _, _>(
+            mesh.faces().flat_map(|face_descriptor| {
+                let face = mesh.face_vertices(face_descriptor);
+                [face.0, face.1, face.2].into_iter()
+            }),
+            |i| *mesh.vertex_position(i),
+            mesh.faces().count() * 3,
+            PruneDegenerate,
+        )?
+    };
 
     // Get the final vertex array
-    let mut ffi_vertices = ffi::unsafe_cast_vec(deduplicated.0);
+    let mut ffi_vertices = ffi::unsafe_cast_vec(ffi_vertices);
 
     if let Some(world_to_local) = model.get_world_to_local_transform()? {
-        // Transform to local
-        println!(
+        let _ = TimeKeeper::new(format!(
             "Rust: applying world-local transformation 1/{:?}",
             model.world_orientation
-        );
+        ));
         ffi_vertices
             .iter_mut()
             .for_each(|v| *v = world_to_local(*v));
@@ -105,5 +103,5 @@ pub(crate) fn process_command(
     //    let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
     //}
 
-    Ok((ffi_vertices, deduplicated.1, world_matrix, return_config))
+    Ok((ffi_vertices, ffi_indices, world_matrix, return_config))
 }

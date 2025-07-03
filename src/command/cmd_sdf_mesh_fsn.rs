@@ -11,7 +11,7 @@ use crate::{
     ffi,
     ffi::FFIVector3,
 };
-use fast_surface_nets::{SurfaceNetsBuffer, ndshape::ConstShape, surface_nets_with_config};
+use fast_surface_nets::{SurfaceNetsBuffer, ndshape::ConstShape};
 use ilattice::{glam as iglam, prelude::Extent};
 use rayon::prelude::*;
 use std::time;
@@ -224,7 +224,8 @@ fn generate_and_process_sdf_chunk(
         let mut sn_buffer = SurfaceNetsBuffer::default();
 
         // do the voxel_size multiplication later, vertices pos. needs to match extent.
-        surface_nets_with_config::<_, _, fast_surface_nets::NoNormals>(
+        //fast_surface_nets::surface_nets_with_config::<fast_surface_nets::NoNormals, _, _,>(
+        fast_surface_nets::surface_nets(
             &array,
             &PaddedChunkShape {},
             [0; 3],

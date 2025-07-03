@@ -1,5 +1,5 @@
 [package]
-version = "0.1.14"
+version = "0.1.15"
 name = "hallr"
 edition = "2024"
 readme = "README.md"
@@ -31,19 +31,19 @@ hronn = { version = "0.6.0", features = ["glam"]}
 #hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
 #dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel", "simd"]}
 #dedup_mesh = { path = "../dedup_mesh_rs", features = ["parallel", "simd"]}
-dedup_mesh = { version = "=0.0.5", features = ["parallel", "simd"]}
+dedup_mesh = { version = "=0.1.0", features = ["parallel", "simd"]}
 
 boostvoronoi = { version = "0.11.1" }
 thiserror = "2.0.12"
-ahash = "0.8.11"
-smallvec = "1.15.0"
+ahash = "0.8.12"
+smallvec = "1.15.1"
 rayon = "1.10.0"
 itertools = "0.14.0"
 vob = "3.0.5"
 earcutr = "0.5.0"
 ilattice = { version="0.4.0", default-features = false, features = ["glam", "rayon"]}
-#fast-surface-nets = "0.2.1"
-fast-surface-nets = {git="https://github.com/eadf/fast-surface-nets-rs.git", rev= "02552f3", features = []}
+fast-surface-nets = "0.2.1"
+#fast-surface-nets = {git="https://github.com/eadf/fast-surface-nets-rs.git", rev= "02552f3", features = []}
 #fast-surface-nets = {path="../fast-surface-nets-rs", features = []}
 baby_shark = "=0.3.10"
 logos = "0.15"
