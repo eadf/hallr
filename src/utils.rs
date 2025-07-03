@@ -442,7 +442,11 @@ impl TimeKeeper {
     // Explicit drop method that can be called early
     pub fn drop(&mut self) {
         if !self.stopped {
-            println!("{}: {:?}", self.label, self.start.elapsed());
+            println!(
+                "{}: {:?}",
+                self.label,
+                std::hint::black_box(self.start.elapsed())
+            );
             self.stopped = true;
         }
     }
