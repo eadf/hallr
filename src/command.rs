@@ -407,7 +407,7 @@ pub(crate) fn process_command(
             .chars()
             .next()
         {
-            Some(ffi::MeshFormat::TRIANGULATED_CHAR) => dedup::<f32, usize, Auto, Triangulated>(
+            Some(ffi::MeshFormat::TRIANGULATED_CHAR) => dedup::<f32, usize, FFIVector3, Auto, Triangulated>(
                 &rv.0,
                 &rv.1,
                 tolerance,
@@ -415,7 +415,7 @@ pub(crate) fn process_command(
                 PruneDegenerate,
                 RelaxTolerance,
             )?,
-            Some(ffi::MeshFormat::EDGE_CHAR) => dedup::<f32, usize, Auto, Edges>(
+            Some(ffi::MeshFormat::EDGE_CHAR) => dedup::<f32, usize, FFIVector3, Auto, Edges>(
                 &rv.0,
                 &rv.1,
                 tolerance,
@@ -423,7 +423,7 @@ pub(crate) fn process_command(
                 KeepDegenerate,
                 RelaxTolerance,
             )?,
-            Some(ffi::MeshFormat::POINT_CLOUD_CHAR) => dedup::<f32, usize, Auto, PointCloud>(
+            Some(ffi::MeshFormat::POINT_CLOUD_CHAR) => dedup::<f32, usize, FFIVector3, Auto, PointCloud>(
                 &rv.0,
                 &rv.1,
                 tolerance,
@@ -442,7 +442,7 @@ pub(crate) fn process_command(
             start.elapsed(),
             len - dedup.0.len()
         );
-        rv.0 = ffi::unsafe_cast_vec(dedup.0);
+        rv.0 = dedup.0;
         rv.1 = dedup.1;
         let _ = rv.3.remove(ffi::VERTEX_MERGE_TAG);
     }

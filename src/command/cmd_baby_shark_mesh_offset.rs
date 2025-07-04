@@ -14,6 +14,7 @@ use baby_shark::{
 };
 use dedup_mesh::{CheckFinite, PruneDegenerate, Triangulated, dedup_exact_from_iter};
 use hronn::HronnError;
+use crate::ffi::FFIVector3;
 
 pub(crate) fn process_command(
     input_config: ConfigType,
@@ -55,13 +56,12 @@ pub(crate) fn process_command(
         };
 
         let _ = TimeKeeper::new("Rust: collecting baby_shark output data (+dedup)");
-        let (v, i) = dedup_exact_from_iter::<f32, usize, Triangulated, CheckFinite, _, _>(
+        dedup_exact_from_iter::<f32, usize, FFIVector3, Triangulated, CheckFinite, _, _>(
             0..bs_vertices.len(),
             |i| bs_vertices[i],
             bs_vertices.len(),
             PruneDegenerate,
-        )?;
-        (ffi::unsafe_cast_vec(v), i)
+        )?
     };
 
     if let Some(world_to_local) = model.get_world_to_local_transform()? {

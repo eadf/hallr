@@ -92,6 +92,7 @@ impl FFIVector3 {
     }
 }
 
+#[allow(dead_code)]
 // Convert Vec<[f32; 3]> to Vec<FFIVector3> without copying
 pub(crate) fn unsafe_cast_vec(vec: Vec<[f32; 3]>) -> Vec<FFIVector3> {
     // Safety:
@@ -232,7 +233,7 @@ fn process_command_error_handler(
             Ok(rv) => rv,
             Err(err) => {
                 eprintln!("{err:?}");
-                for cause in successors(Some(&err as &(dyn std::error::Error)), |e| e.source()) {
+                for cause in successors(Some(&err as &dyn std::error::Error), |e| e.source()) {
                     eprintln!("Caused by: {cause:?}");
                 }
                 let mut config = HashMap::new();

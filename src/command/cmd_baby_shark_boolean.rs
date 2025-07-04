@@ -7,7 +7,7 @@ mod tests;
 
 use super::{ConfigType, Model};
 use crate::{HallrError, command::Options, ffi, utils::TimeKeeper};
-
+use crate::prelude::FFIVector3;
 use baby_shark::{
     exports::nalgebra::Vector3,
     mesh::polygon_soup::data_structure::PolygonSoup,
@@ -100,13 +100,12 @@ pub(crate) fn process_command(
     let (ffi_vertices, ffi_indices) = {
         let _ = TimeKeeper::new("Rust: collecting baby_shark output data (+dedup)");
 
-        let (v, i) = dedup_exact_from_iter::<f32, usize, Triangulated, CheckFinite, _, _>(
+        dedup_exact_from_iter::<f32, usize, FFIVector3, Triangulated, CheckFinite, _, _>(
             0..bs_vertices.len(),
             |i| bs_vertices[i],
             bs_vertices.len(),
             PruneDegenerate,
-        )?;
-        (ffi::unsafe_cast_vec(v), i)
+        )?
     };
 
     let mut return_config = ConfigType::new();

@@ -12,6 +12,7 @@ use baby_shark::{
     mesh::{corner_table::CornerTableF, traits::FromIndexed},
 };
 use hronn::HronnError;
+use crate::ffi::FFIVector3;
 
 pub(crate) fn process_command(
     input_config: ConfigType,
@@ -46,12 +47,13 @@ pub(crate) fn process_command(
     }
 
     // it would be nice with a reverse of the `CornerTableF::from_vertices_and_indices()` method here.
-    let (ffi_vertices, ffi_indices) = {
+    let (mut ffi_vertices, ffi_indices) = {
         let _ = TimeKeeper::new("Rust: collecting baby_shark output data (+dedup)");
 
         dedup_mesh::dedup_exact_from_iter::<
             f32,
             usize,
+            FFIVector3,
             dedup_mesh::Triangulated,
             dedup_mesh::CheckFinite,
             _,
@@ -66,9 +68,6 @@ pub(crate) fn process_command(
             dedup_mesh::PruneDegenerate,
         )?
     };
-
-    // Get the final vertex array
-    let mut ffi_vertices = ffi::unsafe_cast_vec(ffi_vertices);
 
     if let Some(world_to_local) = model.get_world_to_local_transform()? {
         // Transform to local
