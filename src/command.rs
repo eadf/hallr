@@ -407,14 +407,16 @@ pub(crate) fn process_command(
             .chars()
             .next()
         {
-            Some(ffi::MeshFormat::TRIANGULATED_CHAR) => dedup::<f32, usize, FFIVector3, Auto, Triangulated>(
-                &rv.0,
-                &rv.1,
-                tolerance,
-                PruneUnused,
-                PruneDegenerate,
-                RelaxTolerance,
-            )?,
+            Some(ffi::MeshFormat::TRIANGULATED_CHAR) => {
+                dedup::<f32, usize, FFIVector3, Auto, Triangulated>(
+                    &rv.0,
+                    &rv.1,
+                    tolerance,
+                    PruneUnused,
+                    PruneDegenerate,
+                    RelaxTolerance,
+                )?
+            }
             Some(ffi::MeshFormat::EDGE_CHAR) => dedup::<f32, usize, FFIVector3, Auto, Edges>(
                 &rv.0,
                 &rv.1,
@@ -423,14 +425,16 @@ pub(crate) fn process_command(
                 KeepDegenerate,
                 RelaxTolerance,
             )?,
-            Some(ffi::MeshFormat::POINT_CLOUD_CHAR) => dedup::<f32, usize, FFIVector3, Auto, PointCloud>(
-                &rv.0,
-                &rv.1,
-                tolerance,
-                KeepUnused,
-                KeepDegenerate,
-                RelaxTolerance,
-            )?,
+            Some(ffi::MeshFormat::POINT_CLOUD_CHAR) => {
+                dedup::<f32, usize, FFIVector3, Auto, PointCloud>(
+                    &rv.0,
+                    &rv.1,
+                    tolerance,
+                    KeepUnused,
+                    KeepDegenerate,
+                    RelaxTolerance,
+                )?
+            }
             other => {
                 return Err(HallrError::InvalidParameter(format!(
                     "Unknown mesh format tag {other:?}",

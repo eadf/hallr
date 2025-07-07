@@ -6,7 +6,7 @@
 mod tests;
 
 use super::{ConfigType, Model};
-use crate::{HallrError, command::Options, ffi, utils::TimeKeeper};
+use crate::{HallrError, command::Options, ffi, ffi::FFIVector3, utils::time_it};
 use baby_shark::{
     exports::nalgebra::Vector3,
     mesh::polygon_soup::data_structure::PolygonSoup,
@@ -14,7 +14,6 @@ use baby_shark::{
 };
 use dedup_mesh::{CheckFinite, PruneDegenerate, Triangulated, dedup_exact_from_iter};
 use hronn::HronnError;
-use crate::ffi::FFIVector3;
 
 pub(crate) fn process_command(
     input_config: ConfigType,
@@ -29,8 +28,7 @@ pub(crate) fn process_command(
     let model = &models[0];
     let world_matrix = model.world_orientation.to_vec();
 
-    let input_mesh = {
-        let _ = TimeKeeper::new("Rust: building baby_shark PolygonSoup");
+    let input_mesh = time_it("Rust: building baby_shark PolygonSoup", || {
         let vertex_soup: Vec<Vector3<f32>> = model
             .indices
             .iter()
@@ -38,7 +36,7 @@ pub(crate) fn process_command(
             .collect();
 
         PolygonSoup::from_vertices(vertex_soup)
-    };
+    });
 
     let mut mesh_to_volume = MeshToVolume::default()
         .with_voxel_size(input_config.get_mandatory_parsed_option("VOXEL_SIZE", None)?);
@@ -47,31 +45,35 @@ pub(crate) fn process_command(
     let offset = mesh_volume.offset(input_config.get_mandatory_parsed_option("OFFSET_BY", None)?);
 
     let (mut ffi_vertices, ffi_indices) = {
-        let bs_vertices = {
+        let bs_vertices = time_it("Rust: running baby_shark::offset()", || {
             println!("Rust: Starting baby_shark::offset()");
-            let _ = TimeKeeper::new("Rust: running baby_shark::offset()");
             MarchingCubesMesher::default()
                 .with_voxel_size(offset.voxel_size())
                 .mesh(&offset)
-        };
+        });
 
-        let _ = TimeKeeper::new("Rust: collecting baby_shark output data (+dedup)");
-        dedup_exact_from_iter::<f32, usize, FFIVector3, Triangulated, CheckFinite, _, _>(
-            0..bs_vertices.len(),
-            |i| bs_vertices[i],
-            bs_vertices.len(),
-            PruneDegenerate,
-        )?
+        time_it("Rust: collecting baby_shark output data (+dedup)", || {
+            dedup_exact_from_iter::<f32, usize, FFIVector3, Triangulated, CheckFinite, _, _>(
+                0..bs_vertices.len(),
+                |i| bs_vertices[i],
+                bs_vertices.len(),
+                PruneDegenerate,
+            )
+        })?
     };
 
     if let Some(world_to_local) = model.get_world_to_local_transform()? {
-        let _ = TimeKeeper::new(format!(
-            "Rust: applying world-local transformation 1/{:?}",
-            model.world_orientation
-        ));
-        ffi_vertices
-            .iter_mut()
-            .for_each(|v| *v = world_to_local(*v));
+        time_it(
+            format!(
+                "Rust: applying world-local transformation 1/{:?}",
+                model.world_orientation
+            ),
+            || {
+                ffi_vertices
+                    .iter_mut()
+                    .for_each(|v| *v = world_to_local(*v));
+            },
+        )
     } else {
         println!("Rust: *not* applying world-local transformation");
     };

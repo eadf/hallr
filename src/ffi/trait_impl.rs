@@ -127,9 +127,9 @@ impl From<(f32, f32, f32)> for FFIVector3 {
     }
 }
 
-impl From<[f32;3]> for FFIVector3 {
+impl From<[f32; 3]> for FFIVector3 {
     #[inline(always)]
-    fn from(v: [f32;3]) -> Self {
+    fn from(v: [f32; 3]) -> Self {
         Self {
             x: v[0],
             y: v[1],

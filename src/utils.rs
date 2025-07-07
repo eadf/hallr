@@ -424,36 +424,17 @@ impl<T> UnsafeArray<T> for Vec<T> {
     }
 }
 
-pub struct TimeKeeper {
-    start: Instant,
-    label: String,
-    stopped: bool, // Track whether we've already printed
+pub fn time_it<T>(label: impl Into<String>, work: impl FnOnce() -> T) -> T {
+    let start = Instant::now();
+    let result = work();
+    let elapsed = start.elapsed();
+    println!("{}: {:?}", label.into(), elapsed);
+    result
 }
 
-impl TimeKeeper {
-    pub fn new(label: impl Into<String>) -> Self {
-        TimeKeeper {
-            start: Instant::now(),
-            label: label.into(),
-            stopped: false,
-        }
-    }
-
-    // Explicit drop method that can be called early
-    pub fn drop(&mut self) {
-        if !self.stopped {
-            println!(
-                "{}: {:?}",
-                self.label,
-                std::hint::black_box(self.start.elapsed())
-            );
-            self.stopped = true;
-        }
-    }
-}
-
-impl Drop for TimeKeeper {
-    fn drop(&mut self) {
-        self.drop(); // Reuse the same logic
-    }
+pub fn time_it_r<T>(
+    label: impl Into<String>,
+    work: impl FnOnce() -> Result<T, HallrError>,
+) -> Result<T, HallrError> {
+    time_it(label, || -> Result<T, HallrError> { work() })
 }

@@ -292,7 +292,8 @@ dependencies = [
 [[package]]
 name = "dedup_mesh"
 version = "0.2.0"
-source = "git+https://codeberg.org/eadf/dedup_mesh_rs.git#e861eb93f27483e5a32ccc446e634bc314505172"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "669ac76efa51726d8cb2a11eb09f9f4887078044b3a02da8399bb2a062960d74"
 dependencies = [
  "num-traits",
  "rayon",
