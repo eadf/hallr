@@ -5,7 +5,6 @@
 //! A module containing boilerplate implementations of standard traits such as Default, From etc etc
 
 use super::{FFIVector3, MeshFormat};
-use baby_shark::exports::nalgebra;
 use hronn::prelude::ConvertTo;
 use std::fmt;
 
@@ -328,34 +327,6 @@ impl ConvertTo<FFIVector3> for DVec3 {
             y: self.y as f32,
             z: self.z as f32,
         }
-    }
-}
-
-impl From<FFIVector3> for nalgebra::Vector3<f32> {
-    #[inline(always)]
-    fn from(v: FFIVector3) -> nalgebra::Vector3<f32> {
-        nalgebra::Vector3::new(v.x, v.y, v.z)
-    }
-}
-
-impl From<&FFIVector3> for nalgebra::Vector3<f32> {
-    #[inline(always)]
-    fn from(v: &FFIVector3) -> nalgebra::Vector3<f32> {
-        nalgebra::Vector3::new(v.x, v.y, v.z)
-    }
-}
-
-impl From<nalgebra::Vector3<f32>> for FFIVector3 {
-    #[inline(always)]
-    fn from(v: nalgebra::Vector3<f32>) -> Self {
-        FFIVector3::new(v.x, v.y, v.z)
-    }
-}
-
-impl From<&nalgebra::Vector3<f32>> for FFIVector3 {
-    #[inline(always)]
-    fn from(v: &nalgebra::Vector3<f32>) -> Self {
-        FFIVector3::new(v.x, v.y, v.z)
     }
 }
 

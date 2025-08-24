@@ -424,6 +424,7 @@ impl<T> UnsafeArray<T> for Vec<T> {
     }
 }
 
+#[allow(dead_code)]
 pub fn time_it<T>(label: impl Into<String>, work: impl FnOnce() -> T) -> T {
     let start = Instant::now();
     let result = work();
@@ -432,6 +433,7 @@ pub fn time_it<T>(label: impl Into<String>, work: impl FnOnce() -> T) -> T {
     result
 }
 
+#[allow(dead_code)]
 pub fn time_it_r<T>(
     label: impl Into<String>,
     work: impl FnOnce() -> Result<T, HallrError>,

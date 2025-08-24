@@ -5,10 +5,6 @@
 //! This module contains the execution of the implemented commands.
 
 mod cmd_2d_outline;
-mod cmd_baby_shark_boolean;
-mod cmd_baby_shark_decimate;
-mod cmd_baby_shark_isotropic_remesh;
-mod cmd_baby_shark_mesh_offset;
 mod cmd_centerline;
 mod cmd_convex_hull_2d;
 #[cfg(feature = "generate_test_case_from_input")]
@@ -385,12 +381,6 @@ pub(crate) fn process_command(
         "sdf_mesh" => cmd_sdf_mesh_fsn::process_command(config, models)?,
         "sdf_mesh_saft" => cmd_sdf_mesh_saft::process_command(config, models)?,
         "discretize" => cmd_discretize::process_command(config, models)?,
-        "baby_shark_decimate" => cmd_baby_shark_decimate::process_command(config, models)?,
-        "baby_shark_isotropic_remesh" => {
-            cmd_baby_shark_isotropic_remesh::process_command(config, models)?
-        }
-        "baby_shark_mesh_offset" => cmd_baby_shark_mesh_offset::process_command(config, models)?,
-        "baby_shark_boolean" => cmd_baby_shark_boolean::process_command(config, models)?,
         "lsystems" => cmd_lsystems::process_command(config, models)?,
         "mesh_cleanup" => cmd_mesh_cleanup::process_command(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(

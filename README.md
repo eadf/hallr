@@ -60,7 +60,6 @@ Hallr is licensed under **AGPL-3.0-or-later**.
 This project would not be possible without the following Rust crates:
 
 * fast-surface-nets (v0.2) — Dual-licensed under MIT or Apache 2.0.
-* baby_shark (v0.3) — Licensed under the MIT license.
 * saft (v0.34) — Licensed under either the MIT or Apache 2.0 license.
 * ilattice (v0.4) — Licensed under the MIT license.
 * logos (v0.15) — Dual-licensed under MIT or Apache 2.0.
