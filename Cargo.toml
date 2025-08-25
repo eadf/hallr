@@ -1,5 +1,5 @@
 [package]
-version = "0.1.15"
+version = "0.1.16"
 name = "hallr"
 edition = "2024"
 readme = "README.md"
@@ -45,7 +45,6 @@ ilattice = { version="0.4.0", default-features = false, features = ["glam", "ray
 fast-surface-nets = "0.2.1"
 #fast-surface-nets = {git="https://github.com/eadf/fast-surface-nets-rs.git", rev= "02552f3", features = []}
 #fast-surface-nets = {path="../fast-surface-nets-rs", features = []}
-baby_shark = "=0.3.10"
 logos = "0.15"
 ryu = { version="1.0.20", optional=true }
 saft = { version="0.34.1", features = ["with_rayon"]}

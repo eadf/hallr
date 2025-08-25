@@ -12,7 +12,7 @@ bl_info = {
     "category": "Object",
     "description": "A collection of addons written in Rust",
     "author": "EAD https://github.com/eadf",
-    "version": (0, 1, 15),
+    "version": (0, 1, 16),
 }
 
 DEV_MODE = False  # Set this to False for distribution
