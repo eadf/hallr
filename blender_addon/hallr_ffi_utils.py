@@ -400,9 +400,11 @@ def process_mesh_with_rust(config: Dict[str, str],
         create_new: If True, create a new object; if False, modify the active object
 
     Returns:
-        If create_new is True: The newly created object
-        If create_new is False: None (the active object is modified)
+        If create_new is True: The newly created object, a status message (string)
+        If create_new is False: None (the active object is modified), a status message (string)
     """
+    original_vertices = 0
+    original_indices = 0
 
     if create_new:
         new_object = bpy.data.objects.new("New_Object", bpy.data.meshes.new("empty mesh"))
@@ -433,6 +435,8 @@ def process_mesh_with_rust(config: Dict[str, str],
 
         # Extract mesh data
         primary_vertices, primary_indices = package_mesh_data(primary_obj_to_process, primary_format)
+        original_vertices += len(primary_vertices)
+        original_indices += len(primary_indices)
         vertices.extend(primary_vertices)
         indices.extend(primary_indices)
 
@@ -450,6 +454,9 @@ def process_mesh_with_rust(config: Dict[str, str],
 
         # Extract mesh data
         secondary_vertices, secondary_indices = package_mesh_data(secondary_object, secondary_format)
+        original_vertices += len(secondary_vertices)
+        original_indices += len(secondary_indices)
+
         vertices.extend(secondary_vertices)
         indices.extend(secondary_indices)
 
@@ -519,13 +526,13 @@ def process_mesh_with_rust(config: Dict[str, str],
         new_object.data = new_mesh
         # Handle the new object (link to scene, select, etc.)
         handle_new_object(return_options, new_object)
-        return new_object
+        return new_object, f"New mesh: vertices:{len(new_mesh.vertices)} indices:{indices_count}"
     else:
         print("Python: updating old object with new mesh")
         # Update existing object
         bpy.context.view_layer.objects.active = primary_object
         update_existing_object(primary_object, return_options, new_mesh)
-        return None
+        return None, f"Modified mesh: Δvertices:{len(new_mesh.vertices)-original_vertices} Δindices:{indices_count-original_indices}"
 
 
 # Simpler convenience functions that wrap the main processing function
@@ -543,7 +550,7 @@ def process_single_mesh(config: Dict[str, str], mesh_obj: bpy.types.Object = Non
         create_new: Whether to create a new object or modify the active one
 
     Returns:
-        The new object if create_new is True, None otherwise
+        (The new object, info message) if create_new is True, (None, info message) otherwise
     """
     return process_mesh_with_rust(
         config,
@@ -561,7 +568,7 @@ def process_config(config: Dict[str, str]) -> bpy.types.Object:
         config: Configuration options
 
     Returns:
-        The new object
+        The new object, info message
     """
     return process_mesh_with_rust(
         config,

@@ -204,8 +204,9 @@ class MESH_OT_hallr_2d_outline(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
+            _,info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
                                                 create_new=False)
+            self.report({'INFO'}, info)
         except Exception as e:
             self.report({'ERROR'}, f"Error: {e}")
             return {'CANCELLED'}
@@ -241,8 +242,9 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                 create_new=False)
+            self.report({'INFO'}, info)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -273,8 +275,9 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,
+            _,info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,
                                                 create_new=False)
+            self.report({'INFO'}, info)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -326,8 +329,9 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                 create_new=False)
+            self.report({'INFO'}, info)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -668,8 +672,9 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                 create_new=False)
+            self.report({'INFO'}, info)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -761,8 +766,9 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _,info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                 create_new=False)
+            self.report({'INFO'}, info)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -863,8 +869,9 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
             config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                 create_new=False)
+            self.report({'INFO'}, info)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -966,8 +973,9 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
             config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                 create_new=False)
+            self.report({'INFO'}, info)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -1136,8 +1144,9 @@ class MESH_OT_hallr_discretize(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                 create_new=False)
+            self.report({'INFO'}, info)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -1253,8 +1262,9 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
             config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _,info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                 create_new=False)
+            self.report({'INFO'}, info)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -1321,8 +1331,9 @@ class MESH_OT_hallr_mesh_cleanup(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
+            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
                                                 create_new=False)
+            self.report({'INFO'}, info)
         except Exception as e:
             import traceback
             traceback.print_exc()

@@ -488,9 +488,9 @@ class RunLSystemScriptOperator(bpy.types.Operator):
                 }
 
                 # Call the Rust function
-                hallr_ffi_utils.process_config(config)
+                _, info = hallr_ffi_utils.process_config(config)
 
-                self.report({'INFO'}, "L-System script executed")
+                self.report({'INFO'}, "L-System script executed" + info)
             except Exception as e:
                 import traceback
                 traceback.print_exc()

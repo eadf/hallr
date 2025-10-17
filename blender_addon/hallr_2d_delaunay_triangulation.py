@@ -134,11 +134,12 @@ class HALLR_OT_DT2GenerateMesh(bpy.types.Operator):
                       hallr_ffi_utils.COMMAND_TAG: "2d_delaunay_triangulation"}
             try:
                 # Call the Rust function
-                hallr_ffi_utils.process_mesh_with_rust(config, primary_object=point_cloud,
+                _,info = hallr_ffi_utils.process_mesh_with_rust(config, primary_object=point_cloud,
                                                        secondary_object=bounding_shape,
                                                        primary_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,
                                                        secondary_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,
                                                        create_new=True)
+                self.report({'INFO'}, info)
             except Exception as e:
                 import traceback
                 traceback.print_exc()
