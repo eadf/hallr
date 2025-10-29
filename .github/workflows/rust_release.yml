@@ -18,9 +18,11 @@ jobs:
       matrix:
         include:
           - os: windows-latest
+            os_short: win64
             lib_extension: dll
             lib_prefix: ""
           - os: ubuntu-latest
+            os_short: linux64
             lib_extension: so
             lib_prefix: lib
 
@@ -31,9 +33,13 @@ jobs:
       - name: Build Rust library
         run: |
           cargo rustc --release --crate-type=cdylib -- -C opt-level=3 -C lto=fat
-          # cargo build --release
+
         shell: bash
         working-directory: ${{ github.workspace }}
+
+      - name: Install zip (Windows)
+        if: runner.os == 'Windows'
+        run: choco install zip -y
 
       - name: Create platform directory structure
         run: |
@@ -45,50 +51,96 @@ jobs:
           fi
           # Copy Python files
           cp blender_addon/*.py platform_build/hallr/
-          # Copy compiled library  
+          # Copy compiled library
           cp target/release/${{ matrix.lib_prefix }}hallr.${{ matrix.lib_extension }} platform_build/hallr/lib/${{ matrix.lib_prefix }}hallr.${{ matrix.lib_extension }}
+          # list to verify
+          echo "Contents of platform_build:"
+          find platform_build -type f | sort
         shell: bash
         working-directory: ${{ github.workspace }}
 
-      - name: Upload platform artifacts
+      - name: Create platform zip (versioned)
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          ZIPNAME="hallr_${TAG}_${{ matrix.os_short }}.zip"
+          cd platform_build
+          # remove any .DS_Store or __MACOSX if present
+          zip -r "${{ github.workspace }}/${ZIPNAME}" hallr -x "*.DS_Store" -x "__MACOSX/*"
+          
+          cd "${{ github.workspace }}"
+          ls -lh "${ZIPNAME}"
+        shell: bash
+        working-directory: ${{ github.workspace }}
+
+      - name: Upload platform artifact (zip)
         uses: actions/upload-artifact@v4
         with:
-          name: hallr-${{ matrix.os }}
-          path: platform_build
+          name: hallr_${{ github.event.release.tag_name }}_${{ matrix.os_short }}
+          path: |
+            hallr_${{ github.event.release.tag_name }}_${{ matrix.os_short }}.zip
           include-hidden-files: true
 
-  build_macos_arm64:
-    name: Build macOS ARM64
-    runs-on: macos-14  # Uses an Apple Silicon runner
+  build_macos_universal:
+    name: Build macOS Universal
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install ARM target
-        run: rustup target add aarch64-apple-darwin
+      - name: Install targets
+        run: |
+          rustup target add x86_64-apple-darwin
+          rustup target add aarch64-apple-darwin
 
-      - name: Build ARM64 dylib
+      - name: Build x86_64
+        run: |
+          cargo rustc --release --target x86_64-apple-darwin --crate-type="cdylib" -- -C opt-level=3 -C lto=fat
+
+      - name: Build aarch64
         run: |
           cargo rustc --release --target aarch64-apple-darwin --crate-type="cdylib" -- -C opt-level=3 -C lto=fat
 
-      - name: Prepare artifact
+      - name: Create universal library and zip (versioned)
         run: |
           mkdir -p platform_build/hallr/lib
+          # create a dummy file for folder protection
           cp blender_addon/.hallr platform_build/hallr/
+          if [ ! -f "platform_build/hallr/.hallr" ]; then
+            touch platform_build/hallr/.hallr
+          fi
+          # Copy Python files
           cp blender_addon/*.py platform_build/hallr/
-          cp target/aarch64-apple-darwin/release/libhallr.dylib platform_build/hallr/lib/libhallr.dylib
+          # Create universal binary
+          lipo -create \
+            -output platform_build/hallr/lib/libhallr.dylib \
+            target/x86_64-apple-darwin/release/libhallr.dylib \
+            target/aarch64-apple-darwin/release/libhallr.dylib
 
-      - name: Upload macOS arm64 artifact
+          # Verify
+          lipo -info platform_build/hallr/lib/libhallr.dylib
+
+          # Create zip with versioned name
+          TAG="${{ github.event.release.tag_name }}"
+          ZIPNAME="hallr_${TAG}_mac_universal.zip"
+          cd platform_build
+          zip -r "${{ github.workspace }}/${ZIPNAME}" hallr -x "*.DS_Store" -x "__MACOSX/*"
+          
+          cd "${{ github.workspace }}"
+          ls -lh "${ZIPNAME}"
+        shell: bash
+        working-directory: ${{ github.workspace }}
+
+      - name: Upload macOS artifact (zip)
         uses: actions/upload-artifact@v4
         with:
-          name: hallr-macos-arm64
-          path: platform_build
+          name: hallr_${{ github.event.release.tag_name }}_mac_universal
+          path: |
+            hallr_${{ github.event.release.tag_name }}_mac_universal.zip
           include-hidden-files: true
 
-
   combine_artifacts:
-    name: Combine platform artifacts
-    needs: [build_platforms, build_macos_arm64]
+    name: Combine platform artifacts & upload release assets
+    needs: [build_platforms, build_macos_universal]
     runs-on: macos-latest
     steps:
       - name: Checkout code
@@ -98,47 +150,72 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: all_artifacts
-          pattern: "hallr-**"
+          pattern: "hallr_*"
           merge-multiple: true
 
-      - name: Create combined directory structure
+      - name: List downloaded artifacts
         run: |
+          echo "Downloaded files:"
+          find all_artifacts -maxdepth 2 -type f -name "*.zip" -print | sort
+        shell: bash
+
+      - name: Create combined (allplatforms) directory
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
           mkdir -p combined_build/hallr/lib
-          # Make sure the basic structure exists
           touch combined_build/hallr/.hallr
           touch combined_build/.hallr
-          
-          # Copy Python files (only need one copy)
-          find all_artifacts -name "*.py" -exec cp -n {} combined_build/hallr/ \;
-          
-          # Copy all library files
-          find all_artifacts -name "*.dll" -exec cp {} combined_build/hallr/lib/ \;
-          find all_artifacts -name "*.so" -exec cp {} combined_build/hallr/lib/ \;
-          find all_artifacts -name "*.dylib" -exec cp {} combined_build/hallr/lib/ \;
-          
-          # List the combined directory structure
+
+          # Unzip each platform zip into a temporary area, but avoid overwriting python files
+          # We'll extract libraries into combined_build/hallr/lib and copy python once
+          for z in all_artifacts/*.zip; do
+            echo "Processing ${z}"
+            tmpdir=$(mktemp -d)
+            unzip -q "$z" -d "$tmpdir"
+            # copy python files (if not already present)
+            if [ -d "$tmpdir/hallr" ]; then
+              cp -n $tmpdir/hallr/*.py combined_build/hallr/ || true
+              # copy libs
+              find $tmpdir/hallr/lib -type f -exec cp {} combined_build/hallr/lib/ \; || true
+            fi
+            rm -rf "$tmpdir"
+          done
+
+          echo "Combined build tree:"
           find combined_build -type f | sort
-        shell: bash
-        working-directory: ${{ github.workspace }}
 
-      - name: Upload combined artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: hallr
-          path: combined_build
-          include-hidden-files: true
-
-      - name: Create release zip
-        run: |
+          # Create combined zip (allplatforms)
+          ALLZIP="hallr_${TAG}_allplatforms.zip"
           cd combined_build
-          rm -f hallr/.hallr
-          zip -r ../hallr.zip hallr -x "*.DS_Store" -x "__MACOSX/*"
+          zip -r "../${ALLZIP}" hallr -x "*.DS_Store" -x "__MACOSX/*"
+          cd "${{ github.workspace }}"
+          ls -lh "${ALLZIP}"
         shell: bash
         working-directory: ${{ github.workspace }}
 
-      - name: Upload Release Asset
+      - name: Prepare list of release assets to upload
         run: |
-          gh release upload ${{ github.event.release.tag_name }} hallr.zip
+          TAG="${{ github.event.release.tag_name }}"
+          # Find all versioned zips in workspace root (downloaded artifacts will be in all_artifacts or root)
+          # Move any zips from all_artifacts to workspace root so gh can upload them easily
+          find all_artifacts -type f -name "hallr_${TAG}_*.zip" -exec cp {} . \;
+          echo "Files to upload:"
+          ls -1 hallr_${TAG}_*.zip || true
+        shell: bash
+
+      - name: Upload release assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        working-directory: ${{ github.workspace }}
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          # Upload each file (skip if not present)
+          for f in hallr_${TAG}_*.zip; do
+            if [ -f "$f" ]; then
+              echo "Uploading $f to release ${TAG}"
+              gh release upload "${TAG}" "$f" --clobber
+            else
+              echo "Skipping $f (not found)"
+            fi
+          done
+        shell: bash
+
