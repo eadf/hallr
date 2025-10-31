@@ -7,7 +7,7 @@ description = "An experimental Blender addon"
 repository = "https://github.com/eadf/hallr"
 license = "AGPL-3.0-or-later"
 authors = ["eadf"]
-rust-version = "1.85.1"
+rust-version = "1.87.0"
 keywords = ["blender", "voronoi", "lsystems", "geometry"]
 
 [lib]
@@ -29,6 +29,9 @@ krakel = {version = "0.4.1", features = ["vector-traits", "glam"]}
 hronn = { version = "0.6.0", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
 #hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
+remesh = "0.0.1"
+#remesh = { path = "../remesh_rs", features = ["integrity_check"]}
+#remesh = { path = "../remesh_rs"}
 #dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel", "simd"]}
 #dedup_mesh = { path = "../dedup_mesh_rs", features = ["parallel", "simd"]}
 dedup_mesh = { version = "=0.2.0", features = ["parallel", "simd"]}

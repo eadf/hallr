@@ -50,7 +50,7 @@ We welcome contributions from the community! Feel free to submit pull requests o
 
 ### Minimum Supported Rust Version (MSRV)
 
-The minimum supported version of Rust for `hallr` is `1.85.1`.
+The minimum supported version of Rust for `hallr` is `1.87.0`.
 
 ## License
 Hallr is licensed under **AGPL-3.0-or-later**.

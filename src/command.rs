@@ -23,6 +23,7 @@ pub mod cmd_surface_scan;
 mod cmd_voronoi_diagram;
 mod cmd_voronoi_mesh;
 
+mod cmd_isotropic_remesh;
 mod cmd_mesh_cleanup;
 #[cfg(feature = "generate_test_case_from_input")]
 #[cfg(not(test))]
@@ -381,6 +382,7 @@ pub(crate) fn process_command(
         "sdf_mesh" => cmd_sdf_mesh_fsn::process_command(config, models)?,
         "sdf_mesh_saft" => cmd_sdf_mesh_saft::process_command(config, models)?,
         "discretize" => cmd_discretize::process_command(config, models)?,
+        "isotropic_remesh" => cmd_isotropic_remesh::process_command(config, models)?,
         "lsystems" => cmd_lsystems::process_command(config, models)?,
         "mesh_cleanup" => cmd_mesh_cleanup::process_command(config, models)?,
         illegal_command => Err(HallrError::InvalidParameter(format!(

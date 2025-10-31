@@ -44,6 +44,9 @@ pub mod prelude {
 #[derive(thiserror::Error, Debug)]
 pub enum HallrError {
     #[error(transparent)]
+    RemeshError(#[from] remesh::prelude::RemeshError),
+
+    #[error(transparent)]
     DeDupError(#[from] dedup_mesh::DeDupError),
 
     #[error(transparent)]

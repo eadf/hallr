@@ -1349,6 +1349,151 @@ class MESH_OT_hallr_mesh_cleanup(bpy.types.Operator, BaseOperatorMixin):
         row.prop(self, "iterations_count_prop")
 
 
+# Isotropic Remeshing mesh operator
+class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
+    bl_idname = "mesh.hallr_meshtools_isotropic_remesh"
+    bl_label = "Isotropic Remesh"
+    bl_icon = 'MOD_MESHDEFORM'
+    bl_description = "Remesh the mesh isotropically"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    iterations_count_prop: bpy.props.IntProperty(
+        name="Iterations",
+        description="Number of iterations for remeshing. Increase this if your remeshed mesh contains irregularities."
+                    "Higher values improve mesh quality but increase computation time.",
+        default=10,
+        min=1,
+        max=100
+    )
+
+    target_edge_length_prop: bpy.props.FloatProperty(
+        name="Target Edge Length",
+        description="Target edge length after remeshing. Warning: Setting this too small will significantly increase processing time",
+        default=0.5,
+        min=0.001,
+        max=3.0,
+        precision=6,
+        unit='LENGTH'
+    )
+
+    split_edges_prop: bpy.props.BoolProperty(
+        name="Split Edges",
+        description="Allow edge splitting during remeshing",
+        default=True
+    )
+
+    collapse_edges_prop: bpy.props.BoolProperty(
+        name="Collapse Edges",
+        description="Allow edge collapsing during remeshing",
+        default=True
+    )
+
+    flip_edges_prop: bpy.props.BoolProperty(
+        name="Flip Edges",
+        description="Allow edge flipping during remeshing",
+        default=True
+    )
+
+    smooth_vertices_prop: bpy.props.BoolProperty(
+        name="🚧 Smooth Vertices 🚧",
+        description="Allow vertex smoothing during remeshing. Work in progress",
+        default=False
+    )
+
+    # project_vertices_prop: bpy.props.BoolProperty(
+    #    name="Project Vertices",
+    #    description="Project vertices back to the original surface",
+    #    default=True
+    # )
+
+    deny_non_manifold_prop: bpy.props.BoolProperty(
+        name="Deny non manifold mesh",
+        description="Check if the mesh is non-manifold before sending to baby_shark",
+        default=True
+    )
+
+    manifold_not_checked = True
+
+    def invoke(self, context, event):
+        self.manifold_not_checked = True
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+    def execute(self, context):
+        obj = context.active_object
+
+        if self.deny_non_manifold_prop:
+            # Switch to edit mode and select non-manifold geometry
+            bpy.ops.object.mode_set(mode='EDIT')
+            original_select_mode = context.tool_settings.mesh_select_mode[:]
+            bpy.ops.mesh.select_mode(type='VERT')
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.mesh.select_non_manifold()
+
+            # Get the selected elements count
+            bm = bmesh.from_edit_mesh(obj.data)
+            non_manifold_count = sum(1 for v in bm.verts if v.select)
+            bm.free()
+            self.manifold_not_checked = False
+
+            if non_manifold_count > 0:
+                self.report({'ERROR'},
+                            f"Mesh is not manifold! Found {non_manifold_count} problem areas. Problem areas have been selected.")
+                return {'CANCELLED'}
+            else:
+                context.tool_settings.mesh_select_mode = original_select_mode
+
+        # Ensure the object is in object mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        config = {
+            hallr_ffi_utils.COMMAND_TAG: "isotropic_remesh",
+            "ITERATIONS_COUNT": str(self.iterations_count_prop),
+            "TARGET_EDGE_LENGTH": str(self.target_edge_length_prop),
+            "SPLIT_EDGES": str(self.split_edges_prop),
+            "COLLAPSE_EDGES": str(self.collapse_edges_prop),
+            "FLIP_EDGES": str(self.flip_edges_prop),
+            "SMOOTH_VERTICES": str(self.smooth_vertices_prop),
+            # "PROJECT_VERTICES": str(self.project_vertices_prop)
+        }
+
+        try:
+            # Call the Rust function
+            _,info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
+                                                create_new=False)
+            self.report({'INFO'}, info)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.report({'ERROR'}, f"Error: {e}")
+            return {'CANCELLED'}
+
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "iterations_count_prop")
+        # Add target_edge_length with a warning message
+        box = layout.box()
+        row = box.row()
+        row.prop(self, "target_edge_length_prop")
+        # Add warning row with icon
+        warning_row = box.row()
+        warning_row.label(text="CAUTION: Small values will make the ", icon='ERROR')
+        warning_row = box.row()
+        warning_row.label(text="         operation take a long time, while ")
+        warning_row = box.row()
+        warning_row.label(text="         blender is unresponsive")
+        warning_row.scale_y = 0.7
+        layout.prop(self, "split_edges_prop")
+        layout.prop(self, "collapse_edges_prop")
+        layout.prop(self, "flip_edges_prop")
+        layout.prop(self, "smooth_vertices_prop")
+        # layout.prop(self, "project_vertices_prop")
+        # row = layout.row()
+        # row.prop(self, "deny_non_manifold_prop")
+
+
 # menu containing all tools
 class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
     bl_label = "Hallr meshtools"
@@ -1365,6 +1510,7 @@ class VIEW3D_MT_edit_mesh_hallr_meshtools(bpy.types.Menu):
         layout.operator(MESH_OT_hallr_simplify_rdp.bl_idname, icon=MESH_OT_hallr_simplify_rdp.bl_icon)
         layout.operator(MESH_OT_hallr_centerline.bl_idname, icon=MESH_OT_hallr_centerline.bl_icon)
         layout.operator(MESH_OT_hallr_discretize.bl_idname, icon=MESH_OT_hallr_discretize.bl_icon)
+        layout.operator(MESH_OT_hallr_isotropic_remesh.bl_idname, icon=MESH_OT_hallr_discretize.bl_icon)
         layout.separator()
         layout.operator(MESH_OT_hallr_select_vertices_until_intersection.bl_idname,
                         icon=MESH_OT_hallr_select_vertices_until_intersection.bl_icon)
@@ -1409,6 +1555,7 @@ classes = (
     MESH_OT_hallr_random_vertices,
     MESH_OT_hallr_meta_volume,
     MESH_OT_hallr_mesh_cleanup,
+    MESH_OT_hallr_isotropic_remesh,
 )
 
 
