@@ -2,3 +2,4 @@
 clippy-all = "clippy --all --all-targets"
 fmt-all = "fmt --all"
 test-all = "test --all"
+deny-all = "deny check"
