@@ -634,8 +634,7 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 [[package]]
 name = "remesh"
 version = "0.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc087179342b97e56f226f7b301946947ae18a7f90fe8a945f2d5fc54b869bc8"
+source = "git+https://codeberg.org/eadf/remesh_rs.git#1f206a4179a8860e95b00d415b40dd3c67f50a68"
 dependencies = [
  "keyed_priority_queue",
  "ordered-float 5.1.0",

@@ -34,26 +34,71 @@ pub(crate) fn process_command(
 
     println!("Rust: Starting remesh()");
     let (mut ffi_vertices, ffi_indices) = time_it_r("Rust: remesh()", || {
-        Ok(remesher
+        let remesher = remesher
             .with_target_edge_length(
                 input_config.get_mandatory_parsed_option("TARGET_EDGE_LENGTH", None)?,
             )?
             .with_iterations(
                 input_config.get_mandatory_parsed_option::<usize>("ITERATIONS_COUNT", None)?,
-            )?
-            .with_split_multiplier(
-                input_config.get_mandatory_parsed_option::<bool>("SPLIT_EDGES", Some(false))?,
-            )?
-            .with_collapse_multiplier(
-                input_config.get_mandatory_parsed_option::<bool>("COLLAPSE_EDGES", Some(false))?,
-            )?
-            .with_flip_edges(
-                input_config.get_mandatory_parsed_option::<bool>("FLIP_EDGES", Some(false))?,
-            )?
-            .with_smooth_weight(
-                input_config.get_mandatory_parsed_option::<bool>("SMOOTH_VERTICES", Some(false))?,
-            )?
-            .run()?)
+            )?;
+        let remesher = if let Ok(Some(edge_split)) =
+            input_config.get_optional_parsed_option::<bool>("SPLIT_EDGES")
+        {
+            if edge_split {
+                remesher.with_default_split_multiplier()?
+            } else {
+                remesher.without_split_multiplier()?
+            }
+        } else if let Some(edge_split) =
+            input_config.get_optional_parsed_option::<f32>("SPLIT_EDGES")?
+        {
+            remesher.with_split_multiplier(edge_split)?
+        } else {
+            remesher
+        };
+        let remesher = if let Ok(Some(edge_split)) =
+            input_config.get_optional_parsed_option::<bool>("COLLAPSE_EDGES")
+        {
+            if edge_split {
+                remesher.with_default_collapse_multiplier()?
+            } else {
+                remesher.without_collapse_multiplier()?
+            }
+        } else if let Some(edge_split) =
+            input_config.get_optional_parsed_option::<f32>("COLLAPSE_EDGES")?
+        {
+            remesher.with_collapse_multiplier(edge_split)?
+        } else {
+            remesher
+        };
+
+        let remesher = remesher.with_flip_edges(
+            input_config.get_mandatory_parsed_option::<bool>("FLIP_EDGES", Some(false))?,
+        )?;
+        let remesher = if let Ok(Some(smooth_weight)) =
+            input_config.get_optional_parsed_option::<bool>("SMOOTH_VERTICES")
+        {
+            if smooth_weight {
+                remesher.with_default_smooth_weight()?
+            } else {
+                remesher.without_smooth_weight()?
+            }
+        } else if let Some(smooth_weight) =
+            input_config.get_optional_parsed_option::<f32>("SMOOTH_VERTICES")?
+        {
+            remesher.with_smooth_weight(smooth_weight)?
+        } else {
+            remesher
+        };
+
+        let remesher = if let Some(coplanar_threshold) =
+            input_config.get_optional_parsed_option::<f32>("COPLANAR_ANGLE_THRESHOLD")?
+        {
+            remesher.with_coplanar_angle_threshold(coplanar_threshold)?
+        } else {
+            remesher.with_default_coplanar_threshold()?
+        };
+        Ok(remesher.run()?)
     })?;
 
     if let Some(world_to_local) = model.get_world_to_local_transform()? {

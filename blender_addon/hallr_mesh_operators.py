@@ -1354,8 +1354,10 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
     bl_idname = "mesh.hallr_meshtools_isotropic_remesh"
     bl_label = "Isotropic Remesh"
     bl_icon = 'MOD_MESHDEFORM'
-    bl_description = "Remesh the mesh isotropically"
+    bl_description = "Remesh the mesh isotropically using the crate 'remesh'"
     bl_options = {'REGISTER', 'UNDO'}
+
+    DEFAULT_COPLANAR_ANGLE_THRESHOLD_RAD = math.radians(5.0)
 
     iterations_count_prop: bpy.props.IntProperty(
         name="Iterations",
@@ -1397,14 +1399,21 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
     smooth_vertices_prop: bpy.props.BoolProperty(
         name="🚧 Smooth Vertices 🚧",
         description="Allow vertex smoothing during remeshing. Work in progress",
-        default=False
+        default=True
     )
 
-    # project_vertices_prop: bpy.props.BoolProperty(
-    #    name="Project Vertices",
-    #    description="Project vertices back to the original surface",
-    #    default=True
-    # )
+    coplanar_threshold_use_default_prop: bpy.props.BoolProperty(
+        description="Use default or custom coplanarity threshold value. Dihedral angle between merge-able triangles",
+        default=True
+    )
+    coplanar_threshold_value_prop: bpy.props.FloatProperty(
+        name="Coplanarity Threshold",
+        description="Dihedral angle between merge-able triangles",
+        default=DEFAULT_COPLANAR_ANGLE_THRESHOLD_RAD,
+        min=0.0,
+        max=math.radians(90),
+        subtype = 'ANGLE',
+    )
 
     deny_non_manifold_prop: bpy.props.BoolProperty(
         name="Deny non manifold mesh",
@@ -1445,6 +1454,12 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
 
         # Ensure the object is in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
+        if self.coplanar_threshold_use_default_prop:
+            coplanar_angle_rad = self.DEFAULT_COPLANAR_ANGLE_THRESHOLD_RAD
+            print(f"python: ************ using default coplanar_threshold ****** {coplanar_angle_rad}")
+        else:
+            coplanar_angle_rad = self.coplanar_threshold_value_prop
+            print(f"python: ************ using coplanar_threshold ****** {coplanar_angle_rad}")
 
         config = {
             hallr_ffi_utils.COMMAND_TAG: "isotropic_remesh",
@@ -1454,7 +1469,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
             "COLLAPSE_EDGES": str(self.collapse_edges_prop),
             "FLIP_EDGES": str(self.flip_edges_prop),
             "SMOOTH_VERTICES": str(self.smooth_vertices_prop),
-            # "PROJECT_VERTICES": str(self.project_vertices_prop)
+            "COPLANAR_ANGLE_THRESHOLD":str(math.degrees(coplanar_angle_rad))
         }
 
         try:
@@ -1489,6 +1504,15 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
         layout.prop(self, "collapse_edges_prop")
         layout.prop(self, "flip_edges_prop")
         layout.prop(self, "smooth_vertices_prop")
+
+        row = layout.row()
+        if self.coplanar_threshold_use_default_prop:
+            row.prop(self, "coplanar_threshold_use_default_prop", text=f"Default Coplanar threshold: {math.degrees(self.DEFAULT_COPLANAR_ANGLE_THRESHOLD_RAD)}°")
+        else:
+            split = row.split(factor=0.25)
+            split.prop(self, "coplanar_threshold_use_default_prop", text='Default')
+            split.prop(self, "coplanar_threshold_value_prop")
+
         # layout.prop(self, "project_vertices_prop")
         # row = layout.row()
         # row.prop(self, "deny_non_manifold_prop")
