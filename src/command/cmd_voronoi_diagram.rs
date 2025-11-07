@@ -196,7 +196,7 @@ pub(crate) fn process_command(
     }
 
     let cmd_arg_keep_input = input_config
-        .get_parsed_option("KEEP_INPUT")?
+        .get_optional_parsed_option("KEEP_INPUT")?
         .unwrap_or(false);
 
     // used for simplification and discretization distance
@@ -265,7 +265,7 @@ pub(crate) fn process_command(
         ffi::MeshFormat::Edges.to_string(),
     );
 
-    if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
+    if let Some(mv) = input_config.get_optional_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
         // we take the easy way out here, and let blender do the de-duplication of the vertices.
         let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
     }

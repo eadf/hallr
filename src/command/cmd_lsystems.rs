@@ -131,7 +131,7 @@ pub(crate) fn process_command(
         .filter(|&v| v > 0.0) // Only keep positive, > 0 dedup values
         .or_else(|| {
             input_config
-                .get_parsed_option::<f64>(ffi::VERTEX_MERGE_TAG)
+                .get_optional_parsed_option::<f64>(ffi::VERTEX_MERGE_TAG)
                 .ok()?
         })
         .unwrap_or(0.0001);

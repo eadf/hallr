@@ -18,7 +18,8 @@ impl Options for HashMap<String, String> {
             Some(v) => match v.to_lowercase().parse() {
                 Ok(val) => Ok(val),
                 Err(_) => Err(HallrError::InvalidParameter(format!(
-                    "Invalid value for parameter {{\"{key}\"}}: {{\"{v}\"}}"
+                    "Invalid value for parameter {{\"{key}\"}}: {{\"{}\"}}",
+                    v.to_lowercase()
                 ))),
             },
             None => {
@@ -34,14 +35,14 @@ impl Options for HashMap<String, String> {
     }
 
     /// Will return an option parsed as a `T` or None.
-    /// If the option is missing None is returned, if it there but if it can't be parsed an error
+    /// If the option is missing None is returned, if it exists but can't be parsed an error
     /// will be returned.
-    fn get_parsed_option<'a, T: std::str::FromStr>(
+    fn get_optional_parsed_option<'a, T: std::str::FromStr>(
         &'a self,
         key: &'a str,
     ) -> Result<Option<T>, HallrError> {
         match self.get(key) {
-            Some(v) => match v.parse() {
+            Some(v) => match v.to_lowercase().parse() {
                 Ok(val) => Ok(Some(val)),
                 Err(_) => Err(HallrError::InvalidParameter(format!(
                     "Invalid value for parameter {{\"{key}\"}}: {{\"{v}\"}}"

@@ -291,7 +291,7 @@ where
         )));
     }
     let cmd_arg_remove_internals = input_config
-        .get_parsed_option::<bool>("REMOVE_INTERNALS")?
+        .get_optional_parsed_option::<bool>("REMOVE_INTERNALS")?
         .unwrap_or(true);
 
     let cmd_arg_discrete_distance = input_config.get_mandatory_parsed_option("DISTANCE", None)?;
@@ -301,7 +301,7 @@ where
         )));
     }
     let cmd_arg_max_voronoi_dimension = input_config
-        .get_parsed_option::<T::Scalar>("MAX_VORONOI_DIMENSION")?
+        .get_optional_parsed_option::<T::Scalar>("MAX_VORONOI_DIMENSION")?
         .unwrap_or(default_max_voronoi_dimension);
     if !(default_max_voronoi_dimension..100_000_000.0.into())
         .contains(&cmd_arg_max_voronoi_dimension)
@@ -313,13 +313,15 @@ where
         )));
     }
     let cmd_arg_simplify = input_config
-        .get_parsed_option::<bool>("SIMPLIFY")?
+        .get_optional_parsed_option::<bool>("SIMPLIFY")?
         .unwrap_or(true);
 
     let (cmd_arg_weld, cmd_arg_keep_input) = {
-        let mut cmd_arg_weld = input_config.get_parsed_option("WELD")?.unwrap_or(true);
+        let mut cmd_arg_weld = input_config
+            .get_optional_parsed_option("WELD")?
+            .unwrap_or(true);
         let cmd_arg_keep_input = input_config
-            .get_parsed_option("KEEP_INPUT")?
+            .get_optional_parsed_option("KEEP_INPUT")?
             .unwrap_or(true);
 
         if !cmd_arg_keep_input {
@@ -330,7 +332,7 @@ where
     };
 
     let cmd_arg_negative_radius = input_config
-        .get_parsed_option::<bool>("NEGATIVE_RADIUS")?
+        .get_optional_parsed_option::<bool>("NEGATIVE_RADIUS")?
         .unwrap_or(true);
 
     // used for simplification and discretization distance
@@ -519,7 +521,7 @@ where
         ffi::MeshFormat::MESH_FORMAT_TAG.to_string(),
         ffi::MeshFormat::Edges.to_string(),
     );
-    if let Some(mv) = input_config.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
+    if let Some(mv) = input_config.get_optional_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
         // we take the easy way out here, and let blender do the de-duplication of the vertices.
         let _ = return_config.insert(ffi::VERTEX_MERGE_TAG.to_string(), mv.to_string());
     }

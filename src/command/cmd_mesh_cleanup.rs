@@ -535,7 +535,7 @@ pub(crate) fn process_command(
     let model = &models[0];
     let world_matrix = model.world_orientation.to_vec();
     let max_iterations = input_config
-        .get_parsed_option::<usize>("max_iterations")?
+        .get_optional_parsed_option::<usize>("max_iterations")?
         .unwrap_or(5);
 
     let vertices: Vec<Vec3> = model.vertices.iter().map(|v| v.into()).collect::<Vec<_>>();

@@ -79,7 +79,10 @@ trait Options {
     /// Will return an option parsed as a `T` or None.
     /// If the option is missing None is returned, if it there but if it can't be parsed an error
     /// will be returned.
-    fn get_parsed_option<T: std::str::FromStr>(&self, key: &str) -> Result<Option<T>, HallrError>;
+    fn get_optional_parsed_option<T: std::str::FromStr>(
+        &self,
+        key: &str,
+    ) -> Result<Option<T>, HallrError>;
 
     /// Returns the &str value of an option, or an Err is it does not exist
     fn get_mandatory_option(&self, key: &str) -> Result<&str, HallrError>;
@@ -308,10 +311,10 @@ pub fn collect_models<'a, T: GenericVector3>(
                 default_index,
             )?;
             let vertices_end_idx: usize = config
-                .get_parsed_option(&format!("first_vertex_model_{}", model_counter + 1))?
+                .get_optional_parsed_option(&format!("first_vertex_model_{}", model_counter + 1))?
                 .unwrap_or(vertices.len());
             let indices_end_idx: usize = config
-                .get_parsed_option(&format!("first_index_model_{}", model_counter + 1))?
+                .get_optional_parsed_option(&format!("first_index_model_{}", model_counter + 1))?
                 .unwrap_or(indices.len());
 
             models.push(Model::<'_> {
@@ -341,7 +344,7 @@ pub(crate) fn process_command(
     // the type we use for the internal processing
     type T = Vec3A;
 
-    if matrix.len() % 16 != 0 {
+    if !matrix.len().is_multiple_of(16) {
         return Err(HallrError::InvalidInputData(
             "The matrix field must be a multiple of 16".to_string(),
         ));
@@ -389,7 +392,9 @@ pub(crate) fn process_command(
             "Invalid command:{illegal_command}",
         )))?,
     };
-    if let Some(tolerance) = rv.3.get_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)? {
+    if let Some(tolerance) =
+        rv.3.get_optional_parsed_option::<f32>(ffi::VERTEX_MERGE_TAG)?
+    {
         let len = rv.0.len();
         let start = Instant::now();
 
