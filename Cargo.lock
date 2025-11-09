@@ -634,7 +634,7 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 [[package]]
 name = "remesh"
 version = "0.0.1"
-source = "git+https://codeberg.org/eadf/remesh_rs.git#1f206a4179a8860e95b00d415b40dd3c67f50a68"
+source = "git+https://codeberg.org/eadf/remesh_rs.git#6b054aa66a5b8dcfa875e78e152581d69421d609"
 dependencies = [
  "keyed_priority_queue",
  "ordered-float 5.1.0",

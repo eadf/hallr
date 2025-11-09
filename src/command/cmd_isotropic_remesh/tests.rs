@@ -13,7 +13,7 @@ fn test_isotropic_remesh_1() -> Result<(), HallrError> {
     let mut config = ConfigType::default();
     let _ = config.insert("▶".to_string(), "isotropic_remesh".to_string());
     let _ = config.insert("COLLAPSE_EDGES".to_string(), "True".to_string());
-    let _ = config.insert("FLIP_EDGES".to_string(), "True".to_string());
+    let _ = config.insert("FLIP_EDGES".to_string(), "VALENCE".to_string());
     let _ = config.insert(
         "TARGET_EDGE_LENGTH".to_string(),
         "0.10000000149011612".to_string(),

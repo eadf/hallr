@@ -204,8 +204,9 @@ class MESH_OT_hallr_2d_outline(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            _,info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
-                                                create_new=False)
+            _, info = hallr_ffi_utils.process_single_mesh(config, obj,
+                                                          mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
+                                                          create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
             self.report({'ERROR'}, f"Error: {e}")
@@ -243,7 +244,7 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator, BaseOperatorMixin):
         try:
             # Call the Rust function
             _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
-                                                create_new=False)
+                                                          create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
             import traceback
@@ -275,8 +276,9 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            _,info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,
-                                                create_new=False)
+            _, info = hallr_ffi_utils.process_single_mesh(config, obj,
+                                                          mesh_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,
+                                                          create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
             import traceback
@@ -330,7 +332,7 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator, BaseOperatorMixin):
         try:
             # Call the Rust function
             _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
-                                                create_new=False)
+                                                          create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
             import traceback
@@ -673,7 +675,7 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
         try:
             # Call the Rust function
             _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
-                                                create_new=False)
+                                                          create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
             import traceback
@@ -766,8 +768,8 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            _,info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
-                                                create_new=False)
+            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+                                                          create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
             import traceback
@@ -870,7 +872,7 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
         try:
             # Call the Rust function
             _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
-                                                create_new=False)
+                                                          create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
             import traceback
@@ -974,7 +976,7 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
         try:
             # Call the Rust function
             _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
-                                                create_new=False)
+                                                          create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
             import traceback
@@ -1145,7 +1147,7 @@ class MESH_OT_hallr_discretize(bpy.types.Operator, BaseOperatorMixin):
         try:
             # Call the Rust function
             _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
-                                                create_new=False)
+                                                          create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
             import traceback
@@ -1262,8 +1264,8 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
             config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
         try:
             # Call the Rust function
-            _,info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
-                                                create_new=False)
+            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+                                                          create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
             import traceback
@@ -1331,8 +1333,9 @@ class MESH_OT_hallr_mesh_cleanup(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
-                                                create_new=False)
+            _, info = hallr_ffi_utils.process_single_mesh(config, obj,
+                                                          mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
+                                                          create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
             import traceback
@@ -1358,6 +1361,8 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
     bl_options = {'REGISTER', 'UNDO'}
 
     DEFAULT_COPLANAR_ANGLE_THRESHOLD_RAD = math.radians(5.0)
+    DEFAULT_CREASE_ANGLE_THRESHOLD_RAD = math.radians(160)
+    DEFAULT_EDGE_FLIP_QUALITY_WEIGHT = 1.1
 
     iterations_count_prop: bpy.props.IntProperty(
         name="Iterations",
@@ -1390,10 +1395,29 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
         default=True
     )
 
-    flip_edges_prop: bpy.props.BoolProperty(
+    flip_edges_prop: bpy.props.EnumProperty(
         name="Flip Edges",
-        description="Allow edge flipping during remeshing",
-        default=True
+        description="Edge flipping method during remeshing",
+        items=[
+            ('DISABLED', "Disabled", "Disable edge flipping during remeshing"),
+            ('VALENCE', "Valence", "Use valence-based priority during edge flipping"),
+            ('QUALITY', "Quality", "Use a valence then aspect-ration priority during edge flipping"),
+        ],
+        default='DISABLED'
+    )
+
+    quality_threshold_use_default_prop: bpy.props.BoolProperty(
+        name=f"Default threshold {DEFAULT_EDGE_FLIP_QUALITY_WEIGHT}",
+        description="Use default quality threshold",
+        default=True,
+    )
+
+    quality_threshold_prop: bpy.props.FloatProperty(
+        name="Quality Weight",
+        description="Threshold for aspect-ratio quality in edge flipping",
+        default=DEFAULT_EDGE_FLIP_QUALITY_WEIGHT,
+        min=1.0,
+        max=1.3
     )
 
     smooth_vertices_prop: bpy.props.BoolProperty(
@@ -1412,7 +1436,20 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
         default=DEFAULT_COPLANAR_ANGLE_THRESHOLD_RAD,
         min=0.0,
         max=math.radians(90),
-        subtype = 'ANGLE',
+        subtype='ANGLE',
+    )
+
+    crease_threshold_use_default_prop: bpy.props.BoolProperty(
+        description="Use default or custom sharp crease threshold value. The algorithm will not create sharper creases than this angle",
+        default=True
+    )
+    crease_threshold_value_prop: bpy.props.FloatProperty(
+        name="Sharp crease threshold",
+        description="The algorithm will not create sharper creases than this angle",
+        default=DEFAULT_CREASE_ANGLE_THRESHOLD_RAD,
+        min=math.radians(100.0),
+        max=math.radians(179.0),
+        subtype='ANGLE',
     )
 
     deny_non_manifold_prop: bpy.props.BoolProperty(
@@ -1456,10 +1493,12 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
         bpy.ops.object.mode_set(mode='OBJECT')
         if self.coplanar_threshold_use_default_prop:
             coplanar_angle_rad = self.DEFAULT_COPLANAR_ANGLE_THRESHOLD_RAD
-            print(f"python: ************ using default coplanar_threshold ****** {coplanar_angle_rad}")
         else:
             coplanar_angle_rad = self.coplanar_threshold_value_prop
-            print(f"python: ************ using coplanar_threshold ****** {coplanar_angle_rad}")
+        if self.crease_threshold_use_default_prop:
+            crease_angle_rad = self.DEFAULT_CREASE_ANGLE_THRESHOLD_RAD
+        else:
+            crease_angle_rad = self.crease_threshold_value_prop
 
         config = {
             hallr_ffi_utils.COMMAND_TAG: "isotropic_remesh",
@@ -1469,13 +1508,19 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
             "COLLAPSE_EDGES": str(self.collapse_edges_prop),
             "FLIP_EDGES": str(self.flip_edges_prop),
             "SMOOTH_VERTICES": str(self.smooth_vertices_prop),
-            "COPLANAR_ANGLE_THRESHOLD":str(math.degrees(coplanar_angle_rad))
+            "COPLANAR_ANGLE_THRESHOLD": str(math.degrees(coplanar_angle_rad)),
+            "CREASE_ANGLE_THRESHOLD": str(math.degrees(crease_angle_rad)),
         }
-
+        if self.flip_edges_prop == 'QUALITY':
+            if self.quality_threshold_use_default_prop:
+                config["FLIP_QUALITY_THRESHOLD"] = str(self.DEFAULT_EDGE_FLIP_QUALITY_WEIGHT)
+            else:
+                config["FLIP_QUALITY_THRESHOLD"] = str(self.quality_threshold_prop)
         try:
             # Call the Rust function
-            _,info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
-                                                create_new=False)
+            _, info = hallr_ffi_utils.process_single_mesh(config, obj,
+                                                          mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
+                                                          create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
             import traceback
@@ -1502,18 +1547,37 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
         warning_row.scale_y = 0.7
         layout.prop(self, "split_edges_prop")
         layout.prop(self, "collapse_edges_prop")
-        layout.prop(self, "flip_edges_prop")
+        row = layout.row()
+        if self.flip_edges_prop == 'QUALITY':
+            row.prop(self, "flip_edges_prop", text='')
+            if self.quality_threshold_use_default_prop:
+                row.prop(self, "quality_threshold_use_default_prop")
+            else:
+                row.prop(self, "quality_threshold_use_default_prop", text='')
+                row.prop(self, "quality_threshold_prop")
+        else:
+            row.prop(self, "flip_edges_prop")
+
         layout.prop(self, "smooth_vertices_prop")
 
         row = layout.row()
         if self.coplanar_threshold_use_default_prop:
-            row.prop(self, "coplanar_threshold_use_default_prop", text=f"Default Coplanar threshold: {math.degrees(self.DEFAULT_COPLANAR_ANGLE_THRESHOLD_RAD)}°")
+            row.prop(self, "coplanar_threshold_use_default_prop",
+                     text=f"Default Coplanar threshold: {math.degrees(self.DEFAULT_COPLANAR_ANGLE_THRESHOLD_RAD)}°")
         else:
             split = row.split(factor=0.25)
             split.prop(self, "coplanar_threshold_use_default_prop", text='Default')
             split.prop(self, "coplanar_threshold_value_prop")
 
-        # layout.prop(self, "project_vertices_prop")
+        row = layout.row()
+        if self.crease_threshold_use_default_prop:
+            row.prop(self, "crease_threshold_use_default_prop",
+                     text=f"Default sharp crease threshold: {math.degrees(self.DEFAULT_CREASE_ANGLE_THRESHOLD_RAD)}°")
+        else:
+            split = row.split(factor=0.25)
+            split.prop(self, "crease_threshold_use_default_prop", text='Default')
+            split.prop(self, "crease_threshold_value_prop")
+
         # row = layout.row()
         # row.prop(self, "deny_non_manifold_prop")
 

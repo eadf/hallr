@@ -72,9 +72,21 @@ pub(crate) fn process_command(
             remesher
         };
 
-        let remesher = remesher.with_flip_edges(
-            input_config.get_mandatory_parsed_option::<bool>("FLIP_EDGES", Some(false))?,
-        )?;
+        let flip_strategy = input_config
+            .get_mandatory_parsed_option::<String>("FLIP_EDGES", Some("Disabled".to_string()))?;
+        let remesher = match flip_strategy.as_str() {
+            "disabled" => remesher.with_flip_edges(FlipStrategy::Disabled)?,
+            "valence" => remesher.with_flip_edges(FlipStrategy::Valence)?,
+            "quality" => {
+                let qw = input_config
+                    .get_mandatory_parsed_option::<f32>("FLIP_QUALITY_THRESHOLD", None)?;
+                remesher.with_flip_edges(FlipStrategy::weighted(qw))?
+            }
+            _ => Err(HallrError::InvalidParameter(
+                format!("Invalid 'FLIP_EDGES' parameter:{}", flip_strategy).to_string(),
+            ))?,
+        };
+
         let remesher = if let Ok(Some(smooth_weight)) =
             input_config.get_optional_parsed_option::<bool>("SMOOTH_VERTICES")
         {
@@ -98,6 +110,15 @@ pub(crate) fn process_command(
         } else {
             remesher.with_default_coplanar_threshold()?
         };
+
+        let remesher = if let Some(crease_threshold) =
+            input_config.get_optional_parsed_option::<f32>("CREASE_ANGLE_THRESHOLD")?
+        {
+            remesher.with_crease_angle_threshold(crease_threshold)?
+        } else {
+            remesher.with_default_crease_threshold()?
+        };
+
         Ok(remesher.run()?)
     })?;
 
