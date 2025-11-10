@@ -1,5 +1,5 @@
 [package]
-version = "0.1.17"
+version = "0.1.18"
 name = "hallr"
 edition = "2024"
 readme = "README.md"
@@ -29,8 +29,8 @@ krakel = {version = "0.4.1", features = ["vector-traits", "glam"]}
 hronn = { version = "0.6.0", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
 #hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
-#remesh = "=0.0.1"
-remesh = { git = "https://codeberg.org/eadf/remesh_rs.git"}
+remesh = "=0.0.2"
+#remesh = { git = "https://codeberg.org/eadf/remesh_rs.git"}
 #remesh = { path = "../remesh_rs", features = ["integrity_check"]}
 #remesh = { path = "../remesh_rs"}
 #dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel", "simd"]}

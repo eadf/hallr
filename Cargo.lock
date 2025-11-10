@@ -266,7 +266,7 @@ dependencies = [
 
 [[package]]
 name = "hallr"
-version = "0.1.17"
+version = "0.1.18"
 dependencies = [
  "ahash",
  "boostvoronoi",
@@ -363,15 +363,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
 dependencies = [
  "either",
-]
-
-[[package]]
-name = "keyed_priority_queue"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ee7893dab2e44ae5f9d0173f26ff4aa327c10b01b06a72b52dd9405b628640d"
-dependencies = [
- "indexmap",
 ]
 
 [[package]]
@@ -633,10 +624,10 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 
 [[package]]
 name = "remesh"
-version = "0.0.1"
-source = "git+https://codeberg.org/eadf/remesh_rs.git#4aa6f0e1390e09097ae80a4c9afd7527df5bfa53"
+version = "0.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "334865f88ad824f01e470559d003a630005d816915e9c7f5cea417948ac8b535"
 dependencies = [
- "keyed_priority_queue",
  "ordered-float 5.1.0",
  "rayon",
  "rustc-hash",
