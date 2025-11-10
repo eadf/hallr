@@ -80,7 +80,7 @@ pub(crate) fn process_command(
             "quality" => {
                 let qw = input_config
                     .get_mandatory_parsed_option::<f32>("FLIP_QUALITY_THRESHOLD", None)?;
-                remesher.with_flip_edges(FlipStrategy::weighted(qw))?
+                remesher.with_flip_edges(FlipStrategy::quality(qw))?
             }
             _ => Err(HallrError::InvalidParameter(
                 format!("Invalid 'FLIP_EDGES' parameter:{}", flip_strategy).to_string(),
@@ -88,19 +88,11 @@ pub(crate) fn process_command(
         };
 
         let remesher = if let Ok(Some(smooth_weight)) =
-            input_config.get_optional_parsed_option::<bool>("SMOOTH_VERTICES")
-        {
-            if smooth_weight {
-                remesher.with_default_smooth_weight()?
-            } else {
-                remesher.without_smooth_weight()?
-            }
-        } else if let Some(smooth_weight) =
-            input_config.get_optional_parsed_option::<f32>("SMOOTH_VERTICES")?
+            input_config.get_optional_parsed_option::<f32>("SMOOTH_WEIGHT")
         {
             remesher.with_smooth_weight(smooth_weight)?
         } else {
-            remesher
+            remesher.without_smooth_weight()?
         };
 
         let remesher = if let Some(coplanar_threshold) =

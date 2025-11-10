@@ -1363,6 +1363,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
     DEFAULT_COPLANAR_ANGLE_THRESHOLD_RAD = math.radians(5.0)
     DEFAULT_CREASE_ANGLE_THRESHOLD_RAD = math.radians(160)
     DEFAULT_EDGE_FLIP_QUALITY_WEIGHT = 1.1
+    DEFAULT_SMOOTH_WEIGHT = 10.0  # note: this is a percentage
 
     iterations_count_prop: bpy.props.IntProperty(
         name="Iterations",
@@ -1403,7 +1404,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
             ('VALENCE', "Valence", "Use valence-based priority during edge flipping"),
             ('QUALITY', "Quality", "Use a valence then aspect-ration priority during edge flipping"),
         ],
-        default='DISABLED'
+        default='QUALITY'
     )
 
     quality_threshold_use_default_prop: bpy.props.BoolProperty(
@@ -1423,13 +1424,29 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
     smooth_vertices_prop: bpy.props.BoolProperty(
         name="🚧 Smooth Vertices 🚧",
         description="Allow vertex smoothing during remeshing. Work in progress",
+        default=False
+    )
+
+    smooth_use_default_prop: bpy.props.BoolProperty(
+        name="Use default smooth weight",
+        description="Use default or custom smoothing weight",
         default=True
+    )
+
+    smooth_weight_value_prop: bpy.props.FloatProperty(
+        name="Smooth weight",
+        description="Smooth weith as a percentage of the target edge length",
+        default=DEFAULT_SMOOTH_WEIGHT,
+        min=1.0,
+        max=50.0,
+        subtype='PERCENTAGE',
     )
 
     coplanar_threshold_use_default_prop: bpy.props.BoolProperty(
         description="Use default or custom coplanarity threshold value. Dihedral angle between merge-able triangles",
         default=True
     )
+
     coplanar_threshold_value_prop: bpy.props.FloatProperty(
         name="Coplanarity Threshold",
         description="Dihedral angle between merge-able triangles",
@@ -1507,10 +1524,16 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
             "SPLIT_EDGES": str(self.split_edges_prop),
             "COLLAPSE_EDGES": str(self.collapse_edges_prop),
             "FLIP_EDGES": str(self.flip_edges_prop),
-            "SMOOTH_VERTICES": str(self.smooth_vertices_prop),
             "COPLANAR_ANGLE_THRESHOLD": str(math.degrees(coplanar_angle_rad)),
             "CREASE_ANGLE_THRESHOLD": str(math.degrees(crease_angle_rad)),
         }
+
+        if self.smooth_vertices_prop:
+            if self.smooth_use_default_prop:
+                config["SMOOTH_WEIGHT"] = str(self.DEFAULT_SMOOTH_WEIGHT / 100.0)
+            else:
+                config["SMOOTH_WEIGHT"] = str(self.smooth_weight_value_prop / 100.0)
+
         if self.flip_edges_prop == 'QUALITY':
             if self.quality_threshold_use_default_prop:
                 config["FLIP_QUALITY_THRESHOLD"] = str(self.DEFAULT_EDGE_FLIP_QUALITY_WEIGHT)
@@ -1558,7 +1581,18 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
         else:
             row.prop(self, "flip_edges_prop")
 
-        layout.prop(self, "smooth_vertices_prop")
+        row = layout.row()
+        if self.smooth_vertices_prop:
+            sub = row.row()
+            sub.alignment = 'LEFT'
+            sub.prop(self, "smooth_vertices_prop", text='🚧')
+            if self.smooth_use_default_prop:
+                sub.prop(self, "smooth_use_default_prop")
+            else:
+                sub.prop(self, "smooth_use_default_prop", text='')
+                sub.prop(self, "smooth_weight_value_prop")
+        else:
+            row.prop(self, "smooth_vertices_prop")
 
         row = layout.row()
         if self.coplanar_threshold_use_default_prop:

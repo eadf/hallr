@@ -634,7 +634,7 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 [[package]]
 name = "remesh"
 version = "0.0.1"
-source = "git+https://codeberg.org/eadf/remesh_rs.git#6b054aa66a5b8dcfa875e78e152581d69421d609"
+source = "git+https://codeberg.org/eadf/remesh_rs.git#4aa6f0e1390e09097ae80a4c9afd7527df5bfa53"
 dependencies = [
  "keyed_priority_queue",
  "ordered-float 5.1.0",
@@ -764,9 +764,9 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "syn"
-version = "2.0.109"
+version = "2.0.110"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f17c7e013e88258aa9543dcbe81aca68a667a9ac37cd69c9fbc07858bfe0e2f"
+checksum = "a99801b5bd34ede4cf3fc688c5919368fea4e4814a4664359503e6015b280aea"
 dependencies = [
  "proc-macro2",
  "quote",
