@@ -625,14 +625,14 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 [[package]]
 name = "remesh"
 version = "0.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "334865f88ad824f01e470559d003a630005d816915e9c7f5cea417948ac8b535"
+source = "git+https://codeberg.org/eadf/remesh_rs.git#0876a5d32a51a46c82c660a4e648346c548a9376"
 dependencies = [
+ "bytemuck",
  "ordered-float 5.1.0",
  "rayon",
  "rustc-hash",
  "smallvec",
- "vector-traits 0.6.0",
+ "vector-traits 0.6.1",
  "vob",
 ]
 
@@ -853,9 +853,9 @@ dependencies = [
 
 [[package]]
 name = "vector-traits"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68c2fa94f32a2397c483c3d262946a08b0dbe68fd6905a091025108d39a089a2"
+checksum = "950fb1dffc10e5f85adf684bf71c2462406f2cec0dafc26862316c24269e6179"
 dependencies = [
  "approx",
  "glam 0.30.9",

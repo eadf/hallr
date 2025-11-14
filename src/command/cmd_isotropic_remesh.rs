@@ -29,18 +29,15 @@ pub(crate) fn process_command(
     let world_matrix = model.world_orientation.to_vec();
 
     let remesher = time_it("Rust: building IsotropicRemesh input", || {
-        IsotropicRemesh::<f32, _, 0>::new(model.vertices, model.indices)
+        IsotropicRemesh::<f32, _, true>::new(model.vertices, model.indices)
     })?;
 
     println!("Rust: Starting remesh()");
     let (mut ffi_vertices, ffi_indices) = time_it_r("Rust: remesh()", || {
-        let remesher = remesher
-            .with_target_edge_length(
-                input_config.get_mandatory_parsed_option("TARGET_EDGE_LENGTH", None)?,
-            )?
-            .with_iterations(
-                input_config.get_mandatory_parsed_option::<usize>("ITERATIONS_COUNT", None)?,
-            )?;
+        //let remesher = remesher.with_print_stats(20)?;
+        let remesher = remesher.with_target_edge_length(
+            input_config.get_mandatory_parsed_option("TARGET_EDGE_LENGTH", None)?,
+        )?;
         let remesher = if let Ok(Some(edge_split)) =
             input_config.get_optional_parsed_option::<bool>("SPLIT_EDGES")
         {
@@ -111,7 +108,8 @@ pub(crate) fn process_command(
             remesher.with_default_crease_threshold()?
         };
 
-        Ok(remesher.run()?)
+        Ok(remesher
+            .run(input_config.get_mandatory_parsed_option::<usize>("ITERATIONS_COUNT", None)?)?)
     })?;
 
     if let Some(world_to_local) = model.get_world_to_local_transform()? {

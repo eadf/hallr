@@ -14,7 +14,7 @@ keywords = ["blender", "voronoi", "lsystems", "geometry"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-vector-traits = { version="0.5.0", features = ["glam"]}
+vector-traits = { version="0.5.0", features = ["glam", "glam-fast-math"]}
 #vector-traits = { path = "../vector-traits", features = ["glam"] }
 #vector-traits = {git = "https://codeberg.org/eadf/vector_traits_rs.git", features = ["glam"]}
 linestring = { version="0.15.0", features = ["glam"] }
@@ -29,16 +29,16 @@ krakel = {version = "0.4.1", features = ["vector-traits", "glam"]}
 hronn = { version = "0.6.0", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
 #hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
-remesh = "=0.0.2"
-#remesh = { git = "https://codeberg.org/eadf/remesh_rs.git"}
-#remesh = { path = "../remesh_rs", features = ["integrity_check"]}
-#remesh = { path = "../remesh_rs"}
+#remesh = { version "=0.0.2", , features = ["glam-fast-math"] }
+remesh = { git = "https://codeberg.org/eadf/remesh_rs.git", features = ["glam-fast-math"]}
+#remesh = { path = "../remesh_rs", features = ["integrity_check", "glam-fast-math"]}
+#remesh = { path = "../remesh_rs", features = ["glam-fast-math"]}
 #dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel", "simd"]}
 #dedup_mesh = { path = "../dedup_mesh_rs", features = ["parallel", "simd"]}
 dedup_mesh = { version = "=0.2.0", features = ["parallel", "simd"]}
 
 boostvoronoi = { version = "0.11.1" }
-thiserror = "2.0.12"
+thiserror = "2.0.17"
 ahash = "0.8.12"
 smallvec = "1.15.1"
 rayon = "1.10.0"
@@ -56,7 +56,7 @@ macaw = { version="^0.19"} # macaw must be the same version that saft uses
 rustc-hash = "2.1.1"
 
 [dev-dependencies]
-rand = "0.9.1"
+rand = "0.9.2"
 
 [features]
 generate_test_case_from_input = ["dep:ryu"]
