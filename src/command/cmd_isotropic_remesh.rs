@@ -38,35 +38,14 @@ pub(crate) fn process_command(
         let remesher = remesher.with_target_edge_length(
             input_config.get_mandatory_parsed_option("TARGET_EDGE_LENGTH", None)?,
         )?;
-        let remesher = if let Ok(Some(edge_split)) =
-            input_config.get_optional_parsed_option::<bool>("SPLIT_EDGES")
-        {
-            if edge_split {
-                remesher.with_default_split_multiplier()?
-            } else {
-                remesher.without_split_multiplier()?
-            }
-        } else if let Some(edge_split) =
-            input_config.get_optional_parsed_option::<f32>("SPLIT_EDGES")?
-        {
-            remesher.with_split_multiplier(edge_split)?
-        } else {
-            remesher
+        let remesher = match input_config.get_optional_parsed_option::<bool>("SPLIT_EDGES") {
+            Ok(Some(true)) => remesher.with_split_edges(SplitStrategy::DihedralAngle)?,
+            _ => remesher.without_split_edges()?,
         };
-        let remesher = if let Ok(Some(edge_split)) =
-            input_config.get_optional_parsed_option::<bool>("COLLAPSE_EDGES")
-        {
-            if edge_split {
-                remesher.with_default_collapse_multiplier()?
-            } else {
-                remesher.without_collapse_multiplier()?
-            }
-        } else if let Some(edge_split) =
-            input_config.get_optional_parsed_option::<f32>("COLLAPSE_EDGES")?
-        {
-            remesher.with_collapse_multiplier(edge_split)?
-        } else {
-            remesher
+
+        let remesher = match input_config.get_optional_parsed_option::<bool>("COLLAPSE_EDGES") {
+            Ok(Some(true)) => remesher.with_collapse_edges(CollapseStrategy::DihedralAngle)?,
+            _ => remesher.without_collapse_edges()?,
         };
 
         let flip_strategy = input_config

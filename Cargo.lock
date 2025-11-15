@@ -625,7 +625,7 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 [[package]]
 name = "remesh"
 version = "0.0.2"
-source = "git+https://codeberg.org/eadf/remesh_rs.git#0876a5d32a51a46c82c660a4e648346c548a9376"
+source = "git+https://codeberg.org/eadf/remesh_rs.git#f0a205dd53791187d5c97f6767949eaa4a9b9ccb"
 dependencies = [
  "bytemuck",
  "ordered-float 5.1.0",
