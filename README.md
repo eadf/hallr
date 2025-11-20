@@ -72,4 +72,4 @@ This project would not be possible without the following Rust crates:
 * vob (v3.0) — Licensed under the MIT license.
 * earcutr (v0.5) — Licensed under the ISC license.
 * ryu (v1.0) — Licensed under either the Apache 2.0 or Boost Software License 1.0.
-* rustc-hash (v2.1) — Dual-licensed under MIT or Apache 2.0.
+* rand (0.9) — Dual-licensed under MIT or Apache 2.0.

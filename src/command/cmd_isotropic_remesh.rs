@@ -34,7 +34,7 @@ pub(crate) fn process_command(
 
     println!("Rust: Starting remesh()");
     let (mut ffi_vertices, ffi_indices) = time_it_r("Rust: remesh()", || {
-        //let remesher = remesher.with_print_stats(20)?;
+        let remesher = remesher.with_print_stats(20)?;
         let remesher = remesher.with_target_edge_length(
             input_config.get_mandatory_parsed_option("TARGET_EDGE_LENGTH", None)?,
         )?;
@@ -43,9 +43,25 @@ pub(crate) fn process_command(
             _ => remesher.without_split_edges()?,
         };
 
-        let remesher = match input_config.get_optional_parsed_option::<bool>("COLLAPSE_EDGES") {
-            Ok(Some(true)) => remesher.with_collapse_edges(CollapseStrategy::DihedralAngle)?,
-            _ => remesher.without_collapse_edges()?,
+        let remesher = match input_config
+            .get_mandatory_parsed_option::<String>("COLLAPSE_EDGES", Some("Disabled".to_string()))?
+            .to_uppercase()
+            .as_str()
+        {
+            "QEM" => {
+                if let Some(qem_threshold) =
+                    input_config.get_optional_parsed_option::<f32>("COLLAPSE_QEM_THRESHOLD")?
+                {
+                    remesher.with_collapse_qem_threshold(qem_threshold)?
+                } else {
+                    remesher.with_collapse_edges(CollapseStrategy::Qem)?
+                }
+            }
+            "DIHEDRAL" => remesher.with_collapse_edges(CollapseStrategy::DihedralAngle)?,
+            unknown => {
+                println!("Got COLLAPSE_EDGES=={unknown}, turning off edge_collapse()");
+                remesher.without_collapse_edges()?
+            }
         };
 
         let flip_strategy = input_config

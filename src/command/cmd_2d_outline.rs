@@ -94,7 +94,7 @@ where
     println!();
     */
     // all_edges should now contain the outline and none of the internal edges.
-    // no need for internal_edges any more
+    // no need for internal_edges anymore
     drop(internal_edges);
     // vector number translation table
     let mut vector_rename_map = ahash::AHashMap::<u32, u32>::default();

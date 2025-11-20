@@ -1363,6 +1363,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
     DEFAULT_COPLANAR_ANGLE_THRESHOLD_RAD = math.radians(5.0)
     DEFAULT_CREASE_ANGLE_THRESHOLD_RAD = math.radians(160)
     DEFAULT_EDGE_FLIP_QUALITY_WEIGHT = 1.1
+    DEFAULT_COLLAPSE_QEM_WEIGHT = 0.1
     DEFAULT_SMOOTH_WEIGHT = 10.0  # note: this is a percentage
 
     iterations_count_prop: bpy.props.IntProperty(
@@ -1377,7 +1378,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
     target_edge_length_prop: bpy.props.FloatProperty(
         name="Target Edge Length",
         description="Target edge length after remeshing. Warning: Setting this too small will significantly increase processing time",
-        default=0.5,
+        default=DEFAULT_COLLAPSE_QEM_WEIGHT,
         min=0.001,
         max=3.0,
         precision=6,
@@ -1386,19 +1387,34 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
 
     split_edges_prop: bpy.props.BoolProperty(
         name="Split Edges",
-        description="Allow edge splitting during remeshing",
+        description="Use edge splitting during remeshing",
         default=True
     )
 
-    collapse_edges_prop: bpy.props.BoolProperty(
+    collapse_edges_prop: bpy.props.EnumProperty(
         name="Collapse Edges",
-        description="Allow edge collapsing during remeshing",
-        default=True
+        description="Use edge collapsing during remeshing",
+        items=[
+            ('DISABLED', "Disabled", "Disable edge flipping during remeshing"),
+            ('DIHEDRAL', "Dihedral angle", "Use dihedral angle priority during edge collapse"),
+            ('QEM', "Qem", "Use a quadratic error measurments priority during edge collapse"),
+        ],
+        default='DIHEDRAL'
+    )
+
+    collapse_qem_threshold_prop: bpy.props.FloatProperty(
+        name="Quadriq error",
+        description="The threshold used by QEM edge-collapse, as a percentage of target edge lenght",
+        default=0.1,
+        min=0.1,
+        max=90,
+        precision=3,
+        subtype='PERCENTAGE'
     )
 
     flip_edges_prop: bpy.props.EnumProperty(
         name="Flip Edges",
-        description="Edge flipping method during remeshing",
+        description="Use edge flipping method during remeshing",
         items=[
             ('DISABLED', "Disabled", "Disable edge flipping during remeshing"),
             ('VALENCE', "Valence", "Use valence-based priority during edge flipping"),
@@ -1528,6 +1544,9 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
             "CREASE_ANGLE_THRESHOLD": str(math.degrees(crease_angle_rad)),
         }
 
+        if self.collapse_edges_prop == "QEM":
+            config["COLLAPSE_QEM_THRESHOLD"] = str(self.collapse_qem_threshold_prop / 100.0)
+
         if self.smooth_vertices_prop:
             if self.smooth_use_default_prop:
                 config["SMOOTH_WEIGHT"] = str(self.DEFAULT_SMOOTH_WEIGHT / 100.0)
@@ -1569,7 +1588,12 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
         warning_row.label(text="         blender is unresponsive")
         warning_row.scale_y = 0.7
         layout.prop(self, "split_edges_prop")
-        layout.prop(self, "collapse_edges_prop")
+        if self.collapse_edges_prop == "QEM":
+            row = layout.row()
+            row.prop(self, "collapse_edges_prop")
+            row.prop(self, "collapse_qem_threshold_prop")
+        else:
+            layout.prop(self, "collapse_edges_prop")
         row = layout.row()
         if self.flip_edges_prop == 'QUALITY':
             row.prop(self, "flip_edges_prop", text='')
