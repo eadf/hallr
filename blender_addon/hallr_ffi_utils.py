@@ -56,7 +56,7 @@ class ProcessResult(ctypes.Structure):
                 ("map", StringMap)]
 
 
-def load_latest_dylib(prefix="libhallr_"):
+def _load_latest_dylib(prefix="libhallr_"):
     global HALLR_LIBRARY
     if DEV_MODE:
         # this will be find-and-replaced by the build script
@@ -106,7 +106,7 @@ def load_latest_dylib(prefix="libhallr_"):
     return rust_lib
 
 
-def ctypes_close_library(lib):
+def _ctypes_close_library(lib):
     if DEV_MODE:
         dlclose_func = ctypes.CDLL(None).dlclose
         dlclose_func.argtypes = [ctypes.c_void_p]
@@ -129,7 +129,7 @@ COMMAND_TAG = "▶"
 IDENTITY_FFI_MATRIX = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
 
-def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.TRIANGULATED) -> Tuple[List, List]:
+def _package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.TRIANGULATED) -> Tuple[List, List]:
     """
     Extract vertices and indices from a Blender mesh object in a consistent format.
 
@@ -146,7 +146,7 @@ def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.
         print(f"Python: not applying local-world transformation")
         vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in mesh_obj.data.vertices]
     else:
-        print(f"Python: applying local-world transformation: {get_matrices_col_major(mesh_obj)}")
+        print(f"Python: applying local-world transformation: {_get_matrices_col_major(mesh_obj)}")
         vertices = [Vector3(*(world_matrix @ v.co)[:]) for v in mesh_obj.data.vertices]
 
     # Handle indices based on mesh_format
@@ -174,57 +174,7 @@ def package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.
     return vertices, indices
 
 
-def handle_new_object(return_options: Dict[str, str], mesh_obj: bpy.types.Object, select_new_mesh: bool = True) -> None:
-    """
-    Set up the properties of the new object
-
-    Args:
-        return_options: Dictionary of options for post-processing
-        mesh_obj: The new mesh object to handle
-        select_new_mesh: Whether to select the new mesh
-    """
-
-    if select_new_mesh:
-        # Make the new object active
-        bpy.context.view_layer.objects.active = mesh_obj
-
-        bpy.ops.object.mode_set(mode='EDIT')
-
-        bpy.ops.mesh.faces_shade_flat()
-
-        # Ensure object mode
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        # Deselect all objects
-        bpy.ops.object.select_all(action='DESELECT')
-
-        # Select the newly created object
-        mesh_obj.select_set(True)
-
-    # Process post-creation options
-    remove_doubles = False
-    remove_doubles_threshold = 0.00001
-
-    for key, value in return_options.items():
-        if key == "ERROR":
-            raise HallrException(str(value))
-        if key == VERTEX_MERGE_TAG:
-            try:
-                remove_doubles_threshold = float(value)
-                remove_doubles = True
-            except ValueError:
-                pass
-
-    if remove_doubles:
-        bpy.ops.object.mode_set(mode='EDIT')
-        with timer("Python: bpy.ops.mesh.remove_doubles()"):
-            bpy.ops.mesh.remove_doubles(threshold=remove_doubles_threshold)
-        bpy.ops.object.editmode_toggle()
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.mode_set(mode='EDIT')
-
-
-def process_mesh_from_ffi(ffi_vertices_ptr, ffi_indices_ptr, vertex_count, index_count, return_options):
+def _process_mesh_from_ffi(ffi_vertices_ptr, ffi_indices_ptr, vertex_count, index_count, return_options):
     """
     Process mesh data directly from FFI pointers before they're released
     """
@@ -296,39 +246,77 @@ def process_mesh_from_ffi(ffi_vertices_ptr, ffi_indices_ptr, vertex_count, index
     return new_mesh
 
 
-def update_existing_object(active_obj: bpy.types.Object,
-                           return_options: Dict[str, str],
-                           new_mesh) -> None:
+def _handle_new_object(return_options: Dict[str, str],
+                       mesh_obj: bpy.types.Object,
+                       select_new_mesh: bool = True) -> None:
+    """
+    Set up new object properties. Must be called in OBJECT mode.
+
+    Args:
+        return_options: Dictionary of options for post-processing
+        mesh_obj: The new mesh object to handle
+        select_new_mesh: Whether to select the new mesh
+    """
+    # Assert we're in OBJECT mode
+    assert bpy.context.object is None or bpy.context.object.mode == 'OBJECT', \
+        "handle_new_object must be called in OBJECT mode"
+
+    # Set flat shading directly on mesh
+    for poly in mesh_obj.data.polygons:
+        poly.use_smooth = False
+
+    if select_new_mesh:
+        # Deselect all objects
+        bpy.ops.object.select_all(action='DESELECT')
+
+        # Select and make active
+        mesh_obj.select_set(True)
+        bpy.context.view_layer.objects.active = mesh_obj
+
+    # Handle vertex merging
+    if VERTEX_MERGE_TAG in return_options:
+        try:
+            remove_doubles_threshold = float(return_options.get(VERTEX_MERGE_TAG))
+            print(f"Python: removing doubles by {remove_doubles_threshold}")
+            with timer("Python: bmesh.ops.remove_doubles()"):
+                _merge_vertices_bmesh(mesh_obj.data, remove_doubles_threshold)
+        except ValueError:
+            pass
+
+
+def _update_existing_object(active_obj: bpy.types.Object,
+                            return_options: Dict[str, str],
+                            new_mesh) -> None:
+    """
+    Update object mesh data. Must be called in OBJECT mode.
+    """
+    # Assert we're in OBJECT mode
+    assert bpy.context.object is None or bpy.context.object.mode == 'OBJECT', \
+        "update_existing_object must be called in OBJECT mode"
+
     # Store reference to old mesh
     old_mesh = active_obj.data
 
-    active_obj.select_set(True)
-    # Switch to object mode for mesh operations
-    bpy.ops.object.mode_set(mode='OBJECT')
-
+    # Replace mesh data
     active_obj.data = new_mesh
-    bpy.ops.object.shade_flat()
 
-    # Now the old mesh should have one fewer user
+    # Set flat shading directly on mesh polygons
+    for poly in new_mesh.polygons:
+        poly.use_smooth = False
+
+    # Clean up old mesh
     if old_mesh.users == 0 and not old_mesh.use_fake_user:
         bpy.data.meshes.remove(old_mesh)
 
-    # Handle remove doubles if needed
+    # Handle vertex merging using BMesh (no mode change needed)
     if VERTEX_MERGE_TAG in return_options:
-        bpy.ops.object.mode_set(mode='EDIT')
         try:
             remove_doubles_threshold = float(return_options.get(VERTEX_MERGE_TAG))
-            print(f"Python: removing doubles by {remove_doubles_threshold} (blender op)")
-            with timer("Python: bpy.ops.mesh.remove_doubles()"):
-                result = bpy.ops.mesh.remove_doubles(threshold=remove_doubles_threshold)
+            print(f"Python: removing doubles by {remove_doubles_threshold} (bmesh)")
+            with timer("Python: bmesh.ops.remove_doubles()"):
+                _merge_vertices_bmesh(new_mesh, remove_doubles_threshold)
         except ValueError as e:
             print(f"ValueError details: {str(e)}")
-            print(f"Input value that caused error: {return_options.get(VERTEX_MERGE_TAG)}")
-            print(f"Converted to float: {float(return_options.get(VERTEX_MERGE_TAG))}")
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-    # Return to edit mode if that's where we started
-    bpy.ops.object.mode_set(mode='EDIT')
 
 
 def apply_all_transformations(obj: bpy.types.Object, temp_name: str) -> Tuple[bpy.types.Object, bool]:
@@ -350,7 +338,7 @@ def apply_all_transformations(obj: bpy.types.Object, temp_name: str) -> Tuple[bp
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
 
-    if has_un_applied_transformations(obj):
+    if _has_un_applied_transformations(obj):
         # Duplicate the object
         bpy.ops.object.duplicate()
         dup_obj = bpy.context.object
@@ -373,7 +361,7 @@ def apply_all_transformations_direct(obj: bpy.types.Object) -> bpy.types.Object:
     Returns:
         The prepared object
     """
-    if has_un_applied_transformations(obj):
+    if _has_un_applied_transformations(obj):
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
@@ -390,6 +378,8 @@ def process_mesh_with_rust(config: Dict[str, str],
                            create_new: bool = True) -> Optional[bpy.types.Object]:
     """
     Process mesh data with the Rust library.
+    This is the ONLY function that handles mode switching.
+    All lower-level functions assume OBJECT mode.
 
     Args:
         config: Dictionary of configuration options for Rust
@@ -403,6 +393,46 @@ def process_mesh_with_rust(config: Dict[str, str],
         If create_new is True: The newly created object, a status message (string)
         If create_new is False: None (the active object is modified), a status message (string)
     """
+    # Store the original mode at the very start
+    original_mode = bpy.context.object.mode if bpy.context.object else 'OBJECT'
+
+    try:
+        # Ensure OBJECT mode for all operations
+        if bpy.context.object and bpy.context.object.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        result = _process_mesh_with_rust(config, primary_object, secondary_object, primary_format, secondary_format,
+                                         create_new)
+        return result
+
+    finally:
+        # Restore original mode
+        if original_mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode=original_mode)
+
+
+def _process_mesh_with_rust(config: Dict[str, str],
+                            primary_object: Optional[bpy.types.Object] = None,
+                            secondary_object: Optional[bpy.types.Object] = None,
+                            primary_format: Optional[str] = None,
+                            secondary_format: Optional[str] = None,
+                            create_new: bool = True) -> Optional[bpy.types.Object]:
+    """
+    Process mesh data with the Rust library.
+
+    Args:
+        config: Dictionary of configuration options for Rust
+        primary_object: Optional Primary Blender mesh object (can be None)
+        secondary_object: Optional secondary mesh object
+        primary_format: Optional Format for the primary mesh
+        secondary_format: Optional Format for the secondary mesh
+        create_new: If True, create a new object; if False, modify the active object
+
+    Returns:
+        If create_new is True: The newly created object, a status message (string)
+        If create_new is False: None (the active object is modified), a status message (string)
+    """
+
     original_vertices = 0
     original_indices = 0
 
@@ -434,14 +464,14 @@ def process_mesh_with_rust(config: Dict[str, str],
         primary_obj_to_process = primary_object
 
         # Extract mesh data
-        primary_vertices, primary_indices = package_mesh_data(primary_obj_to_process, primary_format)
+        primary_vertices, primary_indices = _package_mesh_data(primary_obj_to_process, primary_format)
         original_vertices += len(primary_vertices)
         original_indices += len(primary_indices)
         vertices.extend(primary_vertices)
         indices.extend(primary_indices)
 
         # Get transformation matrices
-        matrices.extend(get_matrices_col_major(primary_object))
+        matrices.extend(_get_matrices_col_major(primary_object))
 
     if secondary_object:
         mesh_format += secondary_format
@@ -453,7 +483,7 @@ def process_mesh_with_rust(config: Dict[str, str],
         config["first_index_model_1"] = str(first_index_model_1)
 
         # Extract mesh data
-        secondary_vertices, secondary_indices = package_mesh_data(secondary_object, secondary_format)
+        secondary_vertices, secondary_indices = _package_mesh_data(secondary_object, secondary_format)
         original_vertices += len(secondary_vertices)
         original_indices += len(secondary_indices)
 
@@ -461,7 +491,7 @@ def process_mesh_with_rust(config: Dict[str, str],
         indices.extend(secondary_indices)
 
         # Get transformation matrices
-        matrices.extend(get_matrices_col_major(secondary_object))
+        matrices.extend(_get_matrices_col_major(secondary_object))
 
     if mesh_format != "":
         config[MESH_FORMAT_TAG] = mesh_format
@@ -482,9 +512,7 @@ def process_mesh_with_rust(config: Dict[str, str],
     print(f"Python: sending {len(vertices)} vertices, {len(indices)} indices, {len(matrices) / 16.0} matrices")
 
     # Fetch Rust library
-    rust_lib = load_latest_dylib()
-
-    bpy.ops.object.mode_set(mode='EDIT')
+    rust_lib = _load_latest_dylib()
 
     # Call Rust function
     rust_result = rust_lib.process_geometry(
@@ -501,18 +529,16 @@ def process_mesh_with_rust(config: Dict[str, str],
                 raise HallrException(value)
             return_options[key] = value
 
-        new_mesh = process_mesh_from_ffi(rust_result.geometry.vertices, rust_result.geometry.indices,
-                                         rust_result.geometry.vertex_count, rust_result.geometry.indices_count,
-                                         return_options)
+        new_mesh = _process_mesh_from_ffi(rust_result.geometry.vertices, rust_result.geometry.indices,
+                                          rust_result.geometry.vertex_count, rust_result.geometry.indices_count,
+                                          return_options)
         indices_count = rust_result.geometry.indices_count
     finally:
         # Free Rust memory
         rust_lib.free_process_results(rust_result)
 
-    bpy.ops.object.mode_set(mode='OBJECT')
-
     if DEV_MODE:
-        ctypes_close_library(rust_lib)
+        _ctypes_close_library(rust_lib)
 
     print("Python: received config: ", return_options)
     print(
@@ -525,14 +551,14 @@ def process_mesh_with_rust(config: Dict[str, str],
 
         new_object.data = new_mesh
         # Handle the new object (link to scene, select, etc.)
-        handle_new_object(return_options, new_object)
+        _handle_new_object(return_options, new_object)
         return new_object, f"New mesh: vertices:{len(new_mesh.vertices)} indices:{indices_count}"
     else:
         print("Python: updating old object with new mesh")
         # Update existing object
         bpy.context.view_layer.objects.active = primary_object
-        update_existing_object(primary_object, return_options, new_mesh)
-        return None, f"Modified mesh: Δvertices:{len(new_mesh.vertices)-original_vertices} Δindices:{indices_count-original_indices}"
+        _update_existing_object(primary_object, return_options, new_mesh)
+        return None, f"Modified mesh: Δvertices:{len(new_mesh.vertices) - original_vertices} Δindices:{indices_count - original_indices}"
 
 
 # Simpler convenience functions that wrap the main processing function
@@ -596,7 +622,7 @@ def cleanup_duplicated_object(an_obj):
         print("obj_name was not found")
 
 
-def get_matrices_col_major(bpy_object):
+def _get_matrices_col_major(bpy_object):
     """ Return the world orientation as an array of 16 floats"""
     bm = bpy_object.matrix_world
     return [
@@ -629,7 +655,7 @@ def is_loop(mesh):
     return len(edge_count_per_vertex) == len(mesh.edges)
 
 
-def has_un_applied_transformations(obj):
+def _has_un_applied_transformations(obj):
     """
     Returns true if an object has transformations
     """
@@ -652,3 +678,19 @@ def has_un_applied_transformations(obj):
     if obj.scale.x != 1 or obj.scale.y != 1 or obj.scale.z != 1:
         return True
     return False
+
+
+def _merge_vertices_bmesh(mesh: bpy.types.Mesh, threshold: float) -> None:
+    """Merge vertices using BMesh without changing modes."""
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+
+    # Remove doubles
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=threshold)
+
+    # Write back to mesh
+    bm.to_mesh(mesh)
+    bm.free()
+
+    # Update mesh to reflect changes
+    mesh.update()

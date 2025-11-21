@@ -197,9 +197,6 @@ class MESH_OT_hallr_2d_outline(bpy.types.Operator, BaseOperatorMixin):
     def execute(self, context):
         obj = context.active_object
 
-        # Ensure the object is in object mode
-        bpy.ops.object.mode_set(mode='OBJECT')
-
         config = {hallr_ffi_utils.COMMAND_TAG: "2d_outline"}
 
         try:
@@ -234,9 +231,6 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator, BaseOperatorMixin):
     def execute(self, context):
         obj = context.active_object
 
-        # Switch to object mode to gather data without changing the user's selection
-        bpy.ops.object.mode_set(mode='OBJECT')
-
         bpy.context.view_layer.update()
 
         config = {hallr_ffi_utils.COMMAND_TAG: "knife_intersect"}
@@ -268,10 +262,6 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator, BaseOperatorMixin):
 
     def execute(self, context):
         obj = context.active_object
-
-        # Switch to object mode to gather data without changing the user's selection
-        bpy.ops.object.mode_set(mode='OBJECT')
-
         config = {hallr_ffi_utils.COMMAND_TAG: "convex_hull_2d"}
 
         try:
@@ -322,9 +312,6 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator, BaseOperatorMixin):
 
     def execute(self, context):
         obj = context.active_object
-
-        # Ensure the object is in object mode
-        bpy.ops.object.mode_set(mode='OBJECT')
 
         config = {hallr_ffi_utils.COMMAND_TAG: "simplify_rdp", "simplify_distance": str(self.simplify_distance_prop),
                   "simplify_3d": str(self.simplify_3d_prop).lower()}
@@ -662,9 +649,6 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
     def execute(self, context):
         obj = context.active_object
 
-        # Ensure the object is in object mode
-        bpy.ops.object.mode_set(mode='OBJECT')
-
         config = {hallr_ffi_utils.COMMAND_TAG: "voronoi_mesh",
                   "DISTANCE": str(self.distance_prop),
                   "NEGATIVE_RADIUS": str(self.negative_radius_prop).lower(),
@@ -755,9 +739,6 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
         if obj.type != 'MESH':
             self.report({'ERROR'}, "Active object is not a mesh!")
             return {'CANCELLED'}
-
-        # Ensure the object is in object mode
-        bpy.ops.object.mode_set(mode='OBJECT')
 
         config = {hallr_ffi_utils.COMMAND_TAG: "voronoi_diagram",
                   "DISTANCE": str(self.distance_prop),
@@ -860,9 +841,6 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
     def execute(self, context):
         obj = context.active_object
 
-        # Ensure the object is in object mode
-        bpy.ops.object.mode_set(mode='OBJECT')
-
         config = {hallr_ffi_utils.COMMAND_TAG: self.cmd_backend_prop,
                   "SDF_DIVISIONS": str(self.sdf_divisions_prop),
                   "SDF_RADIUS_MULTIPLIER": str(self.sdf_radius_multiplier_prop),
@@ -963,9 +941,6 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
 
     def execute(self, context):
         obj = context.active_object
-
-        # Ensure the object is in object mode
-        bpy.ops.object.mode_set(mode='OBJECT')
 
         config = {hallr_ffi_utils.COMMAND_TAG: self.cmd_backend_prop,
                   "SDF_DIVISIONS": str(self.sdf_divisions_prop),
@@ -1137,9 +1112,6 @@ class MESH_OT_hallr_discretize(bpy.types.Operator, BaseOperatorMixin):
     def execute(self, context):
         obj = context.active_object
 
-        # Ensure the object is in object mode
-        bpy.ops.object.mode_set(mode='OBJECT')
-
         config = {hallr_ffi_utils.COMMAND_TAG: "discretize",
                   "discretize_length": str(self.discretize_length_prop),
                   }
@@ -1244,9 +1216,6 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
     def execute(self, context):
         obj = context.active_object
 
-        # Ensure the object is in object mode
-        bpy.ops.object.mode_set(mode='OBJECT')
-
         config = {hallr_ffi_utils.COMMAND_TAG: "centerline",
                   "ANGLE": str(math.degrees(self.angle_prop)),
                   "REMOVE_INTERNALS"
@@ -1323,9 +1292,6 @@ class MESH_OT_hallr_mesh_cleanup(bpy.types.Operator, BaseOperatorMixin):
     def execute(self, context):
         obj = context.active_object
 
-        # Ensure the object is in object mode
-        bpy.ops.object.mode_set(mode='OBJECT')
-
         config = {
             hallr_ffi_utils.COMMAND_TAG: "mesh_cleanup",
             "max_iterations": str(self.iterations_count_prop),
@@ -1363,7 +1329,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
     DEFAULT_COPLANAR_ANGLE_THRESHOLD_RAD = math.radians(5.0)
     DEFAULT_CREASE_ANGLE_THRESHOLD_RAD = math.radians(160)
     DEFAULT_EDGE_FLIP_QUALITY_WEIGHT = 1.1
-    DEFAULT_COLLAPSE_QEM_WEIGHT = 0.1
+    DEFAULT_COLLAPSE_QEM_WEIGHT = 0.5
     DEFAULT_SMOOTH_WEIGHT = 10.0  # note: this is a percentage
 
     iterations_count_prop: bpy.props.IntProperty(
@@ -1405,7 +1371,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
     collapse_qem_threshold_prop: bpy.props.FloatProperty(
         name="Quadriq error",
         description="The threshold used by QEM edge-collapse, as a percentage of target edge lenght",
-        default=0.1,
+        default=10.0,
         min=0.1,
         max=90,
         precision=3,
@@ -1522,8 +1488,6 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
             else:
                 context.tool_settings.mesh_select_mode = original_select_mode
 
-        # Ensure the object is in object mode
-        bpy.ops.object.mode_set(mode='OBJECT')
         if self.coplanar_threshold_use_default_prop:
             coplanar_angle_rad = self.DEFAULT_COPLANAR_ANGLE_THRESHOLD_RAD
         else:
