@@ -209,9 +209,6 @@ class MESH_OT_hallr_2d_outline(bpy.types.Operator, BaseOperatorMixin):
             self.report({'ERROR'}, f"Error: {e}")
             return {'CANCELLED'}
 
-        # Switch back to edit mode
-        bpy.ops.object.mode_set(mode='EDIT')
-
         return {'FINISHED'}
 
 
@@ -246,9 +243,6 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator, BaseOperatorMixin):
             self.report({'ERROR'}, f"Error: {e}")
             return {'CANCELLED'}
 
-        # Switch back to edit mode
-        bpy.ops.object.mode_set(mode='EDIT')
-
         return {'FINISHED'}
 
 
@@ -275,9 +269,6 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator, BaseOperatorMixin):
             traceback.print_exc()
             self.report({'ERROR'}, f"Error: {e}")
             return {'CANCELLED'}
-
-        # Switch back to edit mode
-        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
@@ -326,9 +317,6 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator, BaseOperatorMixin):
             traceback.print_exc()
             self.report({'ERROR'}, f"Error: {e}")
             return {'CANCELLED'}
-
-        # Switch back to edit mode
-        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
@@ -667,9 +655,6 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
             self.report({'ERROR'}, f"Error: {e}")
             return {'CANCELLED'}
 
-        # Switch back to edit mode
-        bpy.ops.object.mode_set(mode='EDIT')
-
         return {'FINISHED'}
 
     def draw(self, context):
@@ -757,9 +742,6 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
             traceback.print_exc()
             self.report({'ERROR'}, f"Error: {e}")
             return {'CANCELLED'}
-
-        # Switch back to edit mode
-        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
@@ -858,9 +840,6 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
             self.report({'ERROR'}, f"Error: {e}")
             return {'CANCELLED'}
 
-        # Switch back to edit mode
-        bpy.ops.object.mode_set(mode='EDIT')
-
         return {'FINISHED'}
 
     def draw(self, context):
@@ -958,9 +937,6 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
             traceback.print_exc()
             self.report({'ERROR'}, f"Error: {e}")
             return {'CANCELLED'}
-
-        # Switch back to edit mode
-        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
@@ -1127,9 +1103,6 @@ class MESH_OT_hallr_discretize(bpy.types.Operator, BaseOperatorMixin):
             self.report({'ERROR'}, f"Error: {e}")
             return {'CANCELLED'}
 
-        # Switch back to edit mode
-        bpy.ops.object.mode_set(mode='EDIT')
-
         return {'FINISHED'}
 
     def draw(self, context):
@@ -1241,9 +1214,6 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
             traceback.print_exc()
             self.report({'ERROR'}, f"Error: {e}")
             return {'CANCELLED'}
-
-        # Switch back to edit mode
-        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
@@ -1469,7 +1439,8 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
 
         if self.deny_non_manifold_prop:
             # Switch to edit mode and select non-manifold geometry
-            bpy.ops.object.mode_set(mode='EDIT')
+            if obj.mode != 'EDIT':
+                bpy.ops.object.mode_set(mode='EDIT')
             original_select_mode = context.tool_settings.mesh_select_mode[:]
             bpy.ops.mesh.select_mode(type='VERT')
             bpy.ops.mesh.select_all(action='DESELECT')
