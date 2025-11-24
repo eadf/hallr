@@ -1,0 +1,22 @@
+schema_version = "1.0.0"
+
+id = "Hallr"
+name = "Hallr"
+type = "add-on"
+version = "0.1.18"
+maintainer = "EAD https://github.com/eadf"
+tagline = "A collection of addons written in Rust"
+blender_version_min = "3.4.1"
+
+license = ["SPDX:AGPL-3.0-or-later"]
+
+tags = ["Object"]
+description = """
+A collection of addons written in Rust
+"""
+
+# Permissions for Rust FFI shared libraries
+[permissions]
+files = "Load bundled Rust libraries for FFI. Rust code performs no file I/O or network operations - pure computation only."
+# Development Note: Debug builds may generate Rust test cases from input meshes
+# when explicitly enabled via feature flags and ENV variables. This does not occur in release builds.

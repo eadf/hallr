@@ -116,7 +116,7 @@ def run_cargo_build(dev_mode, debug, generate_tests, display_sdf_chunks):
 
 
 def copy_python_files(source_dir, dest_dir):
-    """Copy Python files from the source to the destination directory."""
+    """Copy blender addon files files from the source to the destination directory."""
     clear_directory(os.path.join(dest_dir, "__pycache__"), delete_root=True)
     py_files = glob.glob(f"{source_dir}/*.py")
     os.makedirs(dest_dir, exist_ok=True)
@@ -126,6 +126,15 @@ def copy_python_files(source_dir, dest_dir):
             os.chmod(dest_file, 0o666)
         shutil.copy(source_file, dest_file)
         print(f"Copied Python file: {source_file} -> {dest_file}")
+
+    # Copy blender_manifest.toml specifically
+    manifest_source = os.path.join(source_dir, "blender_manifest.toml")
+    manifest_dest = os.path.join(dest_dir, "blender_manifest.toml")
+    if os.path.exists(manifest_source):
+        if os.path.isfile(manifest_dest):
+            os.chmod(manifest_dest, 0o666)
+        shutil.copy(manifest_source, manifest_dest)
+        print(f"Copied manifest: {manifest_source} -> {manifest_dest}")
 
 
 def process_python_files(addon_exported_path, dev_mode):

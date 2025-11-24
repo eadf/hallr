@@ -34,7 +34,7 @@ pub(crate) fn process_command(
 
     println!("Rust: Starting remesh()");
     let (mut ffi_vertices, ffi_indices) = time_it_r("Rust: remesh()", || {
-        let remesher = remesher.with_print_stats(20)?;
+        //let remesher = remesher.with_print_stats(26)?;
         let remesher = remesher.with_target_edge_length(
             input_config.get_mandatory_parsed_option("TARGET_EDGE_LENGTH", None)?,
         )?;

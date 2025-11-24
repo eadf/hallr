@@ -300,6 +300,11 @@ def _update_existing_object(active_obj: bpy.types.Object,
     # Replace mesh data
     active_obj.data = new_mesh
 
+    # Force complete update
+    new_mesh.update()
+    new_mesh.update_tag()
+    active_obj.update_tag(refresh={'OBJECT', 'DATA'})
+
     # Set flat shading directly on mesh polygons
     for poly in new_mesh.polygons:
         poly.use_smooth = False
@@ -406,6 +411,9 @@ def process_mesh_with_rust(config: Dict[str, str],
         return result
 
     finally:
+        # CRITICAL: Force dependency graph update before returning to edit mode
+        bpy.context.view_layer.update()
+
         # Restore original mode
         if original_mode != 'OBJECT':
             bpy.ops.object.mode_set(mode=original_mode)
