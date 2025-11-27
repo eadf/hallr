@@ -406,9 +406,11 @@ def process_mesh_with_rust(config: Dict[str, str],
         if bpy.context.object and bpy.context.object.mode != 'OBJECT':
             bpy.ops.object.mode_set(mode='OBJECT')
 
+        start_time = time.time()
+
         result = _process_mesh_with_rust(config, primary_object, secondary_object, primary_format, secondary_format,
                                          create_new)
-        return result
+        return result[0],result[1] + f" duration:{_duration_to_str(time.time() - start_time)}"
 
     finally:
         # CRITICAL: Force dependency graph update before returning to edit mode
@@ -702,3 +704,18 @@ def _merge_vertices_bmesh(mesh: bpy.types.Mesh, threshold: float) -> None:
 
     # Update mesh to reflect changes
     mesh.update()
+
+def _duration_to_str(duration):
+    units = [
+        ('s', 1),
+        ('ms', 1e3),
+        ('μs', 1e6),
+        ('ns', 1e9)
+    ]
+
+    for unit, factor in units:
+        if duration * factor >= 1 or unit == 'ns':
+            value = duration * factor
+            return f"{value:.2f} {unit}"
+    # this fallback is actually never used
+    return f"{duration:.2f} s"

@@ -3,6 +3,7 @@
 # Hallr
 
 [![Rust](https://github.com/eadf/hallr/actions/workflows/rust_test.yml/badge.svg)](https://github.com/eadf/hallr/actions/workflows/rust_test.yml)![License](https://img.shields.io/crates/l/hallr)
+[![MSRV](https://img.shields.io/badge/rustc-1.87+-lightgray.svg?logo=rust)](https://www.rust-lang.org)
 [![Sponsor](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/eadf)
 
 Hallr is a Blender add-on written in Rust and Python. Python is used for the blender add-on system glue, sending and receiving data to the rust implementation.
@@ -42,8 +43,6 @@ python3 build_script.py --dev_mode
 ```
 
 Then, open and run the `blender_addon_exported/__init__.py` file inside Blender. In this mode, Blender will automatically use the latest compiled Rust library, so you only need to recompile your Rust code to see changes take effect the next time you run an operation.
-
-For this purpose, the Rust tool watchexec works exceptionally well for automatically recompiling when source files change.
 
 ## Contributing
 We welcome contributions from the community! Feel free to submit pull requests or report issues on our [GitHub repository](https://github.com/eadf/hallr).

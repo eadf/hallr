@@ -1332,16 +1332,16 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
         description="Use edge collapsing during remeshing",
         items=[
             ('DISABLED', "Disabled", "Disable edge flipping during remeshing"),
-            ('DIHEDRAL', "Dihedral angle", "Use dihedral angle priority during edge collapse"),
-            ('QEM', "Qem", "Use a quadratic error measurments priority during edge collapse"),
+            ('DIHEDRAL', "Dihedral angle", "Use dihedral angle priority during edge collapse (faster)"),
+            ('QEM', "Qem", "Use a quadratic error measurements priority during edge collapse (slow)"),
         ],
-        default='DIHEDRAL'
+        default='QEM'
     )
 
     collapse_qem_threshold_prop: bpy.props.FloatProperty(
-        name="Quadriq error",
-        description="The threshold used by QEM edge-collapse, as a percentage of target edge lenght",
-        default=10.0,
+        name="Quadratic error",
+        description="The threshold used by QEM edge-collapse, as a percentage of target edge length",
+        default=5.0,
         min=0.1,
         max=90,
         precision=3,
@@ -1387,7 +1387,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
 
     smooth_weight_value_prop: bpy.props.FloatProperty(
         name="Smooth weight",
-        description="Smooth weith as a percentage of the target edge length",
+        description="Smooth weight as a percentage of the target edge length",
         default=DEFAULT_SMOOTH_WEIGHT,
         min=1.0,
         max=50.0,
@@ -1423,7 +1423,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
 
     deny_non_manifold_prop: bpy.props.BoolProperty(
         name="Deny non manifold mesh",
-        description="Check if the mesh is non-manifold before sending to baby_shark",
+        description="Check if the mesh is non-manifold before sending to Rust functions",
         default=True
     )
 

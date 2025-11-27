@@ -29,11 +29,12 @@ pub(crate) fn process_command(
     let world_matrix = model.world_orientation.to_vec();
 
     let remesher = time_it("Rust: building IsotropicRemesh input", || {
+        // using the fast/unsafe variant
         IsotropicRemesh::<f32, _, true>::new(model.vertices, model.indices)
     })?;
 
     println!("Rust: Starting remesh()");
-    let (mut ffi_vertices, ffi_indices) = time_it_r("Rust: remesh()", || {
+    let (mut ffi_vertices, ffi_indices) = time_it_r("Rust: remesh() took", || {
         //let remesher = remesher.with_print_stats(26)?;
         let remesher = remesher.with_target_edge_length(
             input_config.get_mandatory_parsed_option("TARGET_EDGE_LENGTH", None)?,

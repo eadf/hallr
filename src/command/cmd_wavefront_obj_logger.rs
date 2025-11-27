@@ -10,7 +10,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-/// This is a command that peeks at incoming data and writes it to file
+/// This is a command that peeks at incoming data and writes it to an .obj wavefront file
 pub(crate) fn process_command(config: &ConfigType, models: &[Model<'_>]) -> Result<(), HallrError> {
     let log_dir = match env::var("HALLR_DATA_LOGGER_PATH") {
         Ok(path) => PathBuf::from(path),
