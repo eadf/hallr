@@ -947,9 +947,9 @@ dependencies = [
 
 [[package]]
 name = "private-gemm-x86"
-version = "0.1.19"
+version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c889117925799d04d54915575b5f1f9c74a39c0f96541b6179df589f1d4212ad"
+checksum = "0af8c3e5087969c323f667ccb4b789fa0954f5aa650550e38e81cf9108be21b5"
 dependencies = [
  "defer",
  "interpol",
@@ -1088,8 +1088,9 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 
 [[package]]
 name = "remesh"
-version = "0.0.2"
-source = "git+https://codeberg.org/eadf/remesh_rs.git#781c6b95fac0efd666074b537628b04a638a1f08"
+version = "0.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b44acfcc1eac77cc1159ad715a71d86090dc8aa94da37f62e1880cbfb90acf5"
 dependencies = [
  "bytemuck",
  "faer",
@@ -1443,9 +1444,9 @@ dependencies = [
 
 [[package]]
 name = "winnow"
-version = "0.7.13"
+version = "0.7.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21a0236b59786fed61e2a80582dd500fe61f18b5dca67a4a067d0bc9039339cf"
+checksum = "5a5364e9d77fcdeeaa6062ced926ee3381faa2ee02d3eb83a5c27a8825540829"
 dependencies = [
  "memchr",
 ]

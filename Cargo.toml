@@ -29,8 +29,8 @@ krakel = {version = "0.4.1", features = ["vector-traits", "glam"]}
 hronn = { version = "0.6.0", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
 #hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
-#remesh = { version "=0.0.2", , features = ["glam-fast-math"] }
-remesh = { git = "https://codeberg.org/eadf/remesh_rs.git", features = ["glam-fast-math"]}
+remesh = { version = "=0.0.3", features = ["glam-fast-math"] }
+#remesh = { git = "https://codeberg.org/eadf/remesh_rs.git", features = ["glam-fast-math"]}
 #remesh = { path = "../remesh_rs", features = ["integrity_check", "glam-fast-math"]}
 #remesh = { path = "../remesh_rs", features = ["glam-fast-math"]}
 #dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel", "simd"]}
