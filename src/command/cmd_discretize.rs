@@ -50,7 +50,7 @@ pub(crate) fn build_output_model(
         extent.x.max(extent.y).max(extent.z) * descretization_length_factor
     };
 
-    let mut out_indices = Vec::<usize>::with_capacity(indices.len());
+    let mut out_indices = Vec::<u32>::with_capacity(indices.len());
 
     let (shapes, visited) = linestring::prelude::divide_into_shapes(&indices);
     for index in visited.iter_unset_bits(..) {
@@ -58,18 +58,18 @@ pub(crate) fn build_output_model(
     }
 
     for shape in shapes {
-        let line: Vec<glam::Vec3> = shape.into_iter().map(|i| vertices[i]).collect();
+        let line: Vec<glam::Vec3> = shape.into_iter().map(|i| vertices[i as usize]).collect();
         let mut iter = line
             .discretize(descretization_length)
             .tuple_windows::<(_, _)>()
             .peekable();
         if let Some((v0, v1)) = iter.next() {
-            let mut i0 = v_dedup.get_index_or_insert(v0)? as usize;
+            let mut i0 = v_dedup.get_index_or_insert(v0)?;
             out_indices.push(i0);
             let mut i1 = if iter.peek().is_some() {
-                v_dedup.insert_and_get_index(v1) as usize
+                v_dedup.insert_and_get_index(v1)
             } else {
-                v_dedup.get_index_or_insert(v1)? as usize
+                v_dedup.get_index_or_insert(v1)?
             };
             out_indices.push(i1);
 
@@ -79,9 +79,9 @@ pub(crate) fn build_output_model(
 
                 let (_, v1) = iter.next().unwrap();
                 i1 = if iter.peek().is_some() {
-                    v_dedup.insert_and_get_index(v1) as usize
+                    v_dedup.insert_and_get_index(v1)
                 } else {
-                    v_dedup.get_index_or_insert(v1)? as usize
+                    v_dedup.get_index_or_insert(v1)?
                 };
                 out_indices.push(i1);
             }

@@ -1,6 +1,6 @@
 """
 SPDX-License-Identifier: AGPL-3.0-or-later
-Copyright (c) 2023 lacklustr@protonmail.com https://github.com/eadf
+Copyright (c) 2023,2025 lacklustr@protonmail.com https://github.com/eadf
 This file is part of the hallr crate.
 
 A simple script that calls the unified FFI interface of the .dll/.so/.dylib of hallr
@@ -8,6 +8,10 @@ A simple script that calls the unified FFI interface of the .dll/.so/.dylib of h
 import ctypes
 import platform
 
+MESH_FORMAT_TAG = "📦"
+VERTEX_MERGE_TAG = "≈"
+COMMAND_TAG = "▶"
+EDGES = "⸗"
 
 # 2. Define the structures
 class Vector3(ctypes.Structure):
@@ -25,7 +29,7 @@ class StringMap(ctypes.Structure):
 class GeometryOutput(ctypes.Structure):
     _fields_ = [("vertices", ctypes.POINTER(Vector3)),
                 ("vertex_count", ctypes.c_size_t),
-                ("indices", ctypes.POINTER(ctypes.c_size_t)),
+                ("indices", ctypes.POINTER(ctypes.c_uint32)),
                 ("indices_count", ctypes.c_size_t),
                 ("matrices", ctypes.POINTER(ctypes.c_float)),
                 ("matrices_count", ctypes.c_size_t)]
@@ -44,7 +48,7 @@ if __name__ == "__main__":
     Vector3(0.53755563,0.093555555,0.0), Vector3(0.60400003,0.0,0.0), Vector3(0.48700002,0.0,0.0),
     Vector3(0.29636115,0.25348613,0.0), Vector3(0.17500001,0.296,0.0), Vector3(0.17500001,0.0,0.0), Vector3(0.07700001,0.0,0.0)]
     matrices = [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
-    config = {"first_index_model_0": "0", "SIMPLIFY": "false", "KEEP_INPUT": "true", "NEGATIVE_RADIUS": "true", "▶": "centerline", "REMOVE_INTERNALS": "false", "ANGLE": "89.00000133828577", "DISTANCE": "0.004999999888241291", "WELD": "true", MESH_FORMAT_TAG: "line_chunks"}
+    config = {"first_index_model_0": "0", "SIMPLIFY": "false", "KEEP_INPUT": "true", "NEGATIVE_RADIUS": "true", COMMAND_TAG: "centerline", "REMOVE_INTERNALS": "false", "ANGLE": "89.00000133828577", "DISTANCE": "0.004999999888241291", "WELD": "true", MESH_FORMAT_TAG: EDGES}
 
 
     system = platform.system()
@@ -56,7 +60,7 @@ if __name__ == "__main__":
 
     rust_lib = ctypes.cdll.LoadLibrary("./blender_addon_exported/lib/" + library_name)
     rust_lib.process_geometry.argtypes = [ctypes.POINTER(Vector3), ctypes.c_size_t,
-                                          ctypes.POINTER(ctypes.c_size_t), ctypes.c_size_t,
+                                          ctypes.POINTER(ctypes.c_uint32), ctypes.c_size_t,
                                           ctypes.POINTER(ctypes.c_float), ctypes.c_size_t,
                                           ctypes.POINTER(StringMap)]
 
@@ -71,7 +75,7 @@ if __name__ == "__main__":
 
     # 3. Convert the zero-length data to a ctypes-friendly format
     vertices_ptr = (Vector3 * len(vertices))(*vertices)
-    indices_ptr = (ctypes.c_size_t * len(indices))(*indices)
+    indices_ptr = (ctypes.c_uint32 * len(indices))(*indices)
     matrices_ptr = (ctypes.c_float * len(matrices))(*matrices)
 
     keys_list = list(config.keys())

@@ -102,7 +102,7 @@ pub(crate) fn process_command(
         crate::utils::rounded_cones_fsn::build_output_model(None, voxel_size, mesh, false)?
     } else {
         let mut output_vertices = Vec::<FFIVector3>::with_capacity(result.len());
-        let mut output_indices = Vec::<usize>::with_capacity(result.len());
+        let mut output_indices = Vec::<u32>::with_capacity(result.len());
 
         //println!("results:");
         for (p0_4, p1_4) in result {
@@ -110,9 +110,9 @@ pub(crate) fn process_command(
             let p1_3 = p1_4.xyz();
             //println!("found edge : {p0_4:?} - {p1_4:?}");
 
-            output_indices.push(output_vertices.len());
+            output_indices.push(output_vertices.len() as u32);
             output_vertices.push(p0_3.into());
-            output_indices.push(output_vertices.len());
+            output_indices.push(output_vertices.len() as u32);
             output_vertices.push(p1_3.into());
             //println!("edge from {} to {}", p0, p1);
         }

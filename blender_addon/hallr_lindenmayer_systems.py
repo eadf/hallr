@@ -1,4 +1,5 @@
 import bpy
+import time
 from . import hallr_ffi_utils
 
 # Define L-System Presets
@@ -477,6 +478,7 @@ class RunLSystemScriptOperator(bpy.types.Operator):
     bl_icon = "PLAY"
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         text = bpy.context.space_data.text  # Get the active text file
         if text:
             script_content = text.as_string()  # Get script as string
@@ -488,7 +490,7 @@ class RunLSystemScriptOperator(bpy.types.Operator):
                 }
 
                 # Call the Rust function
-                _, info = hallr_ffi_utils.process_config(config)
+                _, info = hallr_ffi_utils.process_config(wall_clock, config)
 
                 self.report({'INFO'}, "L-System script executed" + info)
             except Exception as e:

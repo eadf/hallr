@@ -20,7 +20,7 @@ fn build_voxel(
     radius_multiplier: f32,
     divisions: f32,
     vertices: &[FFIVector3],
-    edges: &[usize],
+    edges: &[u32],
 ) -> Result<
     (
         f32, // <- voxel_size
@@ -59,8 +59,8 @@ fn build_voxel(
     let capsules: Vec<_> = edges
         .chunks_exact(2)
         .filter_map(|e| {
-            let v0 = vertices[e[0]];
-            let v1 = vertices[e[1]];
+            let v0 = vertices[e[0] as usize];
+            let v1 = vertices[e[1] as usize];
 
             // Early check for zero radii before any expensive computations
             let z0_abs = v0.z.abs();
@@ -123,7 +123,7 @@ fn build_output_model(
     Ok(OwnedModel {
         world_orientation: input_model.copy_world_orientation()?,
         vertices,
-        indices: mesh.indices.into_iter().map(|i| i as usize).collect(),
+        indices: mesh.indices,
     })
 }
 

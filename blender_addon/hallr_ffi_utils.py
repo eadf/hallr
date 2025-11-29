@@ -11,10 +11,12 @@ import ctypes
 from typing import List, Tuple, Dict, Optional
 from contextlib import contextmanager
 import time
+import numpy as np
 
 # workaround for the "ImportError: attempted relative import with no known parent package" problem:
 DEV_MODE = False  # Set this to False for distribution
 HALLR_LIBRARY = None
+LATEST_LOADED_LIBRARY_FILE = None  # Track which file is currently loaded
 
 
 @contextmanager
@@ -22,7 +24,7 @@ def timer(description="Operation"):
     start = time.perf_counter()
     yield
     elapsed = time.perf_counter() - start
-    print(f"{description} took {elapsed:.6f} seconds")
+    print(f"{description} took {_duration_to_str(elapsed)}")
 
 
 class HallrException(Exception):
@@ -45,7 +47,7 @@ class StringMap(ctypes.Structure):
 class GeometryOutput(ctypes.Structure):
     _fields_ = [("vertices", ctypes.POINTER(Vector3)),
                 ("vertex_count", ctypes.c_size_t),
-                ("indices", ctypes.POINTER(ctypes.c_size_t)),
+                ("indices", ctypes.POINTER(ctypes.c_uint32)),
                 ("indices_count", ctypes.c_size_t),
                 ("matrices", ctypes.POINTER(ctypes.c_float)),
                 ("matrices_count", ctypes.c_size_t)]
@@ -58,6 +60,8 @@ class ProcessResult(ctypes.Structure):
 
 def _load_latest_dylib(prefix="libhallr_"):
     global HALLR_LIBRARY
+    global LATEST_LOADED_LIBRARY_FILE
+
     if DEV_MODE:
         # this will be find-and-replaced by the build script
         directory = "HALLR__TARGET_RELEASE"
@@ -69,13 +73,19 @@ def _load_latest_dylib(prefix="libhallr_"):
         # Sort files by their modification time
         files.sort(key=lambda x: os.path.getmtime(os.path.join(directory, x)), reverse=True)
 
-        # Load the latest .dylib, .dll, .so, whatever
-        if files:
-            latest_dylib = os.path.join(directory, files[0])
-            print("Loading lib: ", latest_dylib)
-            rust_lib = ctypes.cdll.LoadLibrary(latest_dylib)
-        else:
+        if not files:
             raise ValueError("Could not find the hallr runtime library!")
+
+        latest_dylib = os.path.join(directory, files[0])
+
+        # Check if we already have this exact file loaded
+        if HALLR_LIBRARY is not None and LATEST_LOADED_LIBRARY_FILE == latest_dylib:
+            return HALLR_LIBRARY
+
+        # Load the new library
+        print("Loading lib: ", latest_dylib)
+        rust_lib = ctypes.cdll.LoadLibrary(latest_dylib)
+        LATEST_LOADED_LIBRARY_FILE = latest_dylib  # Track what we just loaded
 
     else:  # release mode
         if HALLR_LIBRARY:
@@ -94,7 +104,7 @@ def _load_latest_dylib(prefix="libhallr_"):
         rust_lib = ctypes.cdll.LoadLibrary(dylib_path)
 
     rust_lib.process_geometry.argtypes = [ctypes.POINTER(Vector3), ctypes.c_size_t,
-                                          ctypes.POINTER(ctypes.c_size_t), ctypes.c_size_t,
+                                          ctypes.POINTER(ctypes.c_uint32), ctypes.c_size_t,
                                           ctypes.POINTER(ctypes.c_float), ctypes.c_size_t,
                                           ctypes.POINTER(StringMap)]
 
@@ -129,7 +139,8 @@ COMMAND_TAG = "▶"
 IDENTITY_FFI_MATRIX = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
 
-def _package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.TRIANGULATED) -> Tuple[List, List]:
+def _package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat.TRIANGULATED) -> Tuple[
+    np.ndarray, np.ndarray]:
     """
     Extract vertices and indices from a Blender mesh object in a consistent format.
 
@@ -138,97 +149,131 @@ def _package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat
         mesh_format: The format to interpret the mesh data
 
     Returns:
-        tuple: (vertices, indices) in the format specified
+        tuple: (vertices as float32 array, indices as uint32 array)
     """
-    # Handle vertices
+    mesh = mesh_obj.data
+    vertex_count = len(mesh.vertices)
+
+    # Handle vertices - use foreach_get for batch extraction
     world_matrix = mesh_obj.matrix_world
+
     if world_matrix.is_identity:
         print(f"Python: not applying local-world transformation")
-        vertices = [Vector3(v.co.x, v.co.y, v.co.z) for v in mesh_obj.data.vertices]
+        # Get vertices directly as flat array [x,y,z, x,y,z, ...]
+        vertices = np.empty(vertex_count * 3, dtype=np.float32)
+        mesh.vertices.foreach_get("co", vertices)
     else:
-        print(f"Python: applying local-world transformation: {_get_matrices_col_major(mesh_obj)}")
-        vertices = [Vector3(*(world_matrix @ v.co)[:]) for v in mesh_obj.data.vertices]
+        print(f"Python: applying local-world transformation.")
+        # Get vertices and transform them
+        vertices = np.empty(vertex_count * 3, dtype=np.float32)
+        mesh.vertices.foreach_get("co", vertices)
+        vertices = vertices.reshape(-1, 3)
+
+        # Apply transformation matrix
+        # Convert Blender matrix to numpy for vectorized multiplication
+        mat = np.array(world_matrix, dtype=np.float32)
+        # Transform all vertices at once (homogeneous coordinates)
+        ones = np.ones((vertex_count, 1), dtype=np.float32)
+        vertices_homo = np.hstack([vertices, ones])
+        vertices = (vertices_homo @ mat.T)[:, :3]
+        vertices = vertices.flatten()
 
     # Handle indices based on mesh_format
-    indices = []
     if mesh_format == MeshFormat.TRIANGULATED:
         # Verify the mesh is triangulated
-        if not all(len(face.vertices) == 3 for face in mesh_obj.data.polygons):
+        if not all(len(face.vertices) == 3 for face in mesh.polygons):
             raise HallrException(f"The '{mesh_obj.name}' mesh is not fully triangulated!")
 
-        indices = [v for face in mesh_obj.data.polygons for v in face.vertices]
-        if len(indices) == 0:
+        poly_count = len(mesh.polygons)
+        if poly_count == 0:
             raise HallrException(f"No polygons found in '{mesh_obj.name}', maybe the mesh is not fully triangulated?")
+
+        # Extract all loop indices at once
+        indices = np.empty(poly_count * 3, dtype=np.uint32)
+        mesh.loops.foreach_get("vertex_index", indices)
 
     elif mesh_format == MeshFormat.EDGES:
         # Verify there are no polygons for line formats
-        if len(mesh_obj.data.polygons) > 0:
+        if len(mesh.polygons) > 0:
             raise HallrException(
                 f"The '{mesh_obj.name}' model should not contain any polygons for line operations, only edges!")
 
-        # Get edges in appropriate format
-        indices = [v for edge in mesh_obj.data.edges for v in edge.vertices]
-    elif mesh_format != MeshFormat.POINT_CLOUD:
+        edge_count = len(mesh.edges)
+        # Extract all edge vertex indices at once
+        indices = np.empty(edge_count * 2, dtype=np.uint32)
+        mesh.edges.foreach_get("vertices", indices)
+
+    elif mesh_format == MeshFormat.POINT_CLOUD:
+        indices = np.empty(0, dtype=np.uint32)
+    else:
         raise HallrException(f"The mesh format '{mesh_format}' is not supported!")
 
     return vertices, indices
 
 
-def _process_mesh_from_ffi(ffi_vertices_ptr, ffi_indices_ptr, vertex_count, index_count, return_options):
-    """
-    Process mesh data directly from FFI pointers before they're released
-    """
-    # Create the destination mesh
+def _unpackage_mesh_from_ffi(wall_clock, ffi_vertices_ptr, ffi_indices_ptr, vertex_count, index_count, return_options):
+    # print(f"Python: begin unpackage_mesh_from_ffi: {_duration_to_str(time.perf_counter() - wall_clock)}")
+
     new_mesh = bpy.data.meshes.new(return_options.get("model_0_name", "new_mesh"))
     mesh_format = return_options.get(MESH_FORMAT_TAG, None)
+
     if mesh_format is None:
         raise HallrException("The mesh format was missing from the return data.")
 
-    # print(f"Processing mesh with format: {mesh_format}, vertices: {vertex_count}, indices: {index_count}")
+    # Wrap FFI pointers as NumPy arrays (zero-copy!)
+    # FFIVector3 is 3 * f32 = 12 bytes, so we can view it as flat f32 array
+    vertex_array = np.ctypeslib.as_array(
+        ctypes.cast(ffi_vertices_ptr, ctypes.POINTER(ctypes.c_float)),
+        shape=(vertex_count * 3,)
+    )
+    # the indices are rust::u32
+    index_array = np.ctypeslib.as_array(
+        ctypes.cast(ffi_indices_ptr, ctypes.POINTER(ctypes.c_uint32)),
+        shape=(index_count,)
+    )
 
-    # Populate vertices directly from FFI buffer
     new_mesh.vertices.add(vertex_count)
-    for i in range(vertex_count):
-        # ffi_vertices_ptr is an array of Vector3
-        v = ffi_vertices_ptr[i]
-        new_mesh.vertices[i].co = (v.x, v.y, v.z)
+    new_mesh.vertices.foreach_set("co", vertex_array)
 
-    # Handle different mesh formats
     if mesh_format == MeshFormat.TRIANGULATED:
-        # Process triangulated mesh
         face_count = index_count // 3
         new_mesh.polygons.add(face_count)
         new_mesh.loops.add(index_count)
 
-        for f in range(face_count):
-            poly = new_mesh.polygons[f]
-            poly.loop_start = f * 3
+        # Batch set everything
+        new_mesh.loops.foreach_set("vertex_index", index_array)
 
-            for v in range(3):
-                idx = ffi_indices_ptr[f * 3 + v]
-                new_mesh.loops[f * 3 + v].vertex_index = idx
+        loop_starts = np.arange(0, index_count, 3, dtype=np.int32)
+        new_mesh.polygons.foreach_set("loop_start", loop_starts)
+
+        loop_totals = np.full(face_count, 3, dtype=np.int32)
+        new_mesh.polygons.foreach_set("loop_total", loop_totals)
 
     elif mesh_format == MeshFormat.LINE_WINDOWS:
         # Process line mesh in window format (consecutive pairs)
+        # Convert [0,1,2,3,4] -> [(0,1), (1,2), (2,3), (3,4)]
         edge_count = index_count - 1
         if edge_count > 0:
             new_mesh.edges.add(edge_count)
 
-            for e in range(edge_count):
-                v1 = ffi_indices_ptr[e]
-                v2 = ffi_indices_ptr[e + 1]
-                new_mesh.edges[e].vertices = (v1, v2)
+            # Create edge pairs: interleave index_array[:-1] and index_array[1:]
+            edge_vertices = np.empty(edge_count * 2, dtype=np.int32)
+            edge_vertices[0::2] = index_array[:-1]  # Every even index: [0,1,2,3]
+            edge_vertices[1::2] = index_array[1:]  # Every odd index:  [1,2,3,4]
+            # Result: [0,1, 1,2, 2,3, 3,4]
+
+            new_mesh.edges.foreach_set("vertices", edge_vertices)
 
     elif mesh_format == MeshFormat.EDGES:
         # Process line mesh in chunks format (paired indices)
+        # Already in the right format: [v1,v2, v1,v2, ...]
         edge_count = index_count // 2
         if edge_count > 0:
             new_mesh.edges.add(edge_count)
 
-            for e in range(edge_count):
-                v1 = ffi_indices_ptr[e * 2]
-                v2 = ffi_indices_ptr[e * 2 + 1]
-                new_mesh.edges[e].vertices = (v1, v2)
+            # Cast to int32 if needed (Blender expects int32)
+            edge_vertices = index_array[:edge_count * 2].astype(np.int32)
+            new_mesh.edges.foreach_set("vertices", edge_vertices)
 
             # Check if the length is odd and print a warning
             if index_count % 2 != 0:
@@ -240,8 +285,12 @@ def _process_mesh_from_ffi(ffi_vertices_ptr, ffi_indices_ptr, vertex_count, inde
     else:
         raise HallrException(f"Mesh format not recognized: {mesh_format}")
 
+    # print(f"Python: done unpackage_mesh_from_ffi: {_duration_to_str(time.perf_counter() - wall_clock)}")
+
     # Update the mesh to ensure proper calculation of derived data
+    mesh_update_start = time.perf_counter()
     new_mesh.update(calc_edges=True)
+    # print(f"Python: done mesh_update: {_duration_to_str(time.perf_counter() - wall_clock)}")
 
     return new_mesh
 
@@ -284,12 +333,13 @@ def _handle_new_object(return_options: Dict[str, str],
             pass
 
 
-def _update_existing_object(active_obj: bpy.types.Object,
+def _update_existing_object(wall_clock, active_obj: bpy.types.Object,
                             return_options: Dict[str, str],
                             new_mesh) -> None:
     """
     Update object mesh data. Must be called in OBJECT mode.
     """
+
     # Assert we're in OBJECT mode
     assert bpy.context.object is None or bpy.context.object.mode == 'OBJECT', \
         "update_existing_object must be called in OBJECT mode"
@@ -322,6 +372,8 @@ def _update_existing_object(active_obj: bpy.types.Object,
                 _merge_vertices_bmesh(new_mesh, remove_doubles_threshold)
         except ValueError as e:
             print(f"ValueError details: {str(e)}")
+
+    #print(f"Python: update_existing_object: {_duration_to_str(time.perf_counter() - wall_clock)}")
 
 
 def apply_all_transformations(obj: bpy.types.Object, temp_name: str) -> Tuple[bpy.types.Object, bool]:
@@ -375,7 +427,8 @@ def apply_all_transformations_direct(obj: bpy.types.Object) -> bpy.types.Object:
     return obj
 
 
-def process_mesh_with_rust(config: Dict[str, str],
+def process_mesh_with_rust(wall_clock,
+                           config: Dict[str, str],
                            primary_object: Optional[bpy.types.Object] = None,
                            secondary_object: Optional[bpy.types.Object] = None,
                            primary_format: Optional[str] = None,
@@ -387,6 +440,7 @@ def process_mesh_with_rust(config: Dict[str, str],
     All lower-level functions assume OBJECT mode.
 
     Args:
+        wall_clock: the start time of the operation execution
         config: Dictionary of configuration options for Rust
         primary_object: Optional Primary Blender mesh object (can be None)
         secondary_object: Optional secondary mesh object
@@ -406,11 +460,10 @@ def process_mesh_with_rust(config: Dict[str, str],
         if bpy.context.object and bpy.context.object.mode != 'OBJECT':
             bpy.ops.object.mode_set(mode='OBJECT')
 
-        start_time = time.time()
-
-        result = _process_mesh_with_rust(config, primary_object, secondary_object, primary_format, secondary_format,
+        result = _process_mesh_with_rust(wall_clock, config, primary_object, secondary_object, primary_format,
+                                         secondary_format,
                                          create_new)
-        return result[0],result[1] + f" duration:{_duration_to_str(time.time() - start_time)}"
+        return result[0], result[1] + f" duration:{_duration_to_str(time.perf_counter() - wall_clock)}"
 
     finally:
         # CRITICAL: Force dependency graph update before returning to edit mode
@@ -420,8 +473,11 @@ def process_mesh_with_rust(config: Dict[str, str],
         if original_mode != 'OBJECT':
             bpy.ops.object.mode_set(mode=original_mode)
 
+        # print(f"Python: context_view_layer_update: {_duration_to_str(time.perf_counter() - wall_clock)}")
 
-def _process_mesh_with_rust(config: Dict[str, str],
+
+def _process_mesh_with_rust(wall_clock,
+                            config: Dict[str, str],
                             primary_object: Optional[bpy.types.Object] = None,
                             secondary_object: Optional[bpy.types.Object] = None,
                             primary_format: Optional[str] = None,
@@ -443,6 +499,8 @@ def _process_mesh_with_rust(config: Dict[str, str],
         If create_new is False: None (the active object is modified), a status message (string)
     """
 
+    # print(f"Python: begin marshal: {_duration_to_str(time.perf_counter() - wall_clock)}")
+
     original_vertices = 0
     original_indices = 0
 
@@ -463,53 +521,52 @@ def _process_mesh_with_rust(config: Dict[str, str],
         mesh_format += primary_format
 
     # Prepare data structures
-    vertices = []
-    indices = []
-    matrices = []
+    # Prepare data structures - start with empty arrays
+    vertices = np.empty(0, dtype=np.float32)
+    indices = np.empty(0, dtype=np.uint32)
+    matrices = np.empty(0, dtype=np.float32)
 
     # Store the current selection and active object state
     # selected_objects = [o for o in bpy.context.selected_objects]
 
+    input_marshal_start = time.perf_counter()
+
     if primary_object:
         primary_obj_to_process = primary_object
-
-        # Extract mesh data
         primary_vertices, primary_indices = _package_mesh_data(primary_obj_to_process, primary_format)
-        original_vertices += len(primary_vertices)
+        original_vertices += len(primary_vertices) // 3
         original_indices += len(primary_indices)
-        vertices.extend(primary_vertices)
-        indices.extend(primary_indices)
 
-        # Get transformation matrices
-        matrices.extend(_get_matrices_col_major(primary_object))
+        vertices = primary_vertices
+        indices = primary_indices
+        matrices = _get_matrices_col_major(primary_object)  # Returns ndarray now
 
     if secondary_object:
         mesh_format += secondary_format
-
-        # Store offset data
-        first_vertex_model_1 = len(vertices)
+        first_vertex_model_1 = len(vertices) // 3
         first_index_model_1 = len(indices)
         config["first_vertex_model_1"] = str(first_vertex_model_1)
         config["first_index_model_1"] = str(first_index_model_1)
 
-        # Extract mesh data
         secondary_vertices, secondary_indices = _package_mesh_data(secondary_object, secondary_format)
-        original_vertices += len(secondary_vertices)
+        original_vertices += len(secondary_vertices) // 3
         original_indices += len(secondary_indices)
 
-        vertices.extend(secondary_vertices)
-        indices.extend(secondary_indices)
-
-        # Get transformation matrices
-        matrices.extend(_get_matrices_col_major(secondary_object))
+        vertices = np.concatenate([vertices, secondary_vertices])
+        indices = np.concatenate([indices, secondary_indices])
+        matrices = np.concatenate([matrices, _get_matrices_col_major(secondary_object)])  # ← Concatenate!
 
     if mesh_format != "":
         config[MESH_FORMAT_TAG] = mesh_format
 
-    # Convert data to ctypes pointers
-    vertices_ptr = (Vector3 * len(vertices))(*vertices) if vertices else (Vector3 * 0)()
-    indices_ptr = (ctypes.c_size_t * len(indices))(*indices) if indices else (ctypes.c_size_t * 0)()
-    matrices_ptr = (ctypes.c_float * len(matrices))(*matrices) if matrices else (ctypes.c_float * 0)()
+    # print(f"Python: done input marshal: {_duration_to_str(time.perf_counter() - wall_clock)}")
+
+    # Cast flat float array to Vector3 pointer
+    vertices_ptr = vertices.ctypes.data_as(ctypes.POINTER(Vector3))
+
+    # Convert to ctypes pointers - all ndarrays now!
+    indices_ptr = indices.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
+    matrices_ptr = matrices.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
     # Create StringMap from config
     keys_list = list(config.keys())
@@ -519,16 +576,20 @@ def _process_mesh_with_rust(config: Dict[str, str],
     map_data = StringMap(keys_array, values_array, len(keys_list))
 
     print(f"Python: {COMMAND_TAG} '{config.get(COMMAND_TAG, '')}'")
-    print(f"Python: sending {len(vertices)} vertices, {len(indices)} indices, {len(matrices) / 16.0} matrices")
+    print(f"Python: sending {len(vertices) // 3} vertices, {len(indices)} indices, {len(matrices) // 16} matrices")
 
+    # print(f"Python: updating dylib : {_duration_to_str(time.perf_counter() - wall_clock)}")
     # Fetch Rust library
     rust_lib = _load_latest_dylib()
 
+    # print(f"Python: start actual_rust_call: {_duration_to_str(time.perf_counter() - wall_clock)}")
+
     # Call Rust function
     rust_result = rust_lib.process_geometry(
-        vertices_ptr, len(vertices), indices_ptr, len(indices),
+        vertices_ptr, len(vertices) // 3, indices_ptr, len(indices),
         matrices_ptr, len(matrices), map_data
     )
+    # print(f"Python: done actual_rust_call: {_duration_to_str(time.perf_counter() - wall_clock)}")
     try:
         # Extract return options
         return_options = {}
@@ -539,13 +600,14 @@ def _process_mesh_with_rust(config: Dict[str, str],
                 raise HallrException(value)
             return_options[key] = value
 
-        new_mesh = _process_mesh_from_ffi(rust_result.geometry.vertices, rust_result.geometry.indices,
-                                          rust_result.geometry.vertex_count, rust_result.geometry.indices_count,
-                                          return_options)
+        new_mesh = _unpackage_mesh_from_ffi(wall_clock, rust_result.geometry.vertices, rust_result.geometry.indices,
+                                            rust_result.geometry.vertex_count, rust_result.geometry.indices_count,
+                                            return_options)
         indices_count = rust_result.geometry.indices_count
     finally:
         # Free Rust memory
         rust_lib.free_process_results(rust_result)
+    # print(f"Python: after free results: {_duration_to_str(time.perf_counter() - wall_clock)}")
 
     if DEV_MODE:
         _ctypes_close_library(rust_lib)
@@ -567,13 +629,14 @@ def _process_mesh_with_rust(config: Dict[str, str],
         print("Python: updating old object with new mesh")
         # Update existing object
         bpy.context.view_layer.objects.active = primary_object
-        _update_existing_object(primary_object, return_options, new_mesh)
+        _update_existing_object(wall_clock, primary_object, return_options, new_mesh)
         return None, f"Modified mesh: Δvertices:{len(new_mesh.vertices) - original_vertices} Δindices:{indices_count - original_indices}"
 
 
 # Simpler convenience functions that wrap the main processing function
 
-def process_single_mesh(config: Dict[str, str], mesh_obj: bpy.types.Object = None,
+def process_single_mesh(wall_clock,
+                        config: Dict[str, str], mesh_obj: bpy.types.Object = None,
                         mesh_format: str = MeshFormat.EDGES,
                         create_new: bool = True) -> Optional[bpy.types.Object]:
     """
@@ -589,6 +652,7 @@ def process_single_mesh(config: Dict[str, str], mesh_obj: bpy.types.Object = Non
         (The new object, info message) if create_new is True, (None, info message) otherwise
     """
     return process_mesh_with_rust(
+        wall_clock,
         config,
         primary_object=mesh_obj,
         primary_format=mesh_format,
@@ -596,7 +660,7 @@ def process_single_mesh(config: Dict[str, str], mesh_obj: bpy.types.Object = Non
     )
 
 
-def process_config(config: Dict[str, str]) -> bpy.types.Object:
+def process_config(wall_clock, config: Dict[str, str]) -> bpy.types.Object:
     """
     Process a command that does not require an input object, only a config.
 
@@ -607,6 +671,7 @@ def process_config(config: Dict[str, str]) -> bpy.types.Object:
         The new object, info message
     """
     return process_mesh_with_rust(
+        wall_clock,
         config,
         primary_object=None,
         secondary_object=None,
@@ -633,14 +698,10 @@ def cleanup_duplicated_object(an_obj):
 
 
 def _get_matrices_col_major(bpy_object):
-    """ Return the world orientation as an array of 16 floats"""
+    """ Return the world orientation as an array of 16 floats in column-major order"""
     bm = bpy_object.matrix_world
-    return [
-        bm[0][0], bm[1][0], bm[2][0], bm[3][0],  # Column 0
-        bm[0][1], bm[1][1], bm[2][1], bm[3][1],  # Column 1
-        bm[0][2], bm[1][2], bm[2][2], bm[3][2],  # Column 2
-        bm[0][3], bm[1][3], bm[2][3], bm[3][3],  # Column 3 (translation!)
-    ]
+    # Convert to numpy array (4x4) and flatten in column-major ('F'ortran) order
+    return np.array(bm, dtype=np.float32).flatten(order='F')
 
 
 def is_loop(mesh):
@@ -704,6 +765,7 @@ def _merge_vertices_bmesh(mesh: bpy.types.Mesh, threshold: float) -> None:
 
     # Update mesh to reflect changes
     mesh.update()
+
 
 def _duration_to_str(duration):
     units = [

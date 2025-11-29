@@ -19,7 +19,7 @@ struct StringMap {
 struct GeometryOutput {
     struct Vector3* vertices;
     size_t vertex_count;
-    size_t* indices;
+    c_uint32* indices;
     size_t indices_count;
     float* matrices;
     size_t matrices_count;
@@ -44,7 +44,7 @@ void free_process_results(struct ProcessResult* result) {
 }
 
 struct ProcessResult process_geometry(const struct Vector3* vertices, size_t vertex_count,
-                                      const size_t* indices, size_t indices_count,
+                                      const c_uint32* indices, size_t indices_count,
                                       const float* matrices, size_t matrices_count,
                                       const struct StringMap* config) {
     printf("C: Received config of size: %zu\n", config->count);

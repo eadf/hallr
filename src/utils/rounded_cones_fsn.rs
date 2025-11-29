@@ -325,11 +325,9 @@ pub(crate) fn build_output_model(
 
     let (mut vertices, mut indices) = {
         // calculate the maximum required vertices & face capacity
-        let (vertex_capacity, face_capacity) = mesh_buffers
-            .iter()
-            .fold((0_usize, 0_usize), |(v, f), chunk| {
-                (v + chunk.positions.len(), f + chunk.indices.len())
-            });
+        let (vertex_capacity, face_capacity) = mesh_buffers.iter().fold((0, 0), |(v, f), chunk| {
+            (v + chunk.positions.len(), f + chunk.indices.len())
+        });
         if vertex_capacity >= u32::MAX as usize {
             return Err(HallrError::Overflow(format!(
                 "Generated mesh contains too many vertices to be referenced by u32: {vertex_capacity}. Reduce the resolution.",
@@ -366,7 +364,7 @@ pub(crate) fn build_output_model(
             }
 
             for vertex_id in mesh_buffer.indices.iter() {
-                indices.push((*vertex_id + indices_offset) as usize);
+                indices.push(*vertex_id + indices_offset);
             }
         }
     } else {
@@ -385,7 +383,7 @@ pub(crate) fn build_output_model(
             }
 
             for vertex_id in mesh_buffer.indices.iter() {
-                indices.push((*vertex_id + indices_offset) as usize);
+                indices.push(*vertex_id + indices_offset);
             }
         }
     }

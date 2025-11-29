@@ -137,9 +137,9 @@ const DUMMY_VEC: [usize; 0] = [];
 /// * `T`: A type that implements the `GenericVector3` trait.
 ///
 pub fn triangulate_face<T: GenericVector3>(
-    indices: &mut Vec<usize>,
+    indices: &mut Vec<u32>,
     vertices: &[T],
-    face: &[usize],
+    face: &[u32],
 ) -> Result<(), HallrError>
 where
     T::Scalar: Float,
@@ -153,7 +153,7 @@ where
         _ => {
             let mut flattened_coords = Vec::<T::Scalar>::with_capacity(face.len() * 2);
             for i in face {
-                let v = vertices[*i];
+                let v = vertices[*i as usize];
                 flattened_coords.push(v.x());
                 flattened_coords.push(v.y());
             }
@@ -179,16 +179,16 @@ where
 {
     /// transform the voronoi Point into a PB point. Perform duplication checks
     #[inline(always)]
-    fn place_new_vertex_dup_check(&mut self, vertex: T) -> Result<usize, HallrError> {
-        let rv = self.vertex_map.get_index_or_insert(vertex)? as usize;
+    fn place_new_vertex_dup_check(&mut self, vertex: T) -> Result<u32, HallrError> {
+        let rv = self.vertex_map.get_index_or_insert(vertex)?;
         Ok(rv)
     }
 
     /// Place the point in the list. Does not perform any de-duplication checks
     #[allow(dead_code)]
     #[inline(always)]
-    fn place_new_vertex_unchecked(&mut self, vertex: T) -> Result<usize, HallrError> {
-        let n = self.vertex_map.vertices.len();
+    fn place_new_vertex_unchecked(&mut self, vertex: T) -> Result<u32, HallrError> {
+        let n = self.vertex_map.vertices.len() as u32;
         self.vertex_map.vertices.push(vertex);
         Ok(n)
     }
@@ -496,9 +496,9 @@ where
     pub(crate) fn convert_edges(
         &self,
         discretization_distance: T::Scalar,
-    ) -> Result<(DiagramHelperRw<T>, rustc_hash::FxHashMap<usize, Vec<usize>>), HallrError> {
+    ) -> Result<(DiagramHelperRw<T>, rustc_hash::FxHashMap<u32, Vec<u32>>), HallrError> {
         let mut hrw = DiagramHelperRw::default();
-        let mut rv = rustc_hash::FxHashMap::<usize, Vec<usize>>::default();
+        let mut rv = rustc_hash::FxHashMap::<u32, Vec<u32>>::default();
 
         for edge in self.diagram.edges() {
             let edge = edge.get();
@@ -512,21 +512,21 @@ where
             let twin_id = edge.twin()?;
 
             //println!("edge:{:?}", edge_id.0);
-            if !rv.contains_key(&twin_id.0) {
+            if !rv.contains_key(&(twin_id.0 as u32)) {
                 let samples = if edge.is_secondary() {
                     self.convert_secondary_edge(&edge)?
                 } else {
                     self.convert_edge(&edge, discretization_distance)?
                 };
-                let mut pb_edge: Vec<usize> = Vec::with_capacity(samples.len());
+                let mut pb_edge: Vec<u32> = Vec::with_capacity(samples.len());
                 for coord in samples {
                     let v = hrw.place_new_vertex_dup_check(coord)?;
-                    if !pb_edge.contains(&v) {
+                    if !pb_edge.contains(&{ v }) {
                         pb_edge.push(v);
                     }
                 }
 
-                let _ = rv.insert(edge_id.0, pb_edge);
+                let _ = rv.insert(edge_id.0 as u32, pb_edge);
             } else {
                 // ignore edge because the twin is already processed
             }
@@ -539,14 +539,14 @@ where
     #[allow(clippy::type_complexity)]
     fn split_pb_face_by_segment(
         &self,
-        v0n: usize,
-        v1n: usize,
-        pb_face: &[usize],
-    ) -> Result<Option<(Vec<usize>, Vec<usize>)>, HallrError> {
+        v0n: u32,
+        v1n: u32,
+        pb_face: &[u32],
+    ) -> Result<Option<(Vec<u32>, Vec<u32>)>, HallrError> {
         if let Some(v0i) = pb_face.iter().position(|x| x == &v0n) {
             if let Some(v1i) = pb_face.iter().position(|x| x == &v1n) {
-                let mut a = Vec::<usize>::new();
-                let b: Vec<usize> = if v0i < v1i {
+                let mut a = Vec::<u32>::new();
+                let b: Vec<u32> = if v0i < v1i {
                     // todo, could this be made into a direct .collect() too?
                     for i in (0..=v0i).chain(v1i..pb_face.len()) {
                         a.push(pb_face[i]);
@@ -569,9 +569,9 @@ where
     pub(crate) fn generate_mesh_from_cells(
         &self,
         mut dhrw: DiagramHelperRw<T>,
-        edge_map: rustc_hash::FxHashMap<usize, Vec<usize>>,
-    ) -> Result<(Vec<usize>, Vec<T>), HallrError> {
-        let mut return_indices = Vec::<usize>::new();
+        edge_map: rustc_hash::FxHashMap<u32, Vec<u32>>,
+    ) -> Result<(Vec<u32>, Vec<T>), HallrError> {
+        let mut return_indices = Vec::<u32>::new();
 
         for cell in self.diagram.cells().iter() {
             let cell = cell.get();
@@ -594,13 +594,13 @@ where
                     if self.rejected_edges[edge_id.0] && !edge.is_secondary() {
                         continue;
                     }
-                    let mod_edge: Box<dyn ExactSizeIterator<Item = &usize>> = {
-                        if let Some(e) = edge_map.get(&edge_id.0) {
+                    let mod_edge: Box<dyn ExactSizeIterator<Item = &u32>> = {
+                        if let Some(e) = edge_map.get(&(edge_id.0 as u32)) {
                             Box::new(e.iter())
                         } else {
                             Box::new(
                                 edge_map
-                                    .get(&twin_id.0)
+                                    .get(&(twin_id.0 as u32))
                                     .ok_or_else(|| {
                                         HallrError::InternalError(format!(
                                             "could not get twin edge, {}, {}",
@@ -655,10 +655,10 @@ where
                     let edge = self.diagram.get_edge(edge_id)?.get();
                     let twin_id = edge.twin()?;
 
-                    let mod_edge: Box<dyn ExactSizeIterator<Item = &usize>> = {
-                        if let Some(e) = edge_map.get(&edge_id.0) {
+                    let mod_edge: Box<dyn ExactSizeIterator<Item = &u32>> = {
+                        if let Some(e) = edge_map.get(&(edge_id.0 as u32)) {
                             Box::new(e.iter())
-                        } else if let Some(e) = edge_map.get(&twin_id.0) {
+                        } else if let Some(e) = edge_map.get(&(twin_id.0 as u32)) {
                             Box::new(e.iter().rev())
                         } else {
                             //let e:Option<usize> = None;
@@ -703,11 +703,11 @@ where
     pub(crate) fn generate_voronoi_edges_from_cells(
         &self,
         mut dhrw: DiagramHelperRw<T>,
-        edge_map: rustc_hash::FxHashMap<usize, Vec<usize>>,
+        edge_map: rustc_hash::FxHashMap<u32, Vec<u32>>,
         cmd_arg_keep_input: bool,
-    ) -> Result<(Vec<usize>, Vec<T>), HallrError> {
+    ) -> Result<(Vec<u32>, Vec<T>), HallrError> {
         // A vec containing the edges of the faces in "chunk" format
-        let mut return_indices = Vec::<usize>::with_capacity(edge_map.len() * 3);
+        let mut return_indices = Vec::<u32>::with_capacity(edge_map.len() * 3);
         for (_, edge) in edge_map.iter() {
             for line in edge.windows(2) {
                 return_indices.extend(line);

@@ -58,7 +58,7 @@ fn build_voxel(
     radius_multiplier: f32,
     divisions: f32,
     vertices: &[FFIVector3],
-    indices: &[usize],
+    indices: &[u32],
     unpadded_aabb: Extent<iglam::Vec3A>,
     verbose: bool,
 ) -> Result<
@@ -141,7 +141,7 @@ fn extent_from_min_and_lub(min: glam::Vec3A, lub: glam::Vec3A) -> Extent<iglam::
 fn generate_and_process_sdf_chunk(
     unpadded_chunk_extent: Extent3i,
     vertices: &[glam::Vec3A],
-    indices: &[usize],
+    indices: &[u32],
     thickness: f32,
 ) -> Option<SurfaceNetsBuffer> {
     let thickness_v = glam::Vec3A::splat(thickness);
@@ -153,8 +153,8 @@ fn generate_and_process_sdf_chunk(
         .par_chunks_exact(2)
         .filter_map(|edge| {
             let (e0, e1) = (edge[0], edge[1]);
-            let v0 = vertices[e0];
-            let v1 = vertices[e1];
+            let v0 = vertices[e0 as usize];
+            let v1 = vertices[e1 as usize];
 
             let tube_extent =
                 extent_from_min_and_lub(v0.min(v1) - thickness_v, v0.max(v1) + thickness_v)
@@ -204,7 +204,7 @@ fn generate_and_process_sdf_chunk(
         }
         for (from_v, to_v) in filtered_edges
             .iter()
-            .map(|(e0, e1)| (vertices[*e0], vertices[*e1]))
+            .map(|(e0, e1)| (vertices[*e0 as usize], vertices[*e1 as usize]))
         {
             // This is the sdf formula of a capsule
             let pa = glam::vec3a(pwo.x as f32, pwo.y as f32, pwo.z as f32) - from_v;
@@ -263,11 +263,9 @@ pub(crate) fn build_output_model(
 
     let (mut vertices, mut indices) = {
         // calculate the maximum required vertices & facec capacity
-        let (vertex_capacity, face_capacity) = mesh_buffers
-            .iter()
-            .fold((0_usize, 0_usize), |(v, f), chunk| {
-                (v + chunk.positions.len(), f + chunk.indices.len())
-            });
+        let (vertex_capacity, face_capacity) = mesh_buffers.iter().fold((0, 0), |(v, f), chunk| {
+            (v + chunk.positions.len(), f + chunk.indices.len())
+        });
         if vertex_capacity >= u32::MAX as usize {
             return Err(HallrError::Overflow(format!(
                 "Generated mesh contains too many vertices to be referenced by u32: {vertex_capacity}. Reduce the resolution."
@@ -300,7 +298,7 @@ pub(crate) fn build_output_model(
             }
 
             for vertex_id in mesh_buffer.indices.iter() {
-                indices.push((*vertex_id + indices_offset) as usize);
+                indices.push(*vertex_id + indices_offset);
             }
         }
     } else {
@@ -319,7 +317,7 @@ pub(crate) fn build_output_model(
             }
 
             for vertex_id in mesh_buffer.indices.iter() {
-                indices.push((*vertex_id + indices_offset) as usize);
+                indices.push(*vertex_id + indices_offset);
             }
         }
     }

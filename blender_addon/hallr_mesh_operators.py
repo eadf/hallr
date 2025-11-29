@@ -11,6 +11,7 @@ import math
 import array
 from collections import defaultdict
 import mathutils
+import time
 
 from . import hallr_ffi_utils
 
@@ -195,13 +196,14 @@ class MESH_OT_hallr_2d_outline(bpy.types.Operator, BaseOperatorMixin):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         obj = context.active_object
 
         config = {hallr_ffi_utils.COMMAND_TAG: "2d_outline"}
 
         try:
             # Call the Rust function
-            _, info = hallr_ffi_utils.process_single_mesh(config, obj,
+            _, info = hallr_ffi_utils.process_single_mesh(wall_clock, config, obj,
                                                           mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
                                                           create_new=False)
             self.report({'INFO'}, info)
@@ -226,6 +228,7 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator, BaseOperatorMixin):
     )
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         obj = context.active_object
 
         bpy.context.view_layer.update()
@@ -234,7 +237,7 @@ class MESH_OT_hallr_knife_intersect(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(wall_clock, config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                           create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
@@ -255,12 +258,13 @@ class MESH_OT_hallr_convex_hull_2d(bpy.types.Operator, BaseOperatorMixin):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         obj = context.active_object
         config = {hallr_ffi_utils.COMMAND_TAG: "convex_hull_2d"}
 
         try:
             # Call the Rust function
-            _, info = hallr_ffi_utils.process_single_mesh(config, obj,
+            _, info = hallr_ffi_utils.process_single_mesh(wall_clock, config, obj,
                                                           mesh_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,
                                                           create_new=False)
             self.report({'INFO'}, info)
@@ -302,6 +306,7 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator, BaseOperatorMixin):
         return wm.invoke_props_dialog(self)
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         obj = context.active_object
 
         config = {hallr_ffi_utils.COMMAND_TAG: "simplify_rdp", "simplify_distance": str(self.simplify_distance_prop),
@@ -309,7 +314,7 @@ class MESH_OT_hallr_simplify_rdp(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(wall_clock, config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                           create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
@@ -635,6 +640,7 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
         return wm.invoke_props_dialog(self)
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         obj = context.active_object
 
         config = {hallr_ffi_utils.COMMAND_TAG: "voronoi_mesh",
@@ -646,7 +652,8 @@ class MESH_OT_hallr_voroni_mesh(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(wall_clock, config, obj,
+                                                          mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                           create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
@@ -719,6 +726,7 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
         return wm.invoke_props_dialog(self)
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         obj = context.active_object
 
         if obj.type != 'MESH':
@@ -734,7 +742,8 @@ class MESH_OT_hallr_voronoi_diagram(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(wall_clock, config, obj,
+                                                          mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                           create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
@@ -821,6 +830,7 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
         return wm.invoke_props_dialog(self)
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         obj = context.active_object
 
         config = {hallr_ffi_utils.COMMAND_TAG: self.cmd_backend_prop,
@@ -831,7 +841,8 @@ class MESH_OT_hallr_sdf_mesh_25D(bpy.types.Operator, BaseOperatorMixin):
             config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
         try:
             # Call the Rust function
-            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(wall_clock, config, obj,
+                                                          mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                           create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
@@ -919,6 +930,7 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
         return wm.invoke_props_dialog(self)
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         obj = context.active_object
 
         config = {hallr_ffi_utils.COMMAND_TAG: self.cmd_backend_prop,
@@ -929,7 +941,8 @@ class MESH_OT_hallr_sdf_mesh(bpy.types.Operator, BaseOperatorMixin):
             config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
         try:
             # Call the Rust function
-            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(wall_clock, config, obj,
+                                                          mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                           create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
@@ -1086,6 +1099,7 @@ class MESH_OT_hallr_discretize(bpy.types.Operator, BaseOperatorMixin):
         return wm.invoke_props_dialog(self)
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         obj = context.active_object
 
         config = {hallr_ffi_utils.COMMAND_TAG: "discretize",
@@ -1094,7 +1108,8 @@ class MESH_OT_hallr_discretize(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(wall_clock, config, obj,
+                                                          mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                           create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
@@ -1187,6 +1202,7 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
         return wm.invoke_props_dialog(self)
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         obj = context.active_object
 
         config = {hallr_ffi_utils.COMMAND_TAG: "centerline",
@@ -1206,7 +1222,8 @@ class MESH_OT_hallr_centerline(bpy.types.Operator, BaseOperatorMixin):
             config[hallr_ffi_utils.VERTEX_MERGE_TAG] = str(self.remove_doubles_threshold_prop)
         try:
             # Call the Rust function
-            _, info = hallr_ffi_utils.process_single_mesh(config, obj, mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
+            _, info = hallr_ffi_utils.process_single_mesh(wall_clock, config, obj,
+                                                          mesh_format=hallr_ffi_utils.MeshFormat.EDGES,
                                                           create_new=False)
             self.report({'INFO'}, info)
         except Exception as e:
@@ -1260,6 +1277,7 @@ class MESH_OT_hallr_mesh_cleanup(bpy.types.Operator, BaseOperatorMixin):
         return wm.invoke_props_dialog(self)
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         obj = context.active_object
 
         config = {
@@ -1269,7 +1287,7 @@ class MESH_OT_hallr_mesh_cleanup(bpy.types.Operator, BaseOperatorMixin):
 
         try:
             # Call the Rust function
-            _, info = hallr_ffi_utils.process_single_mesh(config, obj,
+            _, info = hallr_ffi_utils.process_single_mesh(wall_clock, config, obj,
                                                           mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
                                                           create_new=False)
             self.report({'INFO'}, info)
@@ -1435,6 +1453,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
         return wm.invoke_props_dialog(self)
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         obj = context.active_object
 
         if self.deny_non_manifold_prop:
@@ -1446,11 +1465,15 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
             bpy.ops.mesh.select_all(action='DESELECT')
             bpy.ops.mesh.select_non_manifold()
 
+            manifold_check_time = time.perf_counter()
+
             # Get the selected elements count
             bm = bmesh.from_edit_mesh(obj.data)
             non_manifold_count = sum(1 for v in bm.verts if v.select)
             bm.free()
             self.manifold_not_checked = False
+
+            #print(f"Python: manifold_check: {hallr_ffi_utils._duration_to_str(time.perf_counter() - manifold_check_time)}")
 
             if non_manifold_count > 0:
                 self.report({'ERROR'},
@@ -1495,7 +1518,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
                 config["FLIP_QUALITY_THRESHOLD"] = str(self.quality_threshold_prop)
         try:
             # Call the Rust function
-            _, info = hallr_ffi_utils.process_single_mesh(config, obj,
+            _, info = hallr_ffi_utils.process_single_mesh(wall_clock, config, obj,
                                                           mesh_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
                                                           create_new=False)
             self.report({'INFO'}, info)
@@ -1505,6 +1528,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
             self.report({'ERROR'}, f"Error: {e}")
             return {'CANCELLED'}
 
+        # print(f"Python: operation_execute: {hallr_ffi_utils._duration_to_str(time.perf_counter() - wall_clock)}")
         return {'FINISHED'}
 
     def draw(self, context):

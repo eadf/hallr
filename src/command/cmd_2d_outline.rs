@@ -62,7 +62,7 @@ where
                     "A face contained the same vertex at least twice".to_string(),
                 ));
             }
-            let key = make_edge_key(v0 as u32, v1 as u32);
+            let key = make_edge_key(v0, v1);
 
             if all_edges.contains(&key) {
                 let _ = internal_edges.insert(key);
@@ -97,7 +97,7 @@ where
     // no need for internal_edges anymore
     drop(internal_edges);
     // vector number translation table
-    let mut vector_rename_map = ahash::AHashMap::<u32, u32>::default();
+    let mut vector_rename_map = rustc_hash::FxHashMap::<u32, u32>::default();
     let mut rv_vertices = Vec::<FFIVector3>::with_capacity(all_edges.len() * 6 / 5);
     let mut rv_lines = Vec::<(u32, u32)>::with_capacity(all_edges.len() * 6 / 5);
 
@@ -174,11 +174,11 @@ where
             //world_orientation: input_model.world_orientation.clone(),
             world_orientation: input_model.copy_world_orientation()?,
             vertices: rv_vector,
-            indices: Vec::<usize>::with_capacity(input_model.indices.len()),
+            indices: Vec::<u32>::with_capacity(input_model.indices.len()),
         };
         for l in rv_lines.iter() {
-            model.indices.push(l.0 as usize);
-            model.indices.push(l.1 as usize);
+            model.indices.push(l.0);
+            model.indices.push(l.1);
         }
         let mut return_config = ConfigType::new();
         let _ = return_config.insert(

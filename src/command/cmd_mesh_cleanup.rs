@@ -15,12 +15,12 @@ use vector_traits::glam::Vec3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Edge {
-    pub v0: usize,
-    pub v1: usize,
+    pub v0: u32,
+    pub v1: u32,
 }
 
 impl Edge {
-    pub fn new(v0: usize, v1: usize) -> Self {
+    pub fn new(v0: u32, v1: u32) -> Self {
         // Ensure consistent ordering
         if v0 < v1 {
             Self { v0, v1 }
@@ -32,13 +32,13 @@ impl Edge {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Face {
-    pub v0: usize,
-    pub v1: usize,
-    pub v2: usize,
+    pub v0: u32,
+    pub v1: u32,
+    pub v2: u32,
 }
 
 impl Face {
-    pub fn new(v0: usize, v1: usize, v2: usize) -> Self {
+    pub fn new(v0: u32, v1: u32, v2: u32) -> Self {
         Self { v0, v1, v2 }
     }
 
@@ -51,16 +51,16 @@ impl Face {
     }
 
     pub fn normal(&self, vertices: &[Vec3]) -> Vec3 {
-        let v0 = vertices[self.v0];
-        let v1 = vertices[self.v1];
-        let v2 = vertices[self.v2];
+        let v0 = vertices[self.v0 as usize];
+        let v1 = vertices[self.v1 as usize];
+        let v2 = vertices[self.v2 as usize];
 
         let edge1 = v1 - v0;
         let edge2 = v2 - v0;
         edge1.cross(edge2).normalize()
     }
 
-    pub fn contains_vertex(&self, vertex_idx: usize) -> bool {
+    pub fn contains_vertex(&self, vertex_idx: u32) -> bool {
         self.v0 == vertex_idx || self.v1 == vertex_idx || self.v2 == vertex_idx
     }
 }
@@ -68,7 +68,7 @@ impl Face {
 #[derive(Debug, Clone)]
 struct MeshAnalysis {
     non_manifold_edges: Vec<Edge>,
-    non_manifold_vertices: Vec<usize>,
+    non_manifold_vertices: Vec<u32>,
 }
 
 #[derive(Debug)]
@@ -110,7 +110,7 @@ impl Mesh {
     }
 
     /// Detect non-manifold vertices (vertices that connect disconnected surface components)  
-    pub fn detect_non_manifold_vertices(&mut self) -> &[usize] {
+    pub fn detect_non_manifold_vertices(&mut self) -> &[u32] {
         &self.get_analysis().non_manifold_vertices
     }
 
@@ -153,17 +153,26 @@ impl Mesh {
     }
 
     /// Internal computation method - separated from public API
-    fn compute_non_manifold_vertices(&self) -> Vec<usize> {
+    fn compute_non_manifold_vertices(&self) -> Vec<u32> {
         let mut non_manifold_vertices = Vec::new();
 
         // Build vertex-to-faces mapping
-        let mut vertex_to_faces: FxHashMap<usize, Vec<usize>> =
+        let mut vertex_to_faces: FxHashMap<u32, Vec<u32>> =
             FxHashMap::with_capacity_and_hasher(self.vertices.len(), Default::default());
 
         for (face_idx, face) in self.faces.iter().enumerate() {
-            vertex_to_faces.entry(face.v0).or_default().push(face_idx);
-            vertex_to_faces.entry(face.v1).or_default().push(face_idx);
-            vertex_to_faces.entry(face.v2).or_default().push(face_idx);
+            vertex_to_faces
+                .entry(face.v0)
+                .or_default()
+                .push(face_idx as u32);
+            vertex_to_faces
+                .entry(face.v1)
+                .or_default()
+                .push(face_idx as u32);
+            vertex_to_faces
+                .entry(face.v2)
+                .or_default()
+                .push(face_idx as u32);
         }
 
         for (vertex_idx, face_indices) in vertex_to_faces {
@@ -190,9 +199,9 @@ impl Mesh {
     /// Get connected components of faces around a vertex
     fn get_face_components_around_vertex(
         &self,
-        vertex_idx: usize,
-        face_indices: &[usize],
-    ) -> Vec<Vec<usize>> {
+        vertex_idx: u32,
+        face_indices: &[u32],
+    ) -> Vec<Vec<u32>> {
         let mut visited =
             FxHashSet::with_capacity_and_hasher(face_indices.len(), Default::default());
         let mut components = Vec::new();
@@ -240,12 +249,12 @@ impl Mesh {
     /// Check if two faces share an edge that includes the given vertex
     fn faces_share_edge_through_vertex(
         &self,
-        face1_idx: usize,
-        face2_idx: usize,
-        vertex_idx: usize,
+        face1_idx: u32,
+        face2_idx: u32,
+        vertex_idx: u32,
     ) -> bool {
-        let face1 = &self.faces[face1_idx];
-        let face2 = &self.faces[face2_idx];
+        let face1 = &self.faces[face1_idx as usize];
+        let face2 = &self.faces[face2_idx as usize];
 
         let face1_edges = face1.edges();
         let face2_edges = face2.edges();
@@ -266,7 +275,7 @@ impl Mesh {
     }
 
     /// Check if face components around a vertex are spatially separated
-    fn are_components_spatially_separated(&self, components: &[Vec<usize>]) -> bool {
+    fn are_components_spatially_separated(&self, components: &[Vec<u32>]) -> bool {
         if components.len() < 2 {
             return false;
         }
@@ -279,7 +288,7 @@ impl Mesh {
             let mut count = 0;
 
             for &face_idx in component {
-                let face = &self.faces[face_idx];
+                let face = &self.faces[face_idx as usize];
                 let normal = face.normal(&self.vertices);
                 if normal.length() > 0.0 {
                     avg_normal += normal;
@@ -296,8 +305,8 @@ impl Mesh {
 
         // Check if component normals are significantly different
         // (indicating different surface orientations)
-        for i in 0..component_normals.len() {
-            for j in i + 1..component_normals.len() {
+        for i in 0..component_normals.len() as u32 {
+            for j in i + 1..component_normals.len() as u32 {
                 let dot_product = component_normals.ᚦget(i).dot(*component_normals.ᚦget(j));
                 if dot_product < 0.5 {
                     // Normals differ by more than 60 degrees
@@ -310,9 +319,9 @@ impl Mesh {
     }
 
     /// Fix non-manifold vertices by duplicating them for each connected component
-    pub fn fix_non_manifold_vertices(&mut self) -> usize {
+    pub fn fix_non_manifold_vertices(&mut self) -> u32 {
         // Get the current non-manifold vertices (this will cache the analysis)
-        let non_manifold_vertices: Vec<usize> = self.detect_non_manifold_vertices().to_vec();
+        let non_manifold_vertices: Vec<u32> = self.detect_non_manifold_vertices().to_vec();
         let mut fixes_applied = 0;
 
         for vertex_idx in non_manifold_vertices {
@@ -330,12 +339,12 @@ impl Mesh {
     }
 
     /// Split a non-manifold vertex into multiple vertices
-    fn split_non_manifold_vertex(&mut self, vertex_idx: usize) -> bool {
+    fn split_non_manifold_vertex(&mut self, vertex_idx: u32) -> bool {
         // Get faces that use this vertex
         let mut vertex_faces = Vec::new();
         for (face_idx, face) in self.faces.iter().enumerate() {
             if face.contains_vertex(vertex_idx) {
-                vertex_faces.push(face_idx);
+                vertex_faces.push(face_idx as u32);
             }
         }
 
@@ -350,12 +359,12 @@ impl Mesh {
             return false; // No splitting needed
         }
 
-        let original_vertex_pos = self.vertices[vertex_idx];
+        let original_vertex_pos = self.vertices[vertex_idx as usize];
 
         // Keep the first component using the original vertex
         // Create new vertices for other components
         for (comp_idx, component) in components.iter().enumerate().skip(1) {
-            let new_vertex_idx = self.vertices.len();
+            let new_vertex_idx = self.vertices.len() as u32;
 
             // Add slightly offset vertex to avoid exact duplicates
             let offset = Vec3::new(
@@ -384,7 +393,7 @@ impl Mesh {
     }
 
     /// Fix non-manifold edges by collapsing them to a single point
-    pub fn fix_non_manifold_edges(&mut self) -> usize {
+    pub fn fix_non_manifold_edges(&mut self) -> u32 {
         // Get the current non-manifold edges (this will cache the analysis)
         let non_manifold_edges: Vec<Edge> = self.detect_non_manifold_edges().to_vec();
         let mut fixes_applied = 0;
@@ -411,7 +420,7 @@ impl Mesh {
         let v0_idx = edge.v0;
         let v1_idx = edge.v1;
 
-        if v0_idx >= self.vertices.len() || v1_idx >= self.vertices.len() {
+        if v0_idx as usize >= self.vertices.len() || v1_idx as usize >= self.vertices.len() {
             return false;
         }
 
@@ -450,7 +459,7 @@ impl Mesh {
             .retain(|face| face.v0 != face.v1 && face.v1 != face.v2 && face.v2 != face.v0);
 
         // Find used vertices
-        let mut used_vertices: FxHashSet<usize> =
+        let mut used_vertices: FxHashSet<u32> =
             FxHashSet::with_capacity_and_hasher(self.vertices.len(), Default::default());
         for face in &self.faces {
             let _ = used_vertices.insert(face.v0);
@@ -459,13 +468,13 @@ impl Mesh {
         }
 
         // Create vertex remapping
-        let mut old_to_new: FxHashMap<usize, usize> =
+        let mut old_to_new: FxHashMap<u32, u32> =
             FxHashMap::with_capacity_and_hasher(self.vertices.len(), Default::default());
         let mut new_vertices = Vec::new();
 
         for (new_idx, &old_idx) in used_vertices.iter().enumerate() {
-            let _ = old_to_new.insert(old_idx, new_idx);
-            new_vertices.push(self.vertices[old_idx]);
+            let _ = old_to_new.insert(old_idx, new_idx as u32);
+            new_vertices.push(self.vertices[old_idx as usize]);
         }
 
         // Update face indices
@@ -479,7 +488,7 @@ impl Mesh {
     }
 
     /// Fix all non-manifold issues iteratively until convergence
-    pub fn fix_non_manifold_iterative(&mut self, max_iterations: usize) -> (usize, usize) {
+    pub fn fix_non_manifold_iterative(&mut self, max_iterations: usize) -> (u32, u32) {
         let mut total_vertex_fixes = 0;
         let mut total_edge_fixes = 0;
 
@@ -571,7 +580,7 @@ pub(crate) fn process_command(
 
     // Get the final vertex array
     let mut ffi_vertices: Vec<FFIVector3> = mesh.vertices.iter().map(|v| (*v).into()).collect();
-    let indices: Vec<usize> = mesh.faces.iter().flat_map(|f| [f.v0, f.v1, f.v2]).collect();
+    let indices: Vec<u32> = mesh.faces.iter().flat_map(|f| [f.v0, f.v1, f.v2]).collect();
 
     if let Some(world_to_local) = model.get_world_to_local_transform()? {
         // Transform to local

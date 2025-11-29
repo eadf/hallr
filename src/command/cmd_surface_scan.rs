@@ -21,6 +21,7 @@ use vector_traits::{
 
 #[cfg(test)]
 mod tests;
+
 fn do_meander_scan<T>(
     input_config: ConfigType,
     bounding_vertices: &[FFIVector3],
@@ -28,7 +29,7 @@ fn do_meander_scan<T>(
     probe: &dyn Probe<T, FFIVector3>,
     minimum_z: T::Scalar,
     step: T::Scalar,
-) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
+) -> Result<(Vec<FFIVector3>, Vec<u32>, ConfigType), HallrError>
 where
     T: GenericVector3,
     T::Vector2: PointTrait<PScalar = T::Scalar>,
@@ -95,7 +96,7 @@ fn do_triangulation_scan<T>(
     probe: &dyn Probe<T, FFIVector3>,
     minimum_z: T::Scalar,
     step: T::Scalar,
-) -> Result<(Vec<FFIVector3>, Vec<usize>, ConfigType), HallrError>
+) -> Result<(Vec<FFIVector3>, Vec<u32>, ConfigType), HallrError>
 where
     T: GenericVector3,
     T::Vector2: PointTrait<PScalar = T::Scalar>,

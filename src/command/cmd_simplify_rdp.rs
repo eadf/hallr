@@ -63,7 +63,7 @@ where
         .get_optional_parsed_option("simplify_3d")?
         .unwrap_or(false);
     let mut output_vertices = Vec::<FFIVector3>::default();
-    let mut output_indices = Vec::<usize>::default();
+    let mut output_indices = Vec::<u32>::default();
     let output_matrix;
     if !models.is_empty() && !models[0].indices.is_empty() {
         let model = &models[0];
@@ -81,10 +81,12 @@ where
                 let simplified = indexed_simplify_rdp_3d(&vertices, &line, simplify_distance);
 
                 for line in simplified.windows(2) {
-                    output_indices
-                        .push(vdd.get_index_or_insert(line[0], || vertices[line[0]].to())? as usize);
-                    output_indices
-                        .push(vdd.get_index_or_insert(line[1], || vertices[line[1]].to())? as usize);
+                    output_indices.push(
+                        vdd.get_index_or_insert(line[0], || vertices[line[0] as usize].to())?,
+                    );
+                    output_indices.push(
+                        vdd.get_index_or_insert(line[1], || vertices[line[1] as usize].to())?,
+                    );
                 }
             }
             output_vertices = vdd.vertices;
@@ -98,11 +100,11 @@ where
 
                 for line in simplified.windows(2) {
                     output_indices.push(vdd.get_index_or_insert(line[0], || {
-                        vertices_2d[line[0]].to_3d(T::Scalar::ZERO).to()
-                    })? as usize);
+                        vertices_2d[line[0] as usize].to_3d(T::Scalar::ZERO).to()
+                    })?);
                     output_indices.push(vdd.get_index_or_insert(line[1], || {
-                        vertices_2d[line[1]].to_3d(T::Scalar::ZERO).to()
-                    })? as usize);
+                        vertices_2d[line[1] as usize].to_3d(T::Scalar::ZERO).to()
+                    })?);
                 }
             }
             output_vertices = vdd.vertices;

@@ -88,11 +88,11 @@ where
         let v1 = chunk[1];
 
         vor_lines.push(BV::Line {
-            start: vor_vertices[v0],
-            end: vor_vertices[v1],
+            start: vor_vertices[v0 as usize],
+            end: vor_vertices[v1 as usize],
         });
-        let _ = used_vertices.set(v0, true);
-        let _ = used_vertices.set(v1, true);
+        let _ = used_vertices.set(v0 as usize, true);
+        let _ = used_vertices.set(v1 as usize, true);
     }
     // save the unused vertices as points
     let vor_vertices: Vec<BV::Point<i64>> = vor_vertices
@@ -110,7 +110,7 @@ pub(crate) fn compute_voronoi_mesh(
     input_model: &Model<'_>,
     cmd_arg_max_voronoi_dimension: f32,
     cmd_discretization_distance: f32,
-) -> Result<(Vec<Vec3A>, Vec<usize>), HallrError> {
+) -> Result<(Vec<Vec3A>, Vec<u32>), HallrError> {
     let (vor_vertices, vor_lines, vor_aabb2, inverted_transform) =
         parse_input::<Vec3A>(input_model, cmd_arg_max_voronoi_dimension)?;
     let vor_diagram = {

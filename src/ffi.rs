@@ -92,7 +92,7 @@ impl FFIVector3 {
     }
 }
 
-#[allow(dead_code)]
+/*#[allow(dead_code)]
 // Convert Vec<[f32; 3]> to Vec<FFIVector3> without copying
 pub(crate) fn unsafe_cast_vec(vec: Vec<[f32; 3]>) -> Vec<FFIVector3> {
     // Safety:
@@ -107,7 +107,7 @@ pub(crate) fn unsafe_cast_vec(vec: Vec<[f32; 3]>) -> Vec<FFIVector3> {
             vec.capacity(),
         )
     }
-}
+}*/
 
 /// A struct representing the geometry output for FFI (Foreign Function Interface) usage.
 ///
@@ -126,7 +126,7 @@ pub(crate) fn unsafe_cast_vec(vec: Vec<[f32; 3]>) -> Vec<FFIVector3> {
 pub struct GeometryOutput {
     vertices: *mut FFIVector3,
     vertex_count: usize,
-    indices: *mut usize,
+    indices: *mut u32,
     indices_count: usize,
     matrices: *mut f32,
     matrices_count: usize,
@@ -218,15 +218,10 @@ pub struct ProcessResult {
 /// It also catches any panic! and encapsulates them the same way (and hence don't crash the caller)
 fn process_command_error_handler(
     vertices: &[FFIVector3],
-    indices: &[usize],
+    indices: &[u32],
     matrix: &[f32],
     config: HashMap<String, String>,
-) -> (
-    Vec<FFIVector3>,
-    Vec<usize>,
-    Vec<f32>,
-    HashMap<String, String>,
-) {
+) -> (Vec<FFIVector3>, Vec<u32>, Vec<f32>, HashMap<String, String>) {
     let start = Instant::now();
     let return_value = std::panic::catch_unwind(|| {
         match crate::command::process_command(vertices, indices, matrix, config) {
@@ -280,7 +275,7 @@ fn process_command_error_handler(
 pub unsafe extern "C" fn process_geometry(
     input_ffi_vertices: *const FFIVector3,
     vertex_count: usize,
-    input_ffi_indices: *const usize,
+    input_ffi_indices: *const u32,
     indices_count: usize,
     input_ffi_matrix: *const f32,
     matrix_count: usize,
@@ -341,7 +336,7 @@ pub unsafe extern "C" fn process_geometry(
     let rv_g = GeometryOutput {
         vertices: output_vertices.as_ptr() as *mut FFIVector3,
         vertex_count: output_vertices.len(),
-        indices: output_indices.as_ptr() as *mut usize,
+        indices: output_indices.as_ptr() as *mut u32,
         indices_count: output_indices.len(),
         matrices: output_matrix.as_ptr() as *mut f32,
         matrices_count: output_matrix.len(),

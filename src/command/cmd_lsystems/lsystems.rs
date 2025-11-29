@@ -213,9 +213,9 @@ pub(super) enum TurtleCommand {
 
 #[derive(Default)]
 pub(super) struct TurtleRules {
-    rules: ahash::AHashMap<char, String>,
+    rules: rustc_hash::FxHashMap<char, String>,
     axiom: String,
-    tokens: ahash::AHashMap<char, TurtleCommand>,
+    tokens: rustc_hash::FxHashMap<char, TurtleCommand>,
     yaw: Option<f64>,
     pitch: Option<f64>,
     roll: Option<f64>,

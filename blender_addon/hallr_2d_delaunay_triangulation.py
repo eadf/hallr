@@ -5,6 +5,7 @@ This file is part of the hallr crate.
 """
 
 import bpy
+import time
 from . import hallr_ffi_utils
 
 # Define the choices for the search pattern property
@@ -119,6 +120,7 @@ class HALLR_OT_DT2GenerateMesh(bpy.types.Operator):
     bl_description = "Create a 2½D Delaunay triangulation from the selected point cloud within the bounding shape"
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         # Check if all objects are selected
         bounding_shape = context.scene.hallr_dt2_delaunay_settings.bounding_shape
         point_cloud = context.scene.hallr_dt2_delaunay_settings.point_cloud
@@ -134,7 +136,7 @@ class HALLR_OT_DT2GenerateMesh(bpy.types.Operator):
                       hallr_ffi_utils.COMMAND_TAG: "2d_delaunay_triangulation"}
             try:
                 # Call the Rust function
-                _, info = hallr_ffi_utils.process_mesh_with_rust(config, primary_object=point_cloud,
+                _, info = hallr_ffi_utils.process_mesh_with_rust(wall_clock, config, primary_object=point_cloud,
                                                                  secondary_object=bounding_shape,
                                                                  primary_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,
                                                                  secondary_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,

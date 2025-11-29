@@ -55,7 +55,7 @@ where
         })
         .collect();
 
-    let input_edges: Vec<(usize, usize)> = input_model
+    let input_edges: Vec<(u32, u32)> = input_model
         .indices
         .chunks(2)
         .map(|i| (i[0], i[1]))
@@ -63,7 +63,7 @@ where
     println!("Input edges : {:?}", input_edges.len());
 
     // this map contains a map from `edge_id` ->  `SmallVec<new intersecting vertices id>`
-    let mut edge_split = ahash::AHashMap::<usize, smallvec::SmallVec<[usize; 1]>>::default();
+    let mut edge_split = rustc_hash::FxHashMap::<u32, smallvec::SmallVec<[u32; 1]>>::default();
     let new_vertices = {
         let (updated_vertices_list, intersection_iter) =
             IntersectionTester::<T::Vector2>::new(vertices_2d)
@@ -75,7 +75,7 @@ where
             println!("No intersections detected!!");
         }
         for (splitting_vertex_index, affected_edges) in intersection_iter {
-            let splitting_vertex = updated_vertices_list[splitting_vertex_index];
+            let splitting_vertex = updated_vertices_list[splitting_vertex_index as usize];
             /*println!(
                 "Intersection detected @({},{}):idx:{} Involved edges:{:?}",
                 splitting_vertex.x(),
@@ -93,7 +93,7 @@ where
                 }
                 edge_split
                     .entry(*edge_index)
-                    .or_insert_with(smallvec::SmallVec::<[usize; 1]>::new)
+                    .or_insert_with(smallvec::SmallVec::<[u32; 1]>::new)
                     .push(splitting_vertex_index);
             }
         }
@@ -126,13 +126,13 @@ where
         OwnedModel {
             world_orientation,
             vertices,
-            indices: Vec::<usize>::with_capacity(estimated_edges),
+            indices: Vec::<u32>::with_capacity(estimated_edges),
         }
     };
 
     // insert the un-affected edges into the output
     for (edge_id, edge) in input_edges.iter().enumerate() {
-        if !edge_split.contains_key(&(edge_id)) {
+        if !edge_split.contains_key(&(edge_id as u32)) {
             output_model.indices.push(edge.0);
             output_model.indices.push(edge.1);
             //println!("added un-affected edge: v:{}-v:{}", edge.0, edge.1)
@@ -143,8 +143,8 @@ where
     // Add the intersecting edges, but split them first
 
     for (edge_id, mut split_points) in edge_split {
-        let (i0, i1) = input_edges[edge_id];
-        let v0: T::Vector2 = output_model.vertices[i0].to().to_2d();
+        let (i0, i1) = input_edges[edge_id as usize];
+        let v0: T::Vector2 = output_model.vertices[i0 as usize].to().to_2d();
         /*println!();
         println!(
             "processing edge:{} split_points:{:?} i0:{}, v0:{:?}, i1:{}, v1:{:?}",
@@ -160,9 +160,9 @@ where
             split_points.push(i1);
             //output_model.indices.push(i0);
             //println!("split_points:{:?}", split_points);
-            let new_vec: Vec<(usize, T::Vector2)> = split_points
+            let new_vec: Vec<(u32, T::Vector2)> = split_points
                 .into_iter()
-                .map(|i| (i, output_model.vertices[i].to().to_2d()))
+                .map(|i| (i, output_model.vertices[i as usize].to().to_2d()))
                 .collect();
             //println!("new_vec:{:?}", new_vec);
             //println!("pushed: {}", i0);

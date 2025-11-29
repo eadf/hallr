@@ -92,8 +92,8 @@ pub(crate) fn process_command(
     let (voxel_size, mesh) = crate::utils::rounded_cones_fsn::build_round_cones_voxel_mesh(
         cmd_arg_sdf_divisions,
         input_model.indices.par_chunks_exact(2).map(|i| {
-            let e0 = vertices[i[0]];
-            let e1 = vertices[i[1]];
+            let e0 = vertices[i[0] as usize];
+            let e1 = vertices[i[1] as usize];
             (
                 glam::vec4(e0.0.x, e0.0.y, 0.0, e0.1 * cmd_arg_sdf_radius_multiplier),
                 glam::vec4(e1.0.x, e1.0.y, 0.0, e1.1 * cmd_arg_sdf_radius_multiplier),

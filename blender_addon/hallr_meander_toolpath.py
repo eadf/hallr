@@ -6,6 +6,7 @@ This file is part of the hallr crate.
 
 import bpy
 import math
+import time
 from . import hallr_ffi_utils
 
 # Define the choices for the tool/probe property
@@ -168,6 +169,7 @@ class OBJECT_OT_MT_GenerateMesh(bpy.types.Operator):
     # bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        wall_clock = time.perf_counter()
         # Check if all objects are selected
         settings = context.scene.hallr_meander_settings
         bounding_shape = settings.bounding_shape
@@ -197,7 +199,8 @@ class OBJECT_OT_MT_GenerateMesh(bpy.types.Operator):
 
             try:
                 # Call the Rust function
-                hallr_ffi_utils.process_mesh_with_rust(config, primary_object=model,
+                hallr_ffi_utils.process_mesh_with_rust(wall_clock,
+                                                       config, primary_object=model,
                                                        secondary_object=bounding_shape,
                                                        primary_format=hallr_ffi_utils.MeshFormat.TRIANGULATED,
                                                        secondary_format=hallr_ffi_utils.MeshFormat.POINT_CLOUD,

@@ -20,7 +20,7 @@ fn build_saft_voxels(
     radius_multiplier: f32,
     divisions: f32,
     vertices: &[FFIVector3],
-    edges: &[usize],
+    edges: &[u32],
 ) -> Result<
     (
         f32, // <- voxel_size
@@ -62,9 +62,9 @@ fn build_saft_voxels(
     let capsules: Vec<_> = edges
         .chunks_exact(2)
         .map(|e| {
-            let v0 = vertices[e[0]];
+            let v0 = vertices[e[0] as usize];
             let v0 = macaw::Vec3::new(v0.x, v0.y, v0.z) * scale;
-            let v1 = vertices[e[1]];
+            let v1 = vertices[e[1] as usize];
             let v1 = macaw::Vec3::new(v1.x, v1.y, v1.z) * scale;
             graph.capsule([v0, v1], radius)
         })
@@ -115,7 +115,7 @@ fn build_output_model(
     Ok(OwnedModel {
         world_orientation: input_model.copy_world_orientation()?,
         vertices,
-        indices: mesh.indices.into_iter().map(|i| i as usize).collect(),
+        indices: mesh.indices,
     })
 }
 

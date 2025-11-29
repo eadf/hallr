@@ -86,6 +86,7 @@ impl<T: GenericVector2> VertexDeduplicator2D<T> {
     }
 }
 
+// TODO replace with dedup crate
 #[allow(clippy::type_complexity)]
 pub(crate) struct VertexDeduplicator3D<T: GenericVector3> {
     set: FxHashMap<
@@ -158,11 +159,11 @@ impl<T: HasXYZ> IndexDeduplicator<T> {
     }
 
     /// get a previously defined index, or insert the vertex and return the new index
-    pub fn get_index_or_insert<F>(&mut self, old_index: usize, vertex: F) -> Result<u32, HallrError>
+    pub fn get_index_or_insert<F>(&mut self, old_index: u32, vertex: F) -> Result<u32, HallrError>
     where
         F: Fn() -> T,
     {
-        let index = self.set.entry(old_index as u32).or_insert_with(|| {
+        let index = self.set.entry(old_index).or_insert_with(|| {
             let new_index = self.vertices.len();
             self.vertices.push(vertex());
             new_index as u32
@@ -367,60 +368,60 @@ impl UnsafeVob for vob::Vob {
 #[allow(dead_code)]
 pub(crate) trait UnsafeArray<T> {
     /// unsafe (thorn) get()
-    fn ᚦget(&self, index: usize) -> &T;
+    fn ᚦget(&self, index: u32) -> &T;
     /// unsafe (thorn) get_mut()
-    fn ᚦget_mut(&mut self, index: usize) -> &mut T;
+    fn ᚦget_mut(&mut self, index: u32) -> &mut T;
 }
 
 impl<T> UnsafeArray<T> for [T] {
     #[cfg(debug_assertions)]
     #[inline(always)]
-    fn ᚦget(&self, index: usize) -> &T {
-        self.get(index).unwrap()
+    fn ᚦget(&self, index: u32) -> &T {
+        self.get(index as usize).unwrap()
     }
 
     #[cfg(not(debug_assertions))]
     #[inline(always)]
-    fn ᚦget(&self, index: usize) -> &T {
-        unsafe { self.get_unchecked(index) }
+    fn ᚦget(&self, index: u32) -> &T {
+        unsafe { self.get_unchecked(index as usize) }
     }
 
     #[cfg(debug_assertions)]
     #[inline(always)]
-    fn ᚦget_mut(&mut self, index: usize) -> &mut T {
-        self.get_mut(index).unwrap()
+    fn ᚦget_mut(&mut self, index: u32) -> &mut T {
+        self.get_mut(index as usize).unwrap()
     }
 
     #[cfg(not(debug_assertions))]
     #[inline(always)]
-    fn ᚦget_mut(&mut self, index: usize) -> &mut T {
-        unsafe { self.get_unchecked_mut(index) }
+    fn ᚦget_mut(&mut self, index: u32) -> &mut T {
+        unsafe { self.get_unchecked_mut(index as usize) }
     }
 }
 
 impl<T> UnsafeArray<T> for Vec<T> {
     #[cfg(debug_assertions)]
     #[inline(always)]
-    fn ᚦget(&self, index: usize) -> &T {
-        self.get(index).unwrap()
+    fn ᚦget(&self, index: u32) -> &T {
+        self.get(index as usize).unwrap()
     }
 
     #[cfg(not(debug_assertions))]
     #[inline(always)]
-    fn ᚦget(&self, index: usize) -> &T {
-        unsafe { self.get_unchecked(index) }
+    fn ᚦget(&self, index: u32) -> &T {
+        unsafe { self.get_unchecked(index as usize) }
     }
 
     #[cfg(debug_assertions)]
     #[inline(always)]
-    fn ᚦget_mut(&mut self, index: usize) -> &mut T {
-        self.get_mut(index).unwrap()
+    fn ᚦget_mut(&mut self, index: u32) -> &mut T {
+        self.get_mut(index as usize).unwrap()
     }
 
     #[cfg(not(debug_assertions))]
     #[inline(always)]
-    fn ᚦget_mut(&mut self, index: usize) -> &mut T {
-        unsafe { self.get_unchecked_mut(index) }
+    fn ᚦget_mut(&mut self, index: u32) -> &mut T {
+        unsafe { self.get_unchecked_mut(index as usize) }
     }
 }
 

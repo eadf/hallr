@@ -66,7 +66,7 @@ pub fn is_data_logger_enabled() -> bool {
     *HALLR_DATA_LOGGER_ENABLED.get_or_init(|| std::env::var("HALLR_DATA_LOGGER_PATH").is_ok())
 }
 
-type CommandResult = (Vec<FFIVector3>, Vec<usize>, Vec<f32>, ConfigType);
+type CommandResult = (Vec<FFIVector3>, Vec<u32>, Vec<f32>, ConfigType);
 
 trait Options {
     /// Will return an option parsed as a `T` or an Err
@@ -102,7 +102,7 @@ trait Options {
 pub struct Model<'a> {
     world_orientation: &'a [f32],
     vertices: &'a [FFIVector3],
-    indices: &'a [usize],
+    indices: &'a [u32],
 }
 
 impl Model<'_> {
@@ -216,7 +216,7 @@ impl Model<'_> {
 pub struct OwnedModel {
     pub(crate) world_orientation: [f32; 16],
     pub(crate) vertices: Vec<FFIVector3>,
-    pub(crate) indices: Vec<usize>,
+    pub(crate) indices: Vec<u32>,
 }
 
 impl OwnedModel {
@@ -224,7 +224,7 @@ impl OwnedModel {
         Self {
             world_orientation: [0.0; 16],
             vertices: Vec::<FFIVector3>::with_capacity(vertices_cap),
-            indices: Vec::<usize>::with_capacity(indices_cap),
+            indices: Vec::<u32>::with_capacity(indices_cap),
         }
     }
 
@@ -247,7 +247,7 @@ impl OwnedModel {
 
     /// Adds a point to the end of the list
     fn push(&mut self, value: FFIVector3) {
-        self.indices.push(self.vertices.len());
+        self.indices.push(self.vertices.len() as u32);
         self.vertices.push(value);
     }
 
@@ -262,7 +262,7 @@ impl OwnedModel {
 /// Sanity check
 pub fn validate_input_data<'a, T: GenericVector3>(
     vertices: &'a [FFIVector3],
-    indices: &'a [usize],
+    indices: &'a [u32],
     _config: &ConfigType,
 ) -> Result<(), HallrError> {
     if vertices.len() > u32::MAX as usize {
@@ -281,7 +281,7 @@ pub fn validate_input_data<'a, T: GenericVector3>(
 /// Collect the model data from `vertices`, `indices` and `config`
 pub fn collect_models<'a, T: GenericVector3>(
     vertices: &'a [FFIVector3],
-    indices: &'a [usize],
+    indices: &'a [u32],
     mut matrix: &'a [f32],
     config: &ConfigType,
 ) -> Result<Vec<Model<'a>>, HallrError> {
@@ -304,23 +304,23 @@ pub fn collect_models<'a, T: GenericVector3>(
                 break;
             }
             // Retrieve the vertex and index offset data as strings
-            let vertices_idx: usize =
+            let vertices_idx: u32 =
                 config.get_mandatory_parsed_option(&vertices_key, default_vertex_index)?;
-            let indices_idx: usize = config.get_mandatory_parsed_option(
+            let indices_idx: u32 = config.get_mandatory_parsed_option(
                 &format!("first_index_model_{model_counter}",),
                 default_index,
             )?;
-            let vertices_end_idx: usize = config
+            let vertices_end_idx: u32 = config
                 .get_optional_parsed_option(&format!("first_vertex_model_{}", model_counter + 1))?
-                .unwrap_or(vertices.len());
-            let indices_end_idx: usize = config
+                .unwrap_or(vertices.len() as u32);
+            let indices_end_idx: u32 = config
                 .get_optional_parsed_option(&format!("first_index_model_{}", model_counter + 1))?
-                .unwrap_or(indices.len());
+                .unwrap_or(indices.len() as u32);
 
             models.push(Model::<'_> {
                 world_orientation: &matrix[0..16],
-                vertices: &vertices[vertices_idx..vertices_end_idx],
-                indices: &indices[indices_idx..indices_end_idx],
+                vertices: &vertices[vertices_idx as usize..vertices_end_idx as usize],
+                indices: &indices[indices_idx as usize..indices_end_idx as usize],
             });
             matrix = &matrix[16..];
             // Move on to the next model
@@ -337,7 +337,7 @@ pub fn collect_models<'a, T: GenericVector3>(
 /// it will forward all request here.
 pub(crate) fn process_command(
     vertices: &[FFIVector3],
-    indices: &[usize],
+    indices: &[u32],
     matrix: &[f32],
     config: ConfigType,
 ) -> Result<CommandResult, HallrError> {
@@ -405,7 +405,7 @@ pub(crate) fn process_command(
             .next()
         {
             Some(ffi::MeshFormat::TRIANGULATED_CHAR) => {
-                dedup::<f32, usize, FFIVector3, Auto, Triangulated>(
+                dedup::<f32, u32, FFIVector3, Auto, Triangulated>(
                     &rv.0,
                     &rv.1,
                     tolerance,
@@ -414,16 +414,28 @@ pub(crate) fn process_command(
                     RelaxTolerance,
                 )?
             }
-            Some(ffi::MeshFormat::EDGE_CHAR) => dedup::<f32, usize, FFIVector3, Auto, Edges>(
+            Some(ffi::MeshFormat::LINE_WINDOWS_CHAR) =>
+            // todo: is this the best dedup option?
+            {
+                dedup::<f32, u32, FFIVector3, Auto, PointCloud>(
+                    &rv.0,
+                    &rv.1,
+                    tolerance,
+                    PruneUnused,
+                    KeepDegenerate,
+                    RelaxTolerance,
+                )?
+            }
+            Some(ffi::MeshFormat::EDGE_CHAR) => dedup::<f32, u32, FFIVector3, Auto, Edges>(
                 &rv.0,
                 &rv.1,
                 tolerance,
-                KeepUnused,
+                PruneUnused,
                 KeepDegenerate,
                 RelaxTolerance,
             )?,
             Some(ffi::MeshFormat::POINT_CLOUD_CHAR) => {
-                dedup::<f32, usize, FFIVector3, Auto, PointCloud>(
+                dedup::<f32, u32, FFIVector3, Auto, PointCloud>(
                     &rv.0,
                     &rv.1,
                     tolerance,
@@ -432,10 +444,15 @@ pub(crate) fn process_command(
                     RelaxTolerance,
                 )?
             }
-            other => {
+            Some(other) => {
                 return Err(HallrError::InvalidParameter(format!(
                     "Unknown mesh format tag {other:?}",
                 )));
+            }
+            None => {
+                return Err(HallrError::InvalidParameter(
+                    "No mesh format tag".to_string(),
+                ));
             }
         };
         println!(
@@ -458,7 +475,7 @@ fn test_3d_triangulated_mesh(result: &CommandResult) {
         .unwrap();
     assert_eq!(result.1.len() % 3, 0);
     assert!(!result.1.is_empty());
-    let number_of_vertices = result.0.len();
+    let number_of_vertices = result.0.len() as u32;
     assert!(number_of_vertices > 0);
 
     for t in result.1.chunks_exact(3) {

@@ -65,7 +65,7 @@ fn test_isotropic_remesh_1() -> Result<(), HallrError> {
 
     assert_eq!(result.1.len() % 3, 0);
 
-    let number_of_vertices = result.0.len();
+    let number_of_vertices = result.0.len() as u32;
     for t in result.1.chunks_exact(3) {
         assert_ne!(t[0], t[1]);
         assert_ne!(t[0], t[2]);

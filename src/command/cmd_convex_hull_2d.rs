@@ -43,7 +43,7 @@ where
     // calculate the convex hull, and convert back to 3d FFIVector3 vertices
     let mut rv_model =
         OwnedModel::with_capacity(input_model.vertices.len(), input_model.indices.len());
-    let all_indices: Vec<usize> = (0..input_model.vertices.len()).collect();
+    let all_indices: Vec<u32> = (0..input_model.vertices.len() as u32).collect();
 
     if let Some(world_to_local) = input_model.get_world_to_local_transform()? {
         println!(
@@ -54,7 +54,7 @@ where
             .iter()
             .for_each(|i| {
                 rv_model.push(world_to_local(
-                    input_model.vertices[*i]
+                    input_model.vertices[*i as usize]
                         .to()
                         .to_2d()
                         .to_3d(T::Scalar::ZERO)
@@ -67,7 +67,7 @@ where
             .iter()
             .for_each(|i| {
                 rv_model.push(
-                    input_model.vertices[*i]
+                    input_model.vertices[*i as usize]
                         .to()
                         .to_2d()
                         .to_3d(T::Scalar::ZERO)

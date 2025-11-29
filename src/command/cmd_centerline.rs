@@ -26,7 +26,7 @@ mod tests;
 
 #[inline(always)]
 /// make a key from v0 and v1, lowest index will always be first
-fn make_edge_key(v0: usize, v1: usize) -> (usize, usize) {
+fn make_edge_key(v0: u32, v1: u32) -> (u32, u32) {
     if v0 < v1 { (v0, v1) } else { (v1, v0) }
 }
 
@@ -36,7 +36,7 @@ fn parse_input<T: GenericVector3>(
     model: &Model<'_>,
 ) -> Result<
     (
-        ahash::AHashSet<(usize, usize)>,
+        rustc_hash::FxHashSet<(u32, u32)>,
         Vec<T>,
         <T as GenericVector3>::Aabb,
     ),
@@ -62,7 +62,7 @@ where
     println!("Rust: Centerline op: data was in plane:{plane:?} aabb:{aabb:?}",);
     //println!("Rust: vertices:{:?}", model.vertices);
     //println!("Rust: indices:{:?}", model.indices);
-    let mut edge_set = ahash::AHashSet::<(usize, usize)>::default();
+    let mut edge_set = rustc_hash::FxHashSet::<(u32, u32)>::default();
 
     for edge in model.indices.chunks(2) {
         let v0 = edge[0];
@@ -209,11 +209,11 @@ where
     }
     //println!("allocated {} needed {} and {}", count, output_pb_model_vertices.len(), output_pb_model_faces.len());
     // Todo: store in the output_indices format in the first place
-    let mut output_pb_model_indices = Vec::<usize>::with_capacity(output_model_edges.len() * 2);
+    let mut output_pb_model_indices = Vec::<u32>::with_capacity(output_model_edges.len() * 2);
     for (a, b) in output_model_edges {
         if a != b {
-            output_pb_model_indices.push(a as usize);
-            output_pb_model_indices.push(b as usize);
+            output_pb_model_indices.push(a);
+            output_pb_model_indices.push(b);
         } else {
             println!("Rust: Something is wrong: wanted to add edge {a} to {b}");
         }
