@@ -8,7 +8,7 @@ import os
 import platform
 import bpy
 import ctypes
-from typing import List, Tuple, Dict, Optional
+from typing import Tuple, Dict, Optional
 from contextlib import contextmanager
 import time
 import numpy as np
@@ -327,7 +327,7 @@ def _handle_new_object(return_options: Dict[str, str],
         try:
             remove_doubles_threshold = float(return_options.get(VERTEX_MERGE_TAG))
             print(f"Python: removing doubles by {remove_doubles_threshold}")
-            with timer("Python: bmesh.ops.remove_doubles()"):
+            with hallr_ffi_utils.timer("Python: bmesh.ops.remove_doubles()"):
                 _merge_vertices_bmesh(mesh_obj.data, remove_doubles_threshold)
         except ValueError:
             pass
@@ -368,7 +368,7 @@ def _update_existing_object(wall_clock, active_obj: bpy.types.Object,
         try:
             remove_doubles_threshold = float(return_options.get(VERTEX_MERGE_TAG))
             print(f"Python: removing doubles by {remove_doubles_threshold} (bmesh)")
-            with timer("Python: bmesh.ops.remove_doubles()"):
+            with hallr_ffi_utils.timer("Python: bmesh.ops.remove_doubles()"):
                 _merge_vertices_bmesh(new_mesh, remove_doubles_threshold)
         except ValueError as e:
             print(f"ValueError details: {str(e)}")
@@ -463,7 +463,7 @@ def process_mesh_with_rust(wall_clock,
         result = _process_mesh_with_rust(wall_clock, config, primary_object, secondary_object, primary_format,
                                          secondary_format,
                                          create_new)
-        return result[0], result[1] + f" duration:{_duration_to_str(time.perf_counter() - wall_clock)}"
+        return result[0], result[1] + f" Total:{_duration_to_str(time.perf_counter() - wall_clock)}"
 
     finally:
         # CRITICAL: Force dependency graph update before returning to edit mode
@@ -584,11 +584,16 @@ def _process_mesh_with_rust(wall_clock,
 
     # print(f"Python: start actual_rust_call: {_duration_to_str(time.perf_counter() - wall_clock)}")
 
+    rust_call_start = time.perf_counter()
+
     # Call Rust function
     rust_result = rust_lib.process_geometry(
         vertices_ptr, len(vertices) // 3, indices_ptr, len(indices),
         matrices_ptr, len(matrices), map_data
     )
+
+    rust_call_duration = _duration_to_str(time.perf_counter() - rust_call_start)
+
     # print(f"Python: done actual_rust_call: {_duration_to_str(time.perf_counter() - wall_clock)}")
     try:
         # Extract return options
@@ -624,13 +629,13 @@ def _process_mesh_with_rust(wall_clock,
         new_object.data = new_mesh
         # Handle the new object (link to scene, select, etc.)
         _handle_new_object(return_options, new_object)
-        return new_object, f"New mesh: vertices:{len(new_mesh.vertices)} indices:{indices_count}"
+        return new_object, f"New mesh: vertices:{len(new_mesh.vertices)} indices:{indices_count} Rust:{rust_call_duration}"
     else:
         print("Python: updating old object with new mesh")
         # Update existing object
         bpy.context.view_layer.objects.active = primary_object
         _update_existing_object(wall_clock, primary_object, return_options, new_mesh)
-        return None, f"Modified mesh: Δvertices:{len(new_mesh.vertices) - original_vertices} Δindices:{indices_count - original_indices}"
+        return None, f"Modified mesh: Δvertices:{len(new_mesh.vertices) - original_vertices} Δindices:{indices_count - original_indices} Rust:{rust_call_duration}"
 
 
 # Simpler convenience functions that wrap the main processing function
@@ -778,6 +783,6 @@ def _duration_to_str(duration):
     for unit, factor in units:
         if duration * factor >= 1 or unit == 'ns':
             value = duration * factor
-            return f"{value:.2f} {unit}"
+            return f"{value:.2f}{unit}"
     # this fallback is actually never used
     return f"{duration:.2f} s"

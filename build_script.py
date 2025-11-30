@@ -115,17 +115,39 @@ def run_cargo_build(dev_mode, debug, generate_tests, display_sdf_chunks):
         exit(1)
 
 
-def copy_python_files(source_dir, dest_dir):
+def copy_python_files(source_dir, dest_dir, max_depth=1, max_files=30):
     """Copy blender addon files files from the source to the destination directory."""
     clear_directory(os.path.join(dest_dir, "__pycache__"), delete_root=True)
     py_files = glob.glob(f"{source_dir}/*.py")
     os.makedirs(dest_dir, exist_ok=True)
-    for source_file in py_files:
-        dest_file = os.path.join(dest_dir, os.path.basename(source_file))
-        if os.path.isfile(dest_file):
-            os.chmod(dest_file, 0o666)
-        shutil.copy(source_file, dest_file)
-        print(f"Copied Python file: {source_file} -> {dest_file}")
+    file_count = 0
+    for root, dirs, files in os.walk(source_dir):
+        # Calculate current depth
+        current_depth = root[len(source_dir):].count(os.sep)
+
+        # Skip if beyond max depth
+        if current_depth > max_depth:
+            # Remove subdirectories from dirs to prevent os.walk from going deeper
+            dirs[:] = []
+            continue
+
+        for file in files:
+            if file.endswith('.py'):
+                file_count += 1
+                if file_count > max_files:
+                    print(f"Safety limit reached: Stopped at {max_files} files")
+                    return
+                source_file = os.path.join(root, file)
+                rel_path = os.path.relpath(source_file, source_dir)
+                dest_file = os.path.join(dest_dir, rel_path)
+
+                dest_dir_path = os.path.dirname(dest_file)
+                os.makedirs(dest_dir_path, exist_ok=True)
+
+                if os.path.isfile(dest_file):
+                    os.chmod(dest_file, 0o666)
+                shutil.copy(source_file, dest_file)
+                print(f"Copied Python file: {source_file} -> {dest_file}")
 
     # Copy blender_manifest.toml specifically
     manifest_source = os.path.join(source_dir, "blender_manifest.toml")
@@ -137,26 +159,43 @@ def copy_python_files(source_dir, dest_dir):
         print(f"Copied manifest: {manifest_source} -> {manifest_dest}")
 
 
-def process_python_files(addon_exported_path, dev_mode):
+def process_python_files(addon_exported_path, dev_mode, max_depth=1, max_files=30):
     """Perform replacements in exported Python files."""
     addon_exported_path = os.path.join(os.getcwd(), addon_exported_path)
     target_release_path = os.path.join(addon_exported_path, "lib")
 
-    for file in glob.glob(f"{addon_exported_path}/*.py"):
-        if args.dev_mode:
-            os.chmod(file, 0o666)  # Make writable before overwrite
-            with open(file, 'r') as f:
-                content = f.read()
+    file_count = 0
+    for root, dirs, files in os.walk(addon_exported_path):
+            # Calculate current depth
+            current_depth = root[len(addon_exported_path):].count(os.sep)
 
-            content = content.replace('HALLR__BLENDER_ADDON_PATH', addon_exported_path)
-            content = content.replace('HALLR__TARGET_RELEASE', target_release_path)
-            content = content.replace('DEV_MODE = False', 'DEV_MODE = True')
-            content = content.replace('from . import', 'import')
+            # Skip if beyond max depth
+            if current_depth > max_depth:
+                # Remove subdirectories from dirs to prevent os.walk from going deeper
+                dirs[:] = []
+                continue
 
-            with open(file, 'w') as f:
-                f.write(content)
-        os.chmod(file, 0o444)  # Read-only for everyone
-        print(f"Processed Python file: {file}")
+            for file in files:
+                if file.endswith('.py'):
+                    file_count += 1
+                    if file_count > max_files:
+                        print(f"Safety limit reached: Stopped at {max_files} files")
+                        return
+                    file = os.path.join(root, file)
+
+                    if args.dev_mode:
+                        os.chmod(file, 0o666)  # Make writable before overwrite
+                        with open(file, 'r') as f:
+                            content = f.read()
+
+                        content = content.replace('HALLR__BLENDER_ADDON_PATH', addon_exported_path)
+                        content = content.replace('HALLR__TARGET_RELEASE', target_release_path)
+                        content = content.replace('DEV_MODE = False', 'DEV_MODE = True')
+
+                        with open(file, 'w') as f:
+                            f.write(content)
+                    os.chmod(file, 0o444)  # Read-only for everyone
+                    print(f"Processed Python file: {file}")
 
 
 def copy_library_files(dev_mode, debug, dest_lib_directory):

@@ -44,6 +44,7 @@ jobs:
       - name: Create platform directory structure
         run: |
           mkdir -p platform_build/hallr/lib
+          mkdir -p platform_build/hallr/hallr_mesh_operators
           # create a dummy file for folder protection
           cp blender_addon/.hallr platform_build/hallr/
           if [ ! -f "platform_build/hallr/.hallr" ]; then
@@ -51,6 +52,9 @@ jobs:
           fi
           # Copy Python files
           cp blender_addon/*.py platform_build/hallr/
+          cp blender_addon/hallr_mesh_operators/*.py platform_build/hallr/hallr_mesh_operators
+          # Copy blender_manifest.toml
+          cp blender_addon/blender_manifest.toml platform_build/hallr
           # Copy compiled library
           cp target/release/${{ matrix.lib_prefix }}hallr.${{ matrix.lib_extension }} platform_build/hallr/lib/${{ matrix.lib_prefix }}hallr.${{ matrix.lib_extension }}
           # list to verify
@@ -103,6 +107,7 @@ jobs:
       - name: Create universal library and zip (versioned)
         run: |
           mkdir -p platform_build/hallr/lib
+          mkdir -p platform_build/hallr/hallr_mesh_operators
           # create a dummy file for folder protection
           cp blender_addon/.hallr platform_build/hallr/
           if [ ! -f "platform_build/hallr/.hallr" ]; then
@@ -110,6 +115,9 @@ jobs:
           fi
           # Copy Python files
           cp blender_addon/*.py platform_build/hallr/
+          cp blender_addon/hallr_mesh_operators/*.py platform_build/hallr/hallr_mesh_operators
+          # Copy blender_manifest.toml
+          cp blender_addon/blender_manifest.toml platform_build/hallr
           # Create universal binary
           lipo -create \
             -output platform_build/hallr/lib/libhallr.dylib \
@@ -162,7 +170,7 @@ jobs:
       - name: Create combined (allplatforms) directory
         run: |
           TAG="${{ github.event.release.tag_name }}"
-          mkdir -p combined_build/hallr/lib
+          mkdir -p combined_build/hallr/lib combined_build/hallr/hallr_mesh_operators
           touch combined_build/hallr/.hallr
           touch combined_build/.hallr
 
@@ -175,8 +183,11 @@ jobs:
             # copy python files (if not already present)
             if [ -d "$tmpdir/hallr" ]; then
               cp -n $tmpdir/hallr/*.py combined_build/hallr/ || true
+              cp -n $tmpdir/hallr/hallr_mesh_operators/*.py combined_build/hallr/hallr_mesh_operators || true
               # copy libs
               find $tmpdir/hallr/lib -type f -exec cp {} combined_build/hallr/lib/ \; || true
+              # copy blender_manifest.toml
+              cp -n $tmpdir/hallr/blender_manifest.toml combined_build/hallr/blender_manifest.toml || true
             fi
             rm -rf "$tmpdir"
           done

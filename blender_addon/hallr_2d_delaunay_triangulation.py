@@ -6,7 +6,12 @@ This file is part of the hallr crate.
 
 import bpy
 import time
-from . import hallr_ffi_utils
+
+DEV_MODE = False  # Set this to False for distribution
+if DEV_MODE:
+    import hallr_ffi_utils
+else:
+    from . import hallr_ffi_utils
 
 # Define the choices for the search pattern property
 bounding_props_items = [

@@ -59,16 +59,15 @@ Hallr is licensed under **AGPL-3.0-or-later**.
 This project would not be possible without the following Rust crates:
 
 * fast-surface-nets (v0.2) — Dual-licensed under MIT or Apache 2.0.
-* saft (v0.34) — Licensed under either the MIT or Apache 2.0 license.
-* ilattice (v0.4) — Licensed under the MIT license.
-* logos (v0.15) — Dual-licensed under MIT or Apache 2.0.
+* rayon (v1.10) — Dual-licensed under MIT or Apache 2.0.
 * thiserror (v2.0) — Licensed under either the MIT or Apache 2.0 license.
-* ahash (v0.8) — Dual-licensed under MIT or Apache 2.0.
 * rustc-hash (v2.1) — Dual-licensed under MIT or Apache 2.0.
 * smallvec (v1.15) — Dual-licensed under MIT or Apache 2.0.
-* rayon (v1.10) — Dual-licensed under MIT or Apache 2.0.
 * itertools (v0.14) — Dual-licensed under MIT or Apache 2.0.
 * vob (v3.0) — Licensed under the MIT license.
+* logos (v0.15) — Dual-licensed under MIT or Apache 2.0.
+* ilattice (v0.4) — Licensed under the MIT license.
 * earcutr (v0.5) — Licensed under the ISC license.
 * ryu (v1.0) — Licensed under either the Apache 2.0 or Boost Software License 1.0.
 * rand (0.9) — Dual-licensed under MIT or Apache 2.0.
+* saft (v0.34) — Licensed under either the MIT or Apache 2.0 license.
