@@ -123,7 +123,7 @@ source = "git+https://codeberg.org/eadf/centerline_rs.git#b29c93f6fdb3996808efb6
 dependencies = [
  "bitflags",
  "boostvoronoi",
- "linestring",
+ "linestring 0.16.0 (git+https://codeberg.org/eadf/linestring_rs.git)",
  "ordered-float 5.1.0",
  "rayon",
  "rustc-hash",
@@ -549,7 +549,7 @@ dependencies = [
  "ilattice",
  "itertools 0.14.0",
  "krakel",
- "linestring",
+ "linestring 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "logos",
  "macaw",
  "rand",
@@ -614,11 +614,12 @@ checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
 
 [[package]]
 name = "hronn"
-version = "0.6.0"
-source = "git+https://codeberg.org/eadf/hronn_rs.git#f8c0287b5e7a52b19a856d823f882d87efd811b4"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d22d330a2c5617c4a33a5b107918f6b3fb22acbd2bb377cdf961c2306e61e135"
 dependencies = [
  "krakel",
- "linestring",
+ "linestring 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon",
  "ryu",
  "smallvec",
@@ -679,8 +680,9 @@ dependencies = [
 
 [[package]]
 name = "krakel"
-version = "0.4.1"
-source = "git+https://codeberg.org/eadf/krakel_rs.git#fa273363910da867c15ce60891eccfb6873e72a4"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32a77324c62084dd2a9fda3a6907117755a6bb31d55e43ffca4baa4d0eb5ce3f"
 dependencies = [
  "approx",
  "num-traits",
@@ -708,8 +710,23 @@ checksum = "f9fbbcab51052fe104eb5e5d351cf728d30a5be1fe14d9be8a3b097481fb97de"
 
 [[package]]
 name = "linestring"
-version = "0.15.0"
-source = "git+https://codeberg.org/eadf/linestring_rs.git#a9efb5e0b95fca857561a7fc81fb42276afffae3"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "715e1269e88ec253c4d54d1b72924ed9d51a3ed8fe2e7c39d1190ac1304a9092"
+dependencies = [
+ "itertools 0.14.0",
+ "rayon",
+ "rustc-hash",
+ "smallvec",
+ "thiserror 2.0.17",
+ "vector-traits",
+ "vob",
+]
+
+[[package]]
+name = "linestring"
+version = "0.16.0"
+source = "git+https://codeberg.org/eadf/linestring_rs.git#f19aa4ea0b4f1957a9b99c6fe12a7586e1b424fa"
 dependencies = [
  "itertools 0.14.0",
  "rayon",
@@ -1083,8 +1100,9 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 
 [[package]]
 name = "remesh"
-version = "0.0.3"
-source = "git+https://codeberg.org/eadf/remesh_rs.git#87238597e7190f3d83f215f3b59babfc9b2a3e78"
+version = "0.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c648d3b657b2a36fafa2b53fbb4cf530913f5ab1ab58ce62bad71e1232d9136"
 dependencies = [
  "bytemuck",
  "faer",
@@ -1442,18 +1460,18 @@ checksum = "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59"
 
 [[package]]
 name = "zerocopy"
-version = "0.8.30"
+version = "0.8.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ea879c944afe8a2b25fef16bb4ba234f47c694565e97383b36f3a878219065c"
+checksum = "fd74ec98b9250adb3ca554bdde269adf631549f51d8a8f8f0a10b50f1cb298c3"
 dependencies = [
  "zerocopy-derive",
 ]
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.8.30"
+version = "0.8.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf955aa904d6040f70dc8e9384444cb1030aed272ba3cb09bbc4ab9e7c1f34f5"
+checksum = "d8a8d209fdf45cf5138cbb5a506f6b52522a25afccc534d1475dad8e31105c6a"
 dependencies = [
  "proc-macro2",
  "quote",

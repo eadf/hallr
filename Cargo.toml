@@ -17,20 +17,20 @@ crate-type = ["cdylib", "rlib"]
 vector-traits = { version="0.6.1", features = ["glam", "glam-fast-math"]}
 #vector-traits = { path = "../vector-traits", features = ["glam"] }
 #vector-traits = {git = "https://codeberg.org/eadf/vector_traits_rs.git", features = ["glam"]}
-#linestring = { version="0.15.0", features = ["glam"] }
-linestring = {git = "https://codeberg.org/eadf/linestring_rs.git", features = ["glam"]}
+linestring = { version="0.16.0", features = ["glam"] }
+#linestring = {git = "https://codeberg.org/eadf/linestring_rs.git", features = ["glam"]}
 #linestring = { path="../linestring.rs", features = ["glam"]}
 #centerline = { version="0.13.0", features = ["glam"]}
 centerline = {git = "https://codeberg.org/eadf/centerline_rs.git", features = ["glam"]}
 #centerline = { path="../centerline.rs", features = ["glam"]}
-#krakel = {version = "0.4.1", features = ["vector-traits", "glam"]}
-krakel = {git = "https://codeberg.org/eadf/krakel_rs.git", features = ["vector-traits", "glam"]}
+krakel = {version = "0.5.0", features = ["vector-traits", "glam"]}
+#krakel = {git = "https://codeberg.org/eadf/krakel_rs.git", features = ["vector-traits", "glam"]}
 #krakel = {path = "../krakel", features = ["vector-traits", "glam"]}
-#hronn = { version = "0.6.0", features = ["glam"]}
-hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
+hronn = { version = "0.7.0", features = ["glam"]}
+#hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
-#remesh = { version = "=0.0.3", features = ["glam-fast-math"] }
-remesh = { git = "https://codeberg.org/eadf/remesh_rs.git", features = ["glam-fast-math"]}
+remesh = { version = "=0.0.4", features = ["glam-fast-math"] }
+#remesh = { git = "https://codeberg.org/eadf/remesh_rs.git", features = ["glam-fast-math"]}
 #remesh = { path = "../remesh_rs", features = ["integrity_check", "glam-fast-math"]}
 #remesh = { path = "../remesh_rs", features = ["glam-fast-math"]}
 #dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel", "simd"]}
@@ -42,7 +42,7 @@ thiserror = "2.0.17"
 smallvec = "1.15.1"
 rayon = "1.11.0"
 itertools = "0.14.0"
-vob = "3.0.5"
+vob = "3.0.6"
 earcutr = "0.5.0"
 ilattice = { version="0.4.0", default-features = false, features = ["glam", "rayon"]}
 fast-surface-nets = "0.2.1"

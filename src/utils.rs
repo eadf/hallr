@@ -331,41 +331,40 @@ pub fn reconstruct_from_unordered_edges(edges: &[usize]) -> Result<Vec<usize>, H
 #[allow(dead_code)]
 pub(crate) trait UnsafeVob {
     /// unsafe (thorn) get()
-    fn ᚦget(&self, index: usize) -> bool;
+    fn ᚦget(&self, index: u32) -> bool;
     /// unsafe (thorn) set()
-    fn ᚦset(&mut self, bit: usize, flag: bool);
+    fn ᚦset(&mut self, bit: u32, flag: bool);
 }
 
 impl UnsafeVob for vob::Vob {
     #[cfg(not(debug_assertions))]
     #[inline(always)]
-    fn ᚦget(&self, bit: usize) -> bool {
-        unsafe { self.get_unchecked(bit) }
+    fn ᚦget(&self, bit: u32) -> bool {
+        unsafe { self.get_unchecked(bit as usize) }
     }
 
     #[cfg(debug_assertions)]
     #[inline(always)]
-    fn ᚦget(&self, bit: usize) -> bool {
-        self.get(bit).unwrap()
+    fn ᚦget(&self, bit: u32) -> bool {
+        self.get(bit as usize).unwrap()
     }
 
     #[cfg(not(debug_assertions))]
     #[inline(always)]
-    fn ᚦset(&mut self, bit: usize, flag: bool) {
+    fn ᚦset(&mut self, bit: u32, flag: bool) {
         unsafe {
-            let _ = self.set_unchecked(bit, flag);
+            let _ = self.set_unchecked(bit as usize, flag);
         };
     }
     #[cfg(debug_assertions)]
     #[inline(always)]
-    fn ᚦset(&mut self, bit: usize, flag: bool) {
+    fn ᚦset(&mut self, bit: u32, flag: bool) {
         unsafe {
-            let _ = self.set_unchecked(bit, flag);
+            let _ = self.set_unchecked(bit as usize, flag);
         }
     }
 }
 
-#[allow(dead_code)]
 pub(crate) trait UnsafeArray<T> {
     /// unsafe (thorn) get()
     fn ᚦget(&self, index: u32) -> &T;
