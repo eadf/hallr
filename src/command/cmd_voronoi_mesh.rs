@@ -9,7 +9,7 @@ use crate::{
     ffi::FFIVector3,
     utils::{GrowingVob, voronoi_utils},
 };
-use boostvoronoi as BV;
+use boostvoronoi::prelude as BV;
 use hronn::prelude::ConvertTo;
 use vector_traits::{
     approx::{AbsDiffEq, UlpsEq},
@@ -114,7 +114,7 @@ pub(crate) fn compute_voronoi_mesh(
     let (vor_vertices, vor_lines, vor_aabb2, inverted_transform) =
         parse_input::<Vec3A>(input_model, cmd_arg_max_voronoi_dimension)?;
     let vor_diagram = {
-        BV::Builder::<i64, f32>::default()
+        BV::Builder::<i64>::default()
             .with_vertices(vor_vertices.iter())?
             .with_segments(vor_lines.iter())?
             .build()?

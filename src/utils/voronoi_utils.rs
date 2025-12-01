@@ -4,7 +4,7 @@
 
 use super::{GrowingVob, HallrError, VertexDeduplicator3D};
 use crate::ffi::FFIVector3;
-use boostvoronoi as BV;
+use boostvoronoi::prelude as BV;
 use hronn::prelude::ConvertTo;
 use itertools::Itertools;
 use linestring::linestring_2d::VoronoiParabolicArc;
@@ -16,10 +16,10 @@ use vector_traits::{
 
 /// Mark infinite edges and their adjacent edges as EXTERNAL.
 pub(crate) fn reject_external_edges<T: GenericVector3>(
-    diagram: &BV::Diagram<T::Scalar>,
+    diagram: &BV::Diagram,
 ) -> Result<vob::Vob<u32>, HallrError>
 where
-    T::Scalar: BV::OutputType,
+    f64: AsPrimitive<T::Scalar>,
 {
     let mut rejected_edges = vob::Vob::<u32>::fill_with_false(diagram.edges().len());
 
@@ -40,22 +40,19 @@ where
 /// 'initial' will be set to false when going past the first edge
 /// Note that this is not a recursive function (as it is in boostvoronoi)
 pub(crate) fn mark_connected_edges<T: GenericVector3>(
-    diagram: &BV::Diagram<T::Scalar>,
+    diagram: &BV::Diagram,
     edge_id: BV::EdgeIndex,
     marked_edges: &mut vob::Vob<u32>,
 ) -> Result<(), HallrError>
 where
-    T::Scalar: BV::OutputType,
+    f64: AsPrimitive<T::Scalar>,
 {
     let mut initial = true;
     let mut queue = VecDeque::<BV::EdgeIndex>::new();
     queue.push_front(edge_id);
 
-    'outer: while !queue.is_empty() {
-        // unwrap is safe since we just checked !queue.is_empty()
-        let edge_id = queue.pop_back().unwrap();
-
-        if marked_edges.get_f(edge_id.0) {
+    'outer: while let Some(edge_id) = queue.pop_back() {
+        if marked_edges.get_f(edge_id.into()) {
             initial = false;
             continue 'outer;
         }
@@ -63,27 +60,21 @@ where
         let v1 = diagram.edge_get_vertex1(edge_id)?;
         if diagram.edge_get_vertex0(edge_id)?.is_some() && v1.is_none() {
             // this edge leads to nowhere
-            let _ = marked_edges.set(edge_id.0, true);
+            let _ = marked_edges.set(edge_id.into(), true);
             initial = false;
             continue 'outer;
         }
-        let _ = marked_edges.set(edge_id.0, true);
+        let _ = marked_edges.set(edge_id.into(), true);
 
         #[allow(unused_assignments)]
         if initial {
             initial = false;
             queue.push_back(diagram.edge_get_twin(edge_id)?);
         } else {
-            let _ = marked_edges.set(diagram.edge_get_twin(edge_id)?.0, true);
+            let _ = marked_edges.set(diagram.edge_get_twin(edge_id)?.into(), true);
         }
 
-        if v1.is_none()
-            || !diagram.edges()[(Some(edge_id))
-                .ok_or_else(|| HallrError::InternalError("Could not get edge twin".to_string()))?
-                .0]
-                .get()
-                .is_primary()
-        {
+        if v1.is_none() || !diagram.get_edge(edge_id)?.get().is_primary() {
             // stop traversing this line if vertex1 is not found or if the edge is not primary
             initial = false;
             continue 'outer;
@@ -100,7 +91,7 @@ where
             let mut edge_iter = v1.get_incident_edge()?;
             let v_incident_edge = edge_iter;
             loop {
-                if !marked_edges.get_f(edge_iter.0) {
+                if !marked_edges.get_f(edge_iter.into()) {
                     queue.push_back(edge_iter);
                 }
                 edge_iter = diagram.edge_rot_next(edge_iter)?;
@@ -198,9 +189,9 @@ where
 /// This construct contains the read-only items
 pub(crate) struct DiagramHelperRo<T: GenericVector3>
 where
-    T::Scalar: BV::OutputType,
+    f64: AsPrimitive<T::Scalar>,
 {
-    pub(crate) diagram: BV::Diagram<T::Scalar>,
+    pub(crate) diagram: BV::Diagram,
     pub(crate) vertices: Vec<BV::Point<i64>>,
     pub(crate) segments: Vec<BV::Line<i64>>,
     //aabb: Aabb2<f64>,
@@ -214,9 +205,9 @@ where
 impl<T: GenericVector3> DiagramHelperRo<T>
 where
     T: ConvertTo<FFIVector3>,
-    T::Scalar: BV::OutputType,
     i64: AsPrimitive<T::Scalar>,
     f32: AsPrimitive<T::Scalar>,
+    f64: AsPrimitive<T::Scalar>,
 {
     /// Retrieves a point from the voronoi input in the order it was presented to
     /// the voronoi builder
@@ -226,21 +217,22 @@ where
         cell_id: BV::CellIndex,
     ) -> Result<BV::Point<i64>, HallrError> {
         let (index, cat) = self.diagram.get_cell(cell_id)?.get().source_index_2();
+        let idx: usize = index.into();
         Ok(match cat {
             BV::SourceCategory::SinglePoint => {
-                if index < self.vertices.len() {
-                    self.vertices[index]
+                if idx < self.vertices.len() {
+                    self.vertices[idx]
                 } else {
-                    let v = self.segments[index - self.vertices.len()].start;
+                    let v = self.segments[idx - self.vertices.len()].start;
                     println!(
                         "Rust: Line point requested as a SinglePoint: {v:?} (should not happen)"
                     );
                     v
                 }
             }
-            BV::SourceCategory::SegmentStart => self.segments[index - self.vertices.len()].start,
+            BV::SourceCategory::SegmentStart => self.segments[idx - self.vertices.len()].start,
             BV::SourceCategory::Segment | BV::SourceCategory::SegmentEnd => {
-                self.segments[index - self.vertices.len()].end
+                self.segments[idx - self.vertices.len()].end
             }
         })
     }
@@ -253,8 +245,8 @@ where
         cell_id: BV::CellIndex,
     ) -> Result<&BV::Line<i64>, HallrError> {
         let cell = self.diagram.get_cell(cell_id)?.get();
-        let index = cell.source_index() - self.vertices.len();
-        Ok(&self.segments[index])
+        let sidx: usize = cell.source_index().into();
+        Ok(&self.segments[sidx - self.vertices.len()])
     }
 
     /// Convert a secondary edge into a set of vertices.
@@ -280,12 +272,20 @@ where
 
         let start_point = if let Some(vertex0_id) = vertex0_id {
             let vertex0 = self.diagram.vertex_get(vertex0_id)?.get();
-            if !self.internal_vertices[vertex0.get_id().0] {
+            if !self.internal_vertices[vertex0.get_id().into()] {
                 None
             } else if vertex0.is_site_point() {
-                Some(T::new_3d(vertex0.x(), vertex0.y(), T::Scalar::ZERO))
+                Some(T::new_3d(
+                    vertex0.x().as_(),
+                    vertex0.y().as_(),
+                    T::Scalar::ZERO,
+                ))
             } else {
-                Some(T::new_3d(vertex0.x(), vertex0.y(), f32::NAN.as_()))
+                Some(T::new_3d(
+                    vertex0.x().as_(),
+                    vertex0.y().as_(),
+                    f32::NAN.as_(),
+                ))
             }
         } else {
             None
@@ -293,12 +293,20 @@ where
 
         let end_point = if let Some(vertex1_id) = vertex1_id {
             let vertex1 = self.diagram.vertex_get(vertex1_id)?.get();
-            if !self.internal_vertices[vertex1.get_id().0] {
+            if !self.internal_vertices[vertex1.get_id().into()] {
                 None
             } else if vertex1.is_site_point() {
-                Some(T::new_3d(vertex1.x(), vertex1.y(), T::Scalar::ZERO))
+                Some(T::new_3d(
+                    vertex1.x().as_(),
+                    vertex1.y().as_(),
+                    T::Scalar::ZERO,
+                ))
             } else {
-                Some(T::new_3d(vertex1.x(), vertex1.y(), f32::NAN.as_()))
+                Some(T::new_3d(
+                    vertex1.x().as_(),
+                    vertex1.y().as_(),
+                    f32::NAN.as_(),
+                ))
             }
         } else {
             None
@@ -392,11 +400,11 @@ where
             let vertex0 = self.diagram.vertex_get(vertex0)?.get();
 
             let start_point = if vertex0.is_site_point() {
-                T::new_3d(vertex0.x(), vertex0.y(), T::Scalar::ZERO)
+                T::new_3d(vertex0.x().as_(), vertex0.y().as_(), T::Scalar::ZERO)
             } else {
-                T::new_3d(vertex0.x(), vertex0.y(), f32::NAN.as_())
+                T::new_3d(vertex0.x().as_(), vertex0.y().as_(), f32::NAN.as_())
             };
-            (start_point, self.internal_vertices[vertex0.get_id().0])
+            (start_point, self.internal_vertices[vertex0.get_id().into()])
         } else {
             return Err(HallrError::InternalError(format!(
                 "Edge vertex0 could not be found. {}:{}",
@@ -410,11 +418,11 @@ where
                 let vertex1 = self.diagram.vertex_get(vertex1)?.get();
 
                 let end_point = if vertex1.is_site_point() {
-                    T::new_3d(vertex1.x(), vertex1.y(), T::Scalar::ZERO)
+                    T::new_3d(vertex1.x().as_(), vertex1.y().as_(), T::Scalar::ZERO)
                 } else {
-                    T::new_3d(vertex1.x(), vertex1.y(), f32::NAN.as_())
+                    T::new_3d(vertex1.x().as_(), vertex1.y().as_(), f32::NAN.as_())
                 };
-                (end_point, self.internal_vertices[vertex1.get_id().0])
+                (end_point, self.internal_vertices[vertex1.get_id().into()])
             } else {
                 return Err(HallrError::InternalError(format!(
                     "Edge vertex1 could not be found. {}:{}",
@@ -504,7 +512,7 @@ where
             let edge = edge.get();
             let edge_id = edge.id();
             // secondary edges may be in the rejected list while still contain needed data
-            if !edge.is_secondary() && self.rejected_edges[edge_id.0] {
+            if !edge.is_secondary() && self.rejected_edges[edge_id.into()] {
                 // ignore rejected edges, but only non-secondary ones.
                 continue;
             }
@@ -512,7 +520,7 @@ where
             let twin_id = edge.twin()?;
 
             //println!("edge:{:?}", edge_id.0);
-            if !rv.contains_key(&(twin_id.0 as u32)) {
+            if !rv.contains_key(&(twin_id.into())) {
                 let samples = if edge.is_secondary() {
                     self.convert_secondary_edge(&edge)?
                 } else {
@@ -526,7 +534,7 @@ where
                     }
                 }
 
-                let _ = rv.insert(edge_id.0 as u32, pb_edge);
+                let _ = rv.insert(edge_id.into(), pb_edge);
             } else {
                 // ignore edge because the twin is already processed
             }
@@ -591,16 +599,16 @@ where
                     let edge = self.diagram.get_edge(edge_id)?.get();
                     let twin_id = edge.twin()?;
 
-                    if self.rejected_edges[edge_id.0] && !edge.is_secondary() {
+                    if self.rejected_edges[edge_id.into()] && !edge.is_secondary() {
                         continue;
                     }
                     let mod_edge: Box<dyn ExactSizeIterator<Item = &u32>> = {
-                        if let Some(e) = edge_map.get(&(edge_id.0 as u32)) {
+                        if let Some(e) = edge_map.get(&(edge_id.into())) {
                             Box::new(e.iter())
                         } else {
                             Box::new(
                                 edge_map
-                                    .get(&(twin_id.0 as u32))
+                                    .get(&(twin_id.into()))
                                     .ok_or_else(|| {
                                         HallrError::InternalError(format!(
                                             "could not get twin edge, {}, {}",
@@ -656,9 +664,9 @@ where
                     let twin_id = edge.twin()?;
 
                     let mod_edge: Box<dyn ExactSizeIterator<Item = &u32>> = {
-                        if let Some(e) = edge_map.get(&(edge_id.0 as u32)) {
+                        if let Some(e) = edge_map.get(&(edge_id.into())) {
                             Box::new(e.iter())
-                        } else if let Some(e) = edge_map.get(&(twin_id.0 as u32)) {
+                        } else if let Some(e) = edge_map.get(&(twin_id.into())) {
                             Box::new(e.iter().rev())
                         } else {
                             //let e:Option<usize> = None;
@@ -750,11 +758,11 @@ impl<T: GenericVector3> Default for DiagramHelperRw<T> {
 
 /// from the list of rejected edges, find a list of internal (non-rejected) vertices.
 pub(crate) fn find_internal_vertices<T: GenericVector3>(
-    diagram: &BV::Diagram<T::Scalar>,
+    diagram: &BV::Diagram,
     rejected_edges: &vob::Vob<u32>,
 ) -> Result<vob::Vob<u32>, HallrError>
 where
-    T::Scalar: BV::OutputType,
+    f64: AsPrimitive<T::Scalar>,
 {
     let mut internal_vertices = vob::Vob::<u32>::fill_with_false(diagram.vertices().len());
     for (_, e) in diagram
@@ -766,10 +774,10 @@ where
         let e = e.get();
         if e.is_primary() {
             if let Some(v0) = e.vertex0() {
-                let _ = internal_vertices.set(v0.0, true);
+                let _ = internal_vertices.set(v0.into(), true);
             }
             if let Some(v1) = diagram.edge_get_vertex1(e.id())? {
-                let _ = internal_vertices.set(v1.0, true);
+                let _ = internal_vertices.set(v1.into(), true);
             }
         }
     }

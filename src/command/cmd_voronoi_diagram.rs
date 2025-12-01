@@ -9,7 +9,7 @@ use crate::{
     ffi::FFIVector3,
     utils::{GrowingVob, voronoi_utils},
 };
-use boostvoronoi as BV;
+use boostvoronoi::prelude as BV;
 use hronn::prelude::ConvertTo;
 use vector_traits::{
     approx::{AbsDiffEq, UlpsEq},
@@ -117,7 +117,7 @@ pub(crate) fn compute_voronoi_diagram(
     println!("vor_vertices {vor_vertices:?}");
     println!("vor_lines {vor_lines:?}");
 
-    let vor_diagram = BV::Builder::<i64, f32>::default()
+    let vor_diagram = BV::Builder::<i64>::default()
         .with_vertices(vor_vertices.iter())?
         .with_segments(vor_lines.iter())?
         .build()?;

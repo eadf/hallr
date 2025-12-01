@@ -9,7 +9,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a15f179cd60c4584b8a8c596927aadc462e27f2ca70c04e0071964a73ba7a75"
 dependencies = [
  "cfg-if",
- "getrandom",
  "once_cell",
  "version_check",
  "zerocopy",
@@ -50,44 +49,19 @@ checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
 
 [[package]]
 name = "boostvoronoi"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "302f131f77cfcc2cdfa7f19689b4fb6215b62ff90c6ccc0a4f837433416b72e1"
+version = "0.12.0"
+source = "git+https://codeberg.org/eadf/boostvoronoi_rs.git?rev=b361408c68#b361408c687d8cf50d455077e7ae75a670eae095"
 dependencies = [
- "boostvoronoi_core",
- "boostvoronoi_ext",
-]
-
-[[package]]
-name = "boostvoronoi_core"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2bb0c89a9f672a73c1bab3b9095f153c4cdaf3ef41923e2105671cbb8b3d101"
-dependencies = [
- "ahash",
  "approx",
- "bitflags",
- "boostvoronoi_ext",
  "cpp_map",
- "itertools 0.12.1",
- "num-traits",
- "ordered-float 4.6.0",
- "thiserror 1.0.69",
- "version_check",
- "vob",
-]
-
-[[package]]
-name = "boostvoronoi_ext"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3361dbf80f0ea0a2f1938ece2d658e9a1a6226a07b089a43a40f7ace4f80daa3"
-dependencies = [
- "approx",
+ "glam 0.30.9",
  "libm",
  "num-traits",
- "ordered-float 4.6.0",
+ "ordered-float",
+ "rustc-hash",
  "smallvec",
+ "thiserror 2.0.17",
+ "vob",
 ]
 
 [[package]]
@@ -118,13 +92,13 @@ checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "centerline"
-version = "0.13.0"
-source = "git+https://codeberg.org/eadf/centerline_rs.git#b29c93f6fdb3996808efb67a2b8e4ee726538cec"
+version = "0.14.0"
+source = "git+https://codeberg.org/eadf/centerline_rs.git?rev=55c21e079d#55c21e079de7ab7df669678cfabfdfd40fef37c8"
 dependencies = [
  "bitflags",
  "boostvoronoi",
- "linestring 0.16.0 (git+https://codeberg.org/eadf/linestring_rs.git)",
- "ordered-float 5.1.0",
+ "linestring",
+ "ordered-float",
  "rayon",
  "rustc-hash",
  "thiserror 2.0.17",
@@ -140,11 +114,12 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
 name = "cpp_map"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b506a5be14254378b4657118a0fc84c25bb44ef58c83cedf13cdce08347409a9"
+version = "0.2.0"
+source = "git+https://codeberg.org/eadf/cpp_map_rs.git?rev=1912fd1181#1912fd11818b599948ecafdfa6f9af3bc56eec7e"
 dependencies = [
- "thiserror 1.0.69",
+ "rand",
+ "smallvec",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -220,7 +195,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "afc28d89ac6cb489f679fcf51aaa62b4667bb0fb73a30f1d4d23949069707c07"
 dependencies = [
- "itertools 0.14.0",
+ "itertools",
  "num-traits",
 ]
 
@@ -547,9 +522,9 @@ dependencies = [
  "fast-surface-nets",
  "hronn",
  "ilattice",
- "itertools 0.14.0",
+ "itertools",
  "krakel",
- "linestring 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "linestring",
  "logos",
  "macaw",
  "rand",
@@ -619,7 +594,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d22d330a2c5617c4a33a5b107918f6b3fb22acbd2bb377cdf961c2306e61e135"
 dependencies = [
  "krakel",
- "linestring 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "linestring",
  "rayon",
  "ryu",
  "smallvec",
@@ -658,15 +633,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "itertools"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba291022dbbd398a455acf126c1e341954079855bc60dfdda641363bd6922569"
-dependencies = [
- "either",
 ]
 
 [[package]]
@@ -714,21 +680,7 @@ version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "715e1269e88ec253c4d54d1b72924ed9d51a3ed8fe2e7c39d1190ac1304a9092"
 dependencies = [
- "itertools 0.14.0",
- "rayon",
- "rustc-hash",
- "smallvec",
- "thiserror 2.0.17",
- "vector-traits",
- "vob",
-]
-
-[[package]]
-name = "linestring"
-version = "0.16.0"
-source = "git+https://codeberg.org/eadf/linestring_rs.git#f19aa4ea0b4f1957a9b99c6fe12a7586e1b424fa"
-dependencies = [
- "itertools 0.14.0",
+ "itertools",
  "rayon",
  "rustc-hash",
  "smallvec",
@@ -923,15 +875,6 @@ name = "once_cell"
 version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
-
-[[package]]
-name = "ordered-float"
-version = "4.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bb71e1b3fa6ca1c61f383464aaf2bb0e2f8e772a1f01d486832464de363b951"
-dependencies = [
- "num-traits",
-]
 
 [[package]]
 name = "ordered-float"
@@ -1366,9 +1309,9 @@ checksum = "9312f7c4f6ff9069b165498234ce8be658059c6728633667c526e27dc2cf1df5"
 
 [[package]]
 name = "vector-traits"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "950fb1dffc10e5f85adf684bf71c2462406f2cec0dafc26862316c24269e6179"
+checksum = "f228b57b00a0cf34733af60bf2f071c90bf0f6432499c1f9cfd16d13bb4225a5"
 dependencies = [
  "approx",
  "glam 0.30.9",

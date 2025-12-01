@@ -4,8 +4,7 @@
 
 use super::{ConfigType, Model, Options, OwnedModel};
 use crate::{HallrError, ffi, ffi::FFIVector3, utils};
-use boostvoronoi as BV;
-use boostvoronoi::OutputType;
+use boostvoronoi::prelude as BV;
 use hronn::prelude::*;
 use itertools::Itertools;
 use linestring::{linestring_3d::LineString3, prelude::LineString2};
@@ -103,7 +102,6 @@ fn build_output_model<T>(
 ) -> Result<OwnedModel, HallrError>
 where
     T: GenericVector3 + ConvertTo<FFIVector3>,
-    T::Scalar: OutputType,
 {
     //let input_pb_model = &a_command.models[0];
 
@@ -274,8 +272,8 @@ where
     T: GenericVector3,
     T: ConvertTo<FFIVector3>,
     FFIVector3: ConvertTo<T>,
-    T::Scalar: OutputType,
     i64: AsPrimitive<T::Scalar>,
+    f64: AsPrimitive<T::Scalar>,
     T::Scalar: AsPrimitive<i64>,
 {
     let default_max_voronoi_dimension: T::Scalar =
