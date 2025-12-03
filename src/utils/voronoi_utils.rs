@@ -24,7 +24,6 @@ where
     let mut rejected_edges = vob::Vob::<u32>::fill_with_false(diagram.edges().len());
 
     for edge in diagram.edges().iter() {
-        let edge = edge.get();
         let edge_id = edge.id();
 
         if diagram.edge_is_infinite(edge_id)? {
@@ -52,7 +51,7 @@ where
     queue.push_front(edge_id);
 
     'outer: while let Some(edge_id) = queue.pop_back() {
-        if marked_edges.get_f(edge_id.into()) {
+        if marked_edges.get_f(edge_id.usize()) {
             initial = false;
             continue 'outer;
         }
@@ -60,28 +59,28 @@ where
         let v1 = diagram.edge_get_vertex1(edge_id)?;
         if diagram.edge_get_vertex0(edge_id)?.is_some() && v1.is_none() {
             // this edge leads to nowhere
-            let _ = marked_edges.set(edge_id.into(), true);
+            let _ = marked_edges.set(edge_id.usize(), true);
             initial = false;
             continue 'outer;
         }
-        let _ = marked_edges.set(edge_id.into(), true);
+        let _ = marked_edges.set(edge_id.usize(), true);
 
         #[allow(unused_assignments)]
         if initial {
             initial = false;
             queue.push_back(diagram.edge_get_twin(edge_id)?);
         } else {
-            let _ = marked_edges.set(diagram.edge_get_twin(edge_id)?.into(), true);
+            let _ = marked_edges.set(diagram.edge_get_twin(edge_id)?.usize(), true);
         }
 
-        if v1.is_none() || !diagram.get_edge(edge_id)?.get().is_primary() {
+        if v1.is_none() || !diagram.edge(edge_id)?.is_primary() {
             // stop traversing this line if vertex1 is not found or if the edge is not primary
             initial = false;
             continue 'outer;
         }
         // v1 is always Some from this point on
         if let Some(v1) = v1 {
-            let v1 = diagram.vertex_get(v1)?.get();
+            let v1 = diagram.vertex(v1)?;
             if v1.is_site_point() {
                 // stop iterating line when site points detected
                 initial = false;
@@ -91,7 +90,7 @@ where
             let mut edge_iter = v1.get_incident_edge()?;
             let v_incident_edge = edge_iter;
             loop {
-                if !marked_edges.get_f(edge_iter.into()) {
+                if !marked_edges.get_f(edge_iter.usize()) {
                     queue.push_back(edge_iter);
                 }
                 edge_iter = diagram.edge_rot_next(edge_iter)?;
@@ -216,8 +215,8 @@ where
         &self,
         cell_id: BV::CellIndex,
     ) -> Result<BV::Point<i64>, HallrError> {
-        let (index, cat) = self.diagram.get_cell(cell_id)?.get().source_index_2();
-        let idx: usize = index.into();
+        let (index, cat) = self.diagram.cell(cell_id)?.source_index_2();
+        let idx = index.usize();
         Ok(match cat {
             BV::SourceCategory::SinglePoint => {
                 if idx < self.vertices.len() {
@@ -244,8 +243,8 @@ where
         &self,
         cell_id: BV::CellIndex,
     ) -> Result<&BV::Line<i64>, HallrError> {
-        let cell = self.diagram.get_cell(cell_id)?.get();
-        let sidx: usize = cell.source_index().into();
+        let cell = self.diagram.cell(cell_id)?;
+        let sidx: usize = cell.source_index().usize();
         Ok(&self.segments[sidx - self.vertices.len()])
     }
 
@@ -259,8 +258,8 @@ where
         let edge_id = edge.id();
         let edge_twin_id = self.diagram.edge_get_twin(edge_id)?;
         let cell_id = self.diagram.edge_get_cell(edge_id)?;
-        let cell = self.diagram.get_cell(cell_id)?.get();
-        let twin_cell_id = self.diagram.get_edge(edge_twin_id)?.get().cell().unwrap();
+        let cell = self.diagram.cell(cell_id)?;
+        let twin_cell_id = self.diagram.edge(edge_twin_id)?.cell().unwrap();
 
         let segment = if cell.contains_point() {
             self.retrieve_segment(twin_cell_id)?
@@ -271,8 +270,8 @@ where
         let vertex1_id = self.diagram.edge_get_vertex1(edge_id)?;
 
         let start_point = if let Some(vertex0_id) = vertex0_id {
-            let vertex0 = self.diagram.vertex_get(vertex0_id)?.get();
-            if !self.internal_vertices[vertex0.get_id().into()] {
+            let vertex0 = self.diagram.vertex(vertex0_id)?;
+            if !self.internal_vertices[vertex0.get_id().usize()] {
                 None
             } else if vertex0.is_site_point() {
                 Some(T::new_3d(
@@ -292,8 +291,8 @@ where
         };
 
         let end_point = if let Some(vertex1_id) = vertex1_id {
-            let vertex1 = self.diagram.vertex_get(vertex1_id)?.get();
-            if !self.internal_vertices[vertex1.get_id().into()] {
+            let vertex1 = self.diagram.vertex(vertex1_id)?;
+            if !self.internal_vertices[vertex1.get_id().usize()] {
                 None
             } else if vertex1.is_site_point() {
                 Some(T::new_3d(
@@ -382,10 +381,10 @@ where
         let edge_id = edge.id();
         let edge_twin_id = self.diagram.edge_get_twin(edge_id)?;
         let cell_id = self.diagram.edge_get_cell(edge_id)?;
-        let cell = self.diagram.get_cell(cell_id)?.get();
-        let twin_cell_id = self.diagram.get_edge(edge_twin_id)?.get().cell()?;
+        let cell = self.diagram.cell(cell_id)?;
+        let twin_cell_id = self.diagram.edge(edge_twin_id)?.cell()?;
         let segment = if cell.contains_point() {
-            let twin_cell = self.diagram.get_cell(twin_cell_id)?.get();
+            let twin_cell = self.diagram.cell(twin_cell_id)?;
             if twin_cell.contains_point() {
                 let cell_point = self.retrieve_point(cell_id)?;
                 BV::Line::new(cell_point, cell_point)
@@ -397,14 +396,17 @@ where
         };
 
         let (start_point, startpoint_is_internal) = if let Some(vertex0) = edge.vertex0() {
-            let vertex0 = self.diagram.vertex_get(vertex0)?.get();
+            let vertex0 = self.diagram.vertex(vertex0)?;
 
             let start_point = if vertex0.is_site_point() {
                 T::new_3d(vertex0.x().as_(), vertex0.y().as_(), T::Scalar::ZERO)
             } else {
                 T::new_3d(vertex0.x().as_(), vertex0.y().as_(), f32::NAN.as_())
             };
-            (start_point, self.internal_vertices[vertex0.get_id().into()])
+            (
+                start_point,
+                self.internal_vertices[vertex0.get_id().usize()],
+            )
         } else {
             return Err(HallrError::InternalError(format!(
                 "Edge vertex0 could not be found. {}:{}",
@@ -415,14 +417,14 @@ where
 
         let (end_point, end_point_is_internal) =
             if let Some(vertex1) = self.diagram.edge_get_vertex1(edge_id)? {
-                let vertex1 = self.diagram.vertex_get(vertex1)?.get();
+                let vertex1 = self.diagram.vertex(vertex1)?;
 
                 let end_point = if vertex1.is_site_point() {
                     T::new_3d(vertex1.x().as_(), vertex1.y().as_(), T::Scalar::ZERO)
                 } else {
                     T::new_3d(vertex1.x().as_(), vertex1.y().as_(), f32::NAN.as_())
                 };
-                (end_point, self.internal_vertices[vertex1.get_id().into()])
+                (end_point, self.internal_vertices[vertex1.get_id().usize()])
             } else {
                 return Err(HallrError::InternalError(format!(
                     "Edge vertex1 could not be found. {}:{}",
@@ -509,10 +511,9 @@ where
         let mut rv = rustc_hash::FxHashMap::<u32, Vec<u32>>::default();
 
         for edge in self.diagram.edges() {
-            let edge = edge.get();
             let edge_id = edge.id();
             // secondary edges may be in the rejected list while still contain needed data
-            if !edge.is_secondary() && self.rejected_edges[edge_id.into()] {
+            if !edge.is_secondary() && self.rejected_edges[edge_id.usize()] {
                 // ignore rejected edges, but only non-secondary ones.
                 continue;
             }
@@ -520,11 +521,11 @@ where
             let twin_id = edge.twin()?;
 
             //println!("edge:{:?}", edge_id.0);
-            if !rv.contains_key(&(twin_id.into())) {
+            if !rv.contains_key(&(twin_id.u32())) {
                 let samples = if edge.is_secondary() {
-                    self.convert_secondary_edge(&edge)?
+                    self.convert_secondary_edge(edge)?
                 } else {
-                    self.convert_edge(&edge, discretization_distance)?
+                    self.convert_edge(edge, discretization_distance)?
                 };
                 let mut pb_edge: Vec<u32> = Vec::with_capacity(samples.len());
                 for coord in samples {
@@ -534,7 +535,7 @@ where
                     }
                 }
 
-                let _ = rv.insert(edge_id.into(), pb_edge);
+                let _ = rv.insert(edge_id.u32(), pb_edge);
             } else {
                 // ignore edge because the twin is already processed
             }
@@ -582,7 +583,6 @@ where
         let mut return_indices = Vec::<u32>::new();
 
         for cell in self.diagram.cells().iter() {
-            let cell = cell.get();
             let cell_id = cell.id();
 
             if cell.contains_point() {
@@ -596,19 +596,19 @@ where
                 };
 
                 for edge_id in self.diagram.cell_edge_iterator(cell_id) {
-                    let edge = self.diagram.get_edge(edge_id)?.get();
+                    let edge = self.diagram.edge(edge_id)?;
                     let twin_id = edge.twin()?;
 
-                    if self.rejected_edges[edge_id.into()] && !edge.is_secondary() {
+                    if self.rejected_edges[edge_id.usize()] && !edge.is_secondary() {
                         continue;
                     }
                     let mod_edge: Box<dyn ExactSizeIterator<Item = &u32>> = {
-                        if let Some(e) = edge_map.get(&(edge_id.into())) {
+                        if let Some(e) = edge_map.get(&(edge_id.u32())) {
                             Box::new(e.iter())
                         } else {
                             Box::new(
                                 edge_map
-                                    .get(&(twin_id.into()))
+                                    .get(&(twin_id.u32()))
                                     .ok_or_else(|| {
                                         HallrError::InternalError(format!(
                                             "could not get twin edge, {}, {}",
@@ -660,13 +660,13 @@ where
                 //print!("SCell:{} v0:{} v1:{} ", cell_id.0, v0n, v1n);
                 let mut new_face = Vec::new();
                 for edge_id in self.diagram.cell_edge_iterator(cell_id) {
-                    let edge = self.diagram.get_edge(edge_id)?.get();
+                    let edge = self.diagram.edge(edge_id)?;
                     let twin_id = edge.twin()?;
 
                     let mod_edge: Box<dyn ExactSizeIterator<Item = &u32>> = {
-                        if let Some(e) = edge_map.get(&(edge_id.into())) {
+                        if let Some(e) = edge_map.get(&(edge_id.u32())) {
                             Box::new(e.iter())
-                        } else if let Some(e) = edge_map.get(&(twin_id.into())) {
+                        } else if let Some(e) = edge_map.get(&(twin_id.u32())) {
                             Box::new(e.iter().rev())
                         } else {
                             //let e:Option<usize> = None;
@@ -771,13 +771,12 @@ where
         .enumerate()
         .filter(|(eid, _)| !rejected_edges[*eid])
     {
-        let e = e.get();
         if e.is_primary() {
             if let Some(v0) = e.vertex0() {
-                let _ = internal_vertices.set(v0.into(), true);
+                let _ = internal_vertices.set(v0.usize(), true);
             }
             if let Some(v1) = diagram.edge_get_vertex1(e.id())? {
-                let _ = internal_vertices.set(v1.into(), true);
+                let _ = internal_vertices.set(v1.usize(), true);
             }
         }
     }
@@ -785,7 +784,7 @@ where
         .vertices()
         .iter()
         .enumerate()
-        .filter(|(_, v)| v.get().is_site_point())
+        .filter(|(_, v)| v.is_site_point())
     {
         let _ = internal_vertices.set(vid, true);
     }

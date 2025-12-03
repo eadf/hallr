@@ -21,7 +21,7 @@ linestring = { version="0.16.0", features = ["glam"] }
 #linestring = {git = "https://codeberg.org/eadf/linestring_rs.git", features = ["glam"]}
 #linestring = { path="../linestring.rs", features = ["glam"]}
 #centerline = { version="0.13.0", features = ["glam"]}
-centerline = {git = "https://codeberg.org/eadf/centerline_rs.git", features = ["glam"], rev="55c21e079d"}
+centerline = {git = "https://codeberg.org/eadf/centerline_rs.git", features = ["glam"], rev="828b4e132b"}
 #centerline = { path="../centerline.rs", features = ["glam"]}
 krakel = {version = "0.5.0", features = ["vector-traits", "glam"]}
 #krakel = {git = "https://codeberg.org/eadf/krakel_rs.git", features = ["vector-traits", "glam"]}
@@ -37,7 +37,7 @@ remesh = { version = "=0.0.4", features = ["glam-fast-math"] }
 #dedup_mesh = { path = "../dedup_mesh_rs", features = ["parallel", "simd"]}
 dedup_mesh = { version = "=0.2.0", features = ["parallel", "simd"]}
 #boostvoronoi = { version = "0.11.1", features = ["glam"] }
-boostvoronoi = { git = "https://codeberg.org/eadf/boostvoronoi_rs.git", rev="b361408c68", features = ["glam"] }
+boostvoronoi = { git = "https://codeberg.org/eadf/boostvoronoi_rs.git", rev="d6bdf18da5", features = ["glam"] }
 #boostvoronoi = { path="../boostvoronoi.rs", features = ["glam"]}
 
 thiserror = "2.0.17"

@@ -50,7 +50,7 @@ checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
 [[package]]
 name = "boostvoronoi"
 version = "0.12.0"
-source = "git+https://codeberg.org/eadf/boostvoronoi_rs.git?rev=b361408c68#b361408c687d8cf50d455077e7ae75a670eae095"
+source = "git+https://codeberg.org/eadf/boostvoronoi_rs.git?rev=d6bdf18da5#d6bdf18da58bd8fa5314322185e749aaaa170871"
 dependencies = [
  "approx",
  "cpp_map",
@@ -93,7 +93,7 @@ checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 [[package]]
 name = "centerline"
 version = "0.14.0"
-source = "git+https://codeberg.org/eadf/centerline_rs.git?rev=55c21e079d#55c21e079de7ab7df669678cfabfdfd40fef37c8"
+source = "git+https://codeberg.org/eadf/centerline_rs.git?rev=828b4e132b#828b4e132b481fa924085b84c07a7f122733cb47"
 dependencies = [
  "bitflags",
  "boostvoronoi",
@@ -664,9 +664,9 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc"
-version = "0.2.177"
+version = "0.2.178"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2874a2af47a2325c2001a6e6fad9b16a53b802102b528163885171cf92b15976"
+checksum = "37c93d8daa9d8a012fd8ab92f088405fb202ea0b6ab73ee2482ae66af4f42091"
 
 [[package]]
 name = "libm"
