@@ -1,5 +1,5 @@
 [package]
-version = "0.1.18"
+version = "0.1.19"
 name = "hallr"
 edition = "2024"
 rust-version = "1.87.0"
@@ -20,8 +20,8 @@ vector-traits = { version="0.6.1", features = ["glam", "glam-fast-math"]}
 linestring = { version="0.16.0", features = ["glam"] }
 #linestring = {git = "https://codeberg.org/eadf/linestring_rs.git", features = ["glam"]}
 #linestring = { path="../linestring.rs", features = ["glam"]}
-#centerline = { version="0.13.0", features = ["glam"]}
-centerline = {git = "https://codeberg.org/eadf/centerline_rs.git", features = ["glam"], rev="828b4e132b"}
+centerline = { version="0.14.0", features = ["glam"]}
+#centerline = {git = "https://codeberg.org/eadf/centerline_rs.git", features = ["glam"], rev="828b4e132b"}
 #centerline = { path="../centerline.rs", features = ["glam"]}
 krakel = {version = "0.5.0", features = ["vector-traits", "glam"]}
 #krakel = {git = "https://codeberg.org/eadf/krakel_rs.git", features = ["vector-traits", "glam"]}
@@ -36,8 +36,8 @@ remesh = { version = "=0.0.4", features = ["glam-fast-math"] }
 #dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel", "simd"]}
 #dedup_mesh = { path = "../dedup_mesh_rs", features = ["parallel", "simd"]}
 dedup_mesh = { version = "=0.2.0", features = ["parallel", "simd"]}
-#boostvoronoi = { version = "0.11.1", features = ["glam"] }
-boostvoronoi = { git = "https://codeberg.org/eadf/boostvoronoi_rs.git", rev="d6bdf18da5", features = ["glam"] }
+boostvoronoi = { version = "0.12.0", features = ["glam"] }
+#boostvoronoi = { git = "https://codeberg.org/eadf/boostvoronoi_rs.git", rev="d6bdf18da5", features = ["glam"] }
 #boostvoronoi = { path="../boostvoronoi.rs", features = ["glam"]}
 
 thiserror = "2.0.17"

@@ -93,7 +93,11 @@ where
                 if !marked_edges.get_f(edge_iter.usize()) {
                     queue.push_back(edge_iter);
                 }
-                edge_iter = diagram.edge_rot_next(edge_iter)?;
+                edge_iter = diagram.edge_rot_next(edge_iter).ok_or_else(|| {
+                    HallrError::InternalError(
+                        format!("Edge disconnected {edge_iter:?}").to_string(),
+                    )
+                })?;
                 if edge_iter == v_incident_edge {
                     break;
                 }

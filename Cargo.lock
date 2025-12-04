@@ -50,7 +50,8 @@ checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
 [[package]]
 name = "boostvoronoi"
 version = "0.12.0"
-source = "git+https://codeberg.org/eadf/boostvoronoi_rs.git?rev=d6bdf18da5#d6bdf18da58bd8fa5314322185e749aaaa170871"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ccbc1f2ab6d91fa06d177d4be93eef4d9cfa76172c1a4d81eebe0f69911e4aa"
 dependencies = [
  "approx",
  "cpp_map",
@@ -93,7 +94,8 @@ checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 [[package]]
 name = "centerline"
 version = "0.14.0"
-source = "git+https://codeberg.org/eadf/centerline_rs.git?rev=828b4e132b#828b4e132b481fa924085b84c07a7f122733cb47"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b456df1a417c0b5aa5a7b0270048ec757f60f518f7e903e692d1a5943e8884e"
 dependencies = [
  "bitflags",
  "boostvoronoi",
@@ -115,7 +117,8 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 [[package]]
 name = "cpp_map"
 version = "0.2.0"
-source = "git+https://codeberg.org/eadf/cpp_map_rs.git?rev=1912fd1181#1912fd11818b599948ecafdfa6f9af3bc56eec7e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec1940c0c538b9de163cd9523bf2801fdea188bba1c5978c9b8750a8a9c7d500"
 dependencies = [
  "rand",
  "smallvec",
@@ -513,7 +516,7 @@ dependencies = [
 
 [[package]]
 name = "hallr"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
  "boostvoronoi",
  "centerline",
