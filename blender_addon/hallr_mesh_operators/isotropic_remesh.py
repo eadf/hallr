@@ -52,7 +52,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
     )
 
     split_edges_prop: bpy.props.BoolProperty(
-        name="Split Edges",
+        name="Enable split edges",
         description="Use edge splitting during remeshing",
         default=True
     )
@@ -153,7 +153,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
 
     deny_non_manifold_prop: bpy.props.BoolProperty(
         name="Deny non manifold mesh",
-        description="Check if the mesh is non-manifold before sending to Rust functions",
+        description="Check if the mesh is non-manifold before sending to Rust functions, this makes the remesh process much slower. It is best to fix the mesh with 'clean mesh' operation or let the remesher run with 1 iteration before doing large remesh jobs",
         default=True
     )
 
@@ -212,6 +212,7 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
             "FLIP_EDGES": str(self.flip_edges_prop),
             "COPLANAR_ANGLE_THRESHOLD": str(math.degrees(coplanar_angle_rad)),
             "CREASE_ANGLE_THRESHOLD": str(math.degrees(crease_angle_rad)),
+            "FIX_NON_MANIFOLD": str(not self.deny_non_manifold_prop)
         }
 
         if self.collapse_edges_prop == "QEM":
@@ -258,7 +259,9 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
         warning_row = box.row()
         warning_row.label(text="         blender is unresponsive")
         warning_row.scale_y = 0.7
-        layout.prop(self, "split_edges_prop")
+        row = layout.row()
+        row.label(text="Split edges")
+        row.prop(self, "split_edges_prop")
         if self.collapse_edges_prop == "QEM":
             row = layout.row()
             row.prop(self, "collapse_edges_prop")
@@ -267,16 +270,17 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
             layout.prop(self, "collapse_edges_prop")
         row = layout.row()
         if self.flip_edges_prop == 'QUALITY':
-            row.prop(self, "flip_edges_prop", text='')
+            row.prop(self, "flip_edges_prop")
             if self.quality_threshold_use_default_prop:
                 row.prop(self, "quality_threshold_use_default_prop")
             else:
-                row.prop(self, "quality_threshold_use_default_prop", text='')
+                row.prop(self, "quality_threshold_use_default_prop")
                 row.prop(self, "quality_threshold_prop")
         else:
             row.prop(self, "flip_edges_prop")
 
         row = layout.row()
+        row.label(text="Smooth vertices")
         if self.smooth_vertices_prop:
             sub = row.row()
             sub.alignment = 'LEFT'
@@ -307,5 +311,5 @@ class MESH_OT_hallr_isotropic_remesh(bpy.types.Operator, BaseOperatorMixin):
             split.prop(self, "crease_threshold_use_default_prop", text='Default')
             split.prop(self, "crease_threshold_value_prop")
 
-        # row = layout.row()
-        # row.prop(self, "deny_non_manifold_prop")
+        row = layout.row()
+        row.prop(self, "deny_non_manifold_prop")

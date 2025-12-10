@@ -94,3 +94,44 @@ fn test_isotropic_remesh_1() -> Result<(), HallrError> {
     //assert_eq!(186, result.1.len()); // indices
     Ok(())
 }
+
+#[test]
+fn test_isotropic_remesh2() -> Result<(), HallrError> {
+    let mut config = ConfigType::default();
+    let _ = config.insert("ITERATIONS_COUNT".to_string(), "10".to_string());
+    let _ = config.insert("📦".to_string(), "△".to_string());
+    let _ = config.insert("TARGET_EDGE_LENGTH".to_string(), "0.5".to_string());
+    let _ = config.insert("COLLAPSE_EDGES".to_string(), "DISABLED".to_string());
+    let _ = config.insert("COPLANAR_ANGLE_THRESHOLD".to_string(), "5.0".to_string());
+    let _ = config.insert("SPLIT_EDGES".to_string(), "False".to_string());
+    let _ = config.insert("FIX_NON_MANIFOLD".to_string(), "True".to_string());
+    let _ = config.insert("CREASE_ANGLE_THRESHOLD".to_string(), "160.0".to_string());
+    let _ = config.insert("FLIP_EDGES".to_string(), "DISABLED".to_string());
+    let _ = config.insert("▶".to_string(), "isotropic_remesh".to_string());
+
+    let owned_model_0 = OwnedModel {
+        world_orientation: OwnedModel::identity_matrix(),
+        vertices: vec![
+            (1.0, 0.0, 0.0).into(),
+            (0.0, 0.0, 1.0).into(),
+            (0.0, 1.0, 0.0).into(),
+            (0.0, 0.0, -1.0).into(),
+            (-1.0, 0.0, 0.0).into(),
+            (0.0, -1.0, 0.0).into(),
+            (-2.0, -1.0, 0.0).into(),
+            (-2.0, 0.0, 1.0).into(),
+            (-2.0, 1.0, 0.0).into(),
+        ],
+        indices: vec![
+            0, 3, 2, 3, 0, 1, 2, 1, 0, 2, 3, 1, 4, 1, 3, 3, 5, 4, 1, 4, 5, 3, 1, 5, 6, 7, 8, 8, 7,
+            4, 4, 7, 6, 8, 4, 6,
+        ],
+    };
+
+    let models = vec![owned_model_0.as_model()];
+
+    let result = super::process_command(config, models)?;
+    assert_eq!(12, result.0.len()); // vertices
+    assert_eq!(36, result.1.len()); // indices
+    Ok(())
+}

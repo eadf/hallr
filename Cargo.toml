@@ -29,14 +29,14 @@ krakel = {version = "0.5.0", features = ["vector-traits", "glam"]}
 hronn = { version = "0.7.0", features = ["glam"]}
 #hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
 #hronn = { path = "../hronn.rs", features = ["glam"]}
-remesh = { version = "=0.0.4", features = ["glam-fast-math"] }
-#remesh = { git = "https://codeberg.org/eadf/remesh_rs.git", features = ["glam-fast-math"]}
+#remesh = { version = "=0.0.4", features = ["glam-fast-math"] }
+remesh = { git = "https://codeberg.org/eadf/remesh_rs.git", features = ["glam-fast-math"]}
 #remesh = { path = "../remesh_rs", features = ["integrity_check", "glam-fast-math"]}
 #remesh = { path = "../remesh_rs", features = ["glam-fast-math"]}
 #dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel", "simd"]}
 #dedup_mesh = { path = "../dedup_mesh_rs", features = ["parallel", "simd"]}
 dedup_mesh = { version = "=0.2.0", features = ["parallel", "simd"]}
-boostvoronoi = { version = "0.12.0", features = ["glam"] }
+boostvoronoi = { version = "0.12.1", features = ["glam"] }
 #boostvoronoi = { git = "https://codeberg.org/eadf/boostvoronoi_rs.git", rev="d6bdf18da5", features = ["glam"] }
 #boostvoronoi = { path="../boostvoronoi.rs", features = ["glam"]}
 
@@ -50,7 +50,7 @@ ilattice = { version="0.4.0", default-features = false, features = ["glam", "ray
 fast-surface-nets = "0.2.1"
 #fast-surface-nets = {git="https://github.com/eadf/fast-surface-nets-rs.git", rev= "02552f3", features = []}
 #fast-surface-nets = {path="../fast-surface-nets-rs", features = []}
-logos = "0.15"
+logos = "0.16"
 ryu = { version="1.0.20", optional=true }
 saft = { version="0.34.1", features = ["with_rayon"]}
 macaw = { version="^0.19"} # macaw must be the same version that saft uses

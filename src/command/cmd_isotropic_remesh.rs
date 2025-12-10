@@ -30,7 +30,7 @@ pub(crate) fn process_command(
 
     let remesher = time_it("Rust: building IsotropicRemesh input", || {
         // using the fast/unsafe variant
-        IsotropicRemesh::<f32, _, true>::new(model.vertices, model.indices)
+        IsotropicRemesh::<f32, _, false>::new(model.vertices, model.indices)
     })?;
 
     println!("Rust: Starting remesh()");
@@ -102,6 +102,11 @@ pub(crate) fn process_command(
             remesher.with_crease_angle_threshold(crease_threshold)?
         } else {
             remesher.with_default_crease_threshold()?
+        };
+
+        let remesher = match input_config.get_optional_parsed_option::<bool>("FIX_NON_MANIFOLD") {
+            Ok(Some(true)) => remesher.with_fix_non_manifold()?,
+            _ => remesher,
         };
 
         Ok(remesher

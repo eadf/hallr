@@ -190,7 +190,8 @@ def _package_mesh_data(mesh_obj: bpy.types.Object, mesh_format: str = MeshFormat
 
         # Extract all loop indices at once
         indices = np.empty(poly_count * 3, dtype=np.uint32)
-        mesh.loops.foreach_get("vertex_index", indices)
+        #mesh.loops.foreach_get("vertex_index", indices)
+        mesh.polygons.foreach_get("vertices", indices)
 
     elif mesh_format == MeshFormat.EDGES:
         # Verify there are no polygons for line formats
