@@ -1,5 +1,5 @@
 [package]
-version = "0.1.19"
+version = "0.1.20"
 name = "hallr"
 edition = "2024"
 rust-version = "1.87.0"
@@ -14,55 +14,55 @@ keywords = ["blender", "voronoi", "lsystems", "geometry"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-vector-traits = { version="0.6.1", features = ["glam", "glam-fast-math"]}
-#vector-traits = { path = "../vector-traits", features = ["glam"] }
-#vector-traits = {git = "https://codeberg.org/eadf/vector_traits_rs.git", features = ["glam"]}
-linestring = { version="0.16.0", features = ["glam"] }
-#linestring = {git = "https://codeberg.org/eadf/linestring_rs.git", features = ["glam"]}
-#linestring = { path="../linestring.rs", features = ["glam"]}
-centerline = { version="0.14.0", features = ["glam"]}
-#centerline = {git = "https://codeberg.org/eadf/centerline_rs.git", features = ["glam"], rev="828b4e132b"}
-#centerline = { path="../centerline.rs", features = ["glam"]}
-krakel = {version = "0.5.0", features = ["vector-traits", "glam"]}
-#krakel = {git = "https://codeberg.org/eadf/krakel_rs.git", features = ["vector-traits", "glam"]}
-#krakel = {path = "../krakel", features = ["vector-traits", "glam"]}
-hronn = { version = "0.7.0", features = ["glam"]}
-#hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", features = ["glam"]}
-#hronn = { path = "../hronn.rs", features = ["glam"]}
-#remesh = { version = "=0.0.4", features = ["glam-fast-math"] }
-remesh = { git = "https://codeberg.org/eadf/remesh_rs.git", features = ["glam-fast-math"]}
-#remesh = { path = "../remesh_rs", features = ["integrity_check", "glam-fast-math"]}
-#remesh = { path = "../remesh_rs", features = ["glam-fast-math"]}
-#dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", features = ["parallel", "simd"]}
-#dedup_mesh = { path = "../dedup_mesh_rs", features = ["parallel", "simd"]}
-dedup_mesh = { version = "=0.2.0", features = ["parallel", "simd"]}
-boostvoronoi = { version = "0.12.1", features = ["glam"] }
-#boostvoronoi = { git = "https://codeberg.org/eadf/boostvoronoi_rs.git", rev="d6bdf18da5", features = ["glam"] }
-#boostvoronoi = { path="../boostvoronoi.rs", features = ["glam"]}
+vector-traits = { version="0.6.1", default-features = false, features = ["glam", "glam-fast-math"]}
+#vector-traits = { path = "../vector-traits", default-features = false, features = ["glam"] }
+#vector-traits = {git = "https://codeberg.org/eadf/vector_traits_rs.git", default-features = false, features = ["glam"]}
+linestring = { version="0.16.0", default-features = false, features = ["glam"] }
+#linestring = {git = "https://codeberg.org/eadf/linestring_rs.git", default-features = false, features = ["glam"]}
+#linestring = { path="../linestring.rs", default-features = false, features = ["glam"]}
+centerline = { version="0.14.0", default-features = false, features = ["glam"]}
+#centerline = {git = "https://codeberg.org/eadf/centerline_rs.git", default-features = false, features = ["glam"], rev="828b4e132b"}
+#centerline = { path="../centerline.rs", default-features = false, features = ["glam"]}
+krakel = {version = "0.5.0", default-features = false, features = ["vector-traits", "glam"]}
+#krakel = {git = "https://codeberg.org/eadf/krakel_rs.git", default-features = false, features = ["vector-traits", "glam"]}
+#krakel = {path = "../krakel", default-features = false, features = ["vector-traits", "glam"]}
+hronn = { version = "0.7.0", default-features = false, features = ["glam"]}
+#hronn = { git = "https://codeberg.org/eadf/hronn_rs.git", default-features = false, features = ["glam"]}
+#hronn = { path = "../hronn.rs", default-features = false, features = ["glam"]}
+remesh = { version = "=0.0.5", default-features = false, features = ["glam-fast-math"] }
+#remesh = { git = "https://codeberg.org/eadf/remesh_rs.git", default-features = false, features = ["glam-fast-math"]}
+#remesh = { path = "../remesh_rs", default-features = false, features = ["integrity_check", "glam-fast-math"]}
+#remesh = { path = "../remesh_rs", default-features = false, features = ["glam-fast-math"]}
+#dedup_mesh = { git = "https://codeberg.org/eadf/dedup_mesh_rs.git", default-features = false, features = ["parallel", "simd"]}
+#dedup_mesh = { path = "../dedup_mesh_rs", default-features = false, features = ["parallel", "simd"]}
+dedup_mesh = { version = "=0.2.0", default-features = false, features = ["parallel", "simd"]}
+boostvoronoi = { version = "0.12.1", default-features = false, features = ["glam"] }
+#boostvoronoi = { git = "https://codeberg.org/eadf/boostvoronoi_rs.git", rev="d6bdf18da5", default-features = false, features = ["glam"] }
+#boostvoronoi = { path="../boostvoronoi.rs", default-features = false, features = ["glam"]}
 
-thiserror = "2.0.17"
-smallvec = "1.15.1"
-rayon = "1.11.0"
-itertools = "0.14.0"
-vob = "3.0.6"
-earcutr = "0.5.0"
-ilattice = { version="0.4.0", default-features = false, features = ["glam", "rayon"]}
-fast-surface-nets = "0.2.1"
-#fast-surface-nets = {git="https://github.com/eadf/fast-surface-nets-rs.git", rev= "02552f3", features = []}
-#fast-surface-nets = {path="../fast-surface-nets-rs", features = []}
-logos = "0.16"
-ryu = { version="1.0.20", optional=true }
-saft = { version="0.34.1", features = ["with_rayon"]}
+thiserror = { version="2.0.17", default-features = false }
+smallvec = { version="1.15.1", default-features = false }
+rayon = { version="1.11.0", default-features = false }
+itertools = { version="0.14.0", default-features = false }
+vob = { version="3.0.6", default-features = false }
+earcutr = { version="0.5.0", default-features = false }
+ilattice = { version="0.4.0", default-features = false, features = ["glam", "rayon"] }
+fast-surface-nets = { version="0.2.1", default-features = false}
+logos = { version="0.16", default-features = false, features = ["std", "export_derive"] }
+ryu = { version="1.0.20", optional=true, default-features = false }
+saft = { version="0.34.1", default-features = false, features = ["with_rayon"] }
 macaw = { version="^0.19"} # macaw must be the same version that saft uses
-rustc-hash = "2.1.1"
+rustc-hash = { version="2.1.1", default-features = false, features = ["std"] }
 
 [dev-dependencies]
-rand = "0.9.2"
+rand = { version="0.9.2", default-features = false }
 
 [features]
+# this feature will enable test generation from input data
 generate_test_case_from_input = ["dep:ryu"]
 glam-core-simd  = ["vector-traits/glam-core-simd"]
 glam-fast-math = ["vector-traits/glam-fast-math"]
+# this debug feature will visualize the chunk grid in the sdf operations
 display_sdf_chunks = []
 
 [profile.release]

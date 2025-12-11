@@ -525,7 +525,7 @@ dependencies = [
 
 [[package]]
 name = "hallr"
-version = "0.1.19"
+version = "0.1.20"
 dependencies = [
  "boostvoronoi",
  "centerline",
@@ -1060,8 +1060,9 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 
 [[package]]
 name = "remesh"
-version = "0.0.4"
-source = "git+https://codeberg.org/eadf/remesh_rs.git#16aad0a0717ae5a1dd73b0443617b2976e7f9dfe"
+version = "0.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cbf5a4879954395f796e631d38a278725d88822de0c37fca6c92968c649b74eb"
 dependencies = [
  "bytemuck",
  "faer",

@@ -13,10 +13,24 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [ "${{ github.repository }}" = "eadf/hallr" ]; then
+            echo 'matrix=["ubuntu-latest", "windows-latest", "macos-latest"]' >> $GITHUB_OUTPUT
+          else
+            echo 'matrix=["ubuntu-latest", "windows-latest"]' >> $GITHUB_OUTPUT
+          fi
+
   test:
+    needs: setup
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: ${{ fromJSON(needs.setup.outputs.matrix) }}
         rust: [stable, nightly]
     runs-on: ${{ matrix.os }}
     steps:

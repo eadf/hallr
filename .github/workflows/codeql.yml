@@ -12,6 +12,8 @@ jobs:
   analyze:
     name: Analyze code (Python & Rust)
     runs-on: ubuntu-latest
+    # Only run on the main repository, not the test fork
+    if: github.repository == 'eadf/hallr'
 
     permissions:
       actions: read
